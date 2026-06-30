@@ -24,7 +24,7 @@ class Product(models.Model):
     description = models.TextField(blank=True)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     unit = models.CharField(max_length=50, default='per piece')
-    image = models.ImageField(upload_to='marketplace/products/', blank=True, null=True)
+    image = models.CharField(max_length=200, blank=True, default='')
     in_stock = models.BooleanField(default=True)
     is_featured = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -35,11 +35,6 @@ class Product(models.Model):
     def __str__(self):
         return self.name
 
-    @property
-    def image_url(self):
-        if self.image:
-            return self.image.url
-        return None
 
 
 class Order(models.Model):

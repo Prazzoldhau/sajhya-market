@@ -37,7 +37,7 @@
         <!-- Image Panel -->
         <div class="mkt-detail-img-panel">
             {% if product.image %}
-                <img src="{{ product.image.url }}" alt="{{ product.name }}" class="mkt-detail-img">
+                <img src="{% static product.image %}" alt="{{ product.name }}" class="mkt-detail-img">
             {% else %}
                 <div class="mkt-detail-placeholder">
                     <span>{{ product.category.icon|default:"📦" }}</span>
@@ -72,7 +72,7 @@
 
             {% if product.in_stock %}
             <div class="mkt-detail-actions">
-                <a href="{% url 'add-to-cart' product.id %}?next={% url 'view-cart' %}" class="mkt-btn-primary mkt-btn-lg">
+                <a href="{% url 'add-to-cart' product.id %}" class="mkt-btn-primary mkt-btn-lg mkt-btn-add" data-goto="{% url 'view-cart' %}">
                     🛒 Add to Cart
                 </a>
                 <a href="{% url 'marketplace' %}" class="mkt-btn-outline mkt-btn-lg">
@@ -96,7 +96,7 @@
         <div class="mkt-product-card">
             <div class="mkt-product-img">
                 {% if rp.image %}
-                    <img src="{{ rp.image.url }}" alt="{{ rp.name }}">
+                    <img src="{% static rp.image %}" alt="{{ rp.name }}">
                 {% else %}
                     <div class="mkt-img-placeholder">{{ rp.category.icon|default:"📦" }}</div>
                 {% endif %}
@@ -118,4 +118,53 @@
     {% endif %}
 
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    function updateBadge(count) {
+        var cartBtn = document.querySelector('.mkt-cart-btn');
+        if (!cartBtn) return;
+        var badge = cartBtn.querySelector('.mkt-cart-badge');
+        if (count > 0) {
+            if (!badge) {
+                badge = document.createElement('span');
+                badge.className = 'mkt-cart-badge';
+                cartBtn.appendChild(badge);
+            }
+            badge.textContent = count;
+        } else if (badge) {
+            badge.remove();
+        }
+    }
+
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest('.mkt-btn-add');
+        if (!btn) return;
+        e.preventDefault();
+        var goto = btn.dataset.goto || null;
+
+        fetch(btn.href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (!data.success) return;
+                updateBadge(data.cart_count);
+                if (goto) {
+                    window.location.href = goto;
+                } else {
+                    var orig = btn.textContent;
+                    btn.textContent = '✓';
+                    btn.style.background = '#11998e';
+                    btn.style.color = '#fff';
+                    setTimeout(function () {
+                        btn.textContent = orig;
+                        btn.style.background = '';
+                        btn.style.color = '';
+                    }, 1000);
+                }
+            });
+    });
+}());
+</script>
 {% endblock %}

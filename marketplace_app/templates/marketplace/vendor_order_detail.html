@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ order.order_number }} — Vendor Dashboard{% endblock %}
+
+{% block content %}
+<!-- Navbar -->
+<div class="navbar">
+    <div class="logo">Sa:jhya</div>
+    <div class="mkt-nav-center">
+        <span class="mkt-nav-title">{{ order.order_number }}</span>
+    </div>
+    <div class="mkt-nav-right">
+        <a href="{% url 'vendor-orders' %}" class="mkt-back-btn">← All Orders</a>
+    </div>
+</div>
+
+<div class="container mkt-container">
+
+    <!-- Header with status badge -->
+    <div class="mkt-header-row">
+        <div class="header"><h1>Order Details</h1></div>
+        <span class="mkt-status-badge mkt-status-{{ order.status }}">
+            {{ order.get_status_display }}
+        </span>
+    </div>
+
+    <div class="mkt-checkout-layout">
+
+        <!-- Left: Customer Info -->
+        <div class="mkt-checkout-form-panel">
+            <h2 class="mkt-cart-heading">Customer Info</h2>
+            <div class="mkt-order-details">
+                <div class="mkt-order-detail-row">
+                    <span class="mkt-detail-label">Order Number</span>
+                    <span class="mkt-detail-val mkt-order-num">#{{ order.order_number }}</span>
+                </div>
+                <div class="mkt-order-detail-row">
+                    <span class="mkt-detail-label">Date</span>
+                    <span class="mkt-detail-val">{{ order.created_at|date:"d M Y, H:i" }}</span>
+                </div>
+                <div class="mkt-order-detail-row">
+                    <span class="mkt-detail-label">Customer</span>
+                    <span class="mkt-detail-val">{{ order.customer_name }}</span>
+                </div>
+                <div class="mkt-order-detail-row">
+                    <span class="mkt-detail-label">Email</span>
+                    <span class="mkt-detail-val">{{ order.customer_email }}</span>
+                </div>
+                <div class="mkt-order-detail-row">
+                    <span class="mkt-detail-label">Phone</span>
+                    <span class="mkt-detail-val">{{ order.customer_phone }}</span>
+                </div>
+                <div class="mkt-order-detail-row">
+                    <span class="mkt-detail-label">Delivery Address</span>
+                    <span class="mkt-detail-val">{{ order.delivery_address }}</span>
+                </div>
+                {% if order.notes %}
+                <div class="mkt-order-detail-row">
+                    <span class="mkt-detail-label">Notes</span>
+                    <span class="mkt-detail-val">{{ order.notes }}</span>
+                </div>
+                {% endif %}
+                <div class="mkt-order-detail-row">
+                    <span class="mkt-detail-label">Total</span>
+                    <span class="mkt-detail-val mkt-order-total">NPR {{ order.total_amount }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Status Update + Items -->
+        <div class="mkt-order-summary">
+
+            <!-- Status Update Form -->
+            <h3 class="mkt-summary-title">Update Status</h3>
+            <form method="POST" action="" class="mkt-checkout-form">
+                {% csrf_token %}
+                <div class="mkt-form-group">
+                    <label class="mkt-label">Order Status</label>
+                    <select name="status" class="mkt-input">
+                        {% for value, label in status_choices %}
+                        <option value="{{ value }}" {% if value == order.status %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="mkt-btn-primary mkt-btn-full" style="margin-top:0.75rem;">
+                    💾 Save Status
+                </button>
+            </form>
+
+            <div class="mkt-summary-divider"></div>
+
+            <!-- Items Ordered -->
+            <div class="mkt-ordered-items">
+                <h3>Items Ordered</h3>
+                {% for item in items %}
+                <div class="mkt-ordered-row">
+                    <span>{{ item.product_name }} <span class="mkt-qty-tag">×{{ item.quantity }}</span></span>
+                    <span>NPR {{ item.total_price }}</span>
+                </div>
+                {% endfor %}
+                <div class="mkt-ordered-row" style="font-weight:700; border-top:2px solid #eee; margin-top:.5rem; padding-top:.5rem;">
+                    <span>Total</span>
+                    <span class="mkt-order-total">NPR {{ order.total_amount }}</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

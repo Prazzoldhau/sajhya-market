@@ -1,7 +1,25 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.core.exceptions import PermissionDenied
+from django.http import JsonResponse
+from django.db.models import Sum
 from .models import Category, Product, Order, OrderItem
 from decimal import Decimal
+from functools import wraps
+
+
+def staff_required(view_func):
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect(f"/acc/login/?next={request.path}")
+        if not request.user.is_staff:
+            raise PermissionDenied
+        return view_func(request, *args, **kwargs)
+    return wrapper
+
+
+_STATUS_VALUES = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled']
 
 
 def _get_cart(request):
@@ -91,8 +109,11 @@ def add_to_cart(request, product_id):
         }
 
     _save_cart(request, cart)
-    messages.success(request, f'"{product.name}" added to cart!')
 
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': True, 'cart_count': get_cart_count(request)})
+
+    messages.success(request, f'"{product.name}" added to cart!')
     next_url = request.GET.get('next') or request.META.get('HTTP_REFERER') or 'marketplace'
     return redirect(next_url)
 
@@ -195,3 +216,43 @@ def checkout(request):
 def order_success(request, order_number):
     order = get_object_or_404(Order, order_number=order_number)
     return render(request, 'marketplace/order_success.html', {'order': order})
+
+
+@staff_required
+def vendor_orders(request):
+    status_filter = request.GET.get('status', '').strip()
+    orders = Order.objects.select_related('user').prefetch_related('items').order_by('-created_at')
+    if status_filter in _STATUS_VALUES:
+        orders = orders.filter(status=status_filter)
+
+    all_orders = Order.objects.all()
+    context = {
+        'orders': orders,
+        'status_filter': status_filter,
+        'status_choices': _STATUS_VALUES,
+        'total_orders': all_orders.count(),
+        'pending_count': all_orders.filter(status='pending').count(),
+        'total_revenue': all_orders.aggregate(t=Sum('total_amount'))['t'] or 0,
+    }
+    return render(request, 'marketplace/vendor_orders.html', context)
+
+
+@staff_required
+def vendor_order_detail(request, order_number):
+    order = get_object_or_404(Order, order_number=order_number)
+    if request.method == 'POST':
+        new_status = request.POST.get('status', '').strip()
+        if new_status in _STATUS_VALUES:
+            order.status = new_status
+            order.save(update_fields=['status'])
+            messages.success(request, f'Status updated to "{order.get_status_display()}".')
+        else:
+            messages.error(request, 'Invalid status.')
+        return redirect('vendor-order-detail', order_number=order.order_number)
+
+    context = {
+        'order': order,
+        'items': order.items.all(),
+        'status_choices': Order.STATUS_CHOICES,
+    }
+    return render(request, 'marketplace/vendor_order_detail.html', context)

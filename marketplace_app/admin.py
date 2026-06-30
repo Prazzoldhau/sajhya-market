@@ -1,15 +1,41 @@
 from django.contrib import admin
+from import_export import resources, fields
+from import_export.admin import ImportExportModelAdmin
+from import_export.widgets import ForeignKeyWidget
 from .models import Category, Product, Order, OrderItem
 
 
+class CategoryResource(resources.ModelResource):
+    class Meta:
+        model = Category
+        fields = ('id', 'name', 'icon', 'description')
+        export_order = ('id', 'name', 'icon', 'description')
+
+
+class ProductResource(resources.ModelResource):
+    category = fields.Field(
+        column_name='category',
+        attribute='category',
+        widget=ForeignKeyWidget(Category, 'name')
+    )
+
+    class Meta:
+        model = Product
+        fields = ('id', 'name', 'category', 'description', 'price', 'unit', 'in_stock', 'is_featured')
+        export_order = ('id', 'name', 'category', 'description', 'price', 'unit', 'in_stock', 'is_featured')
+        import_id_fields = ('id',)
+
+
 @admin.register(Category)
-class CategoryAdmin(admin.ModelAdmin):
+class CategoryAdmin(ImportExportModelAdmin):
+    resource_class = CategoryResource
     list_display = ['name', 'icon']
     search_fields = ['name']
 
 
 @admin.register(Product)
-class ProductAdmin(admin.ModelAdmin):
+class ProductAdmin(ImportExportModelAdmin):
+    resource_class = ProductResource
     list_display = ['name', 'category', 'price', 'unit', 'in_stock', 'is_featured', 'created_at']
     list_filter = ['category', 'in_stock', 'is_featured']
     search_fields = ['name', 'description']

@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Vendor Dashboard — Sajhya{% endblock %}
+
+{% block content %}
+<!-- Navbar -->
+<div class="navbar">
+    <div class="logo">Sa:jhya</div>
+    <div class="mkt-nav-center">
+        <span class="mkt-nav-title">📦 Vendor Dashboard</span>
+    </div>
+    <div class="mkt-nav-right">
+        <a href="{% url 'marketplace' %}" class="mkt-back-btn">← Marketplace</a>
+    </div>
+</div>
+
+<div class="container mkt-container">
+
+    <!-- Summary Stats -->
+    <div style="display:flex; gap:1rem; margin-bottom:1.5rem; flex-wrap:wrap;">
+        <div style="flex:1; min-width:160px; background:white; border-radius:12px; padding:1.25rem 1.5rem; box-shadow:0 4px 15px rgba(0,0,0,.08); text-align:center;">
+            <div style="font-size:1.8rem; font-weight:700; color:#667eea;">{{ total_orders }}</div>
+            <div style="font-size:0.85rem; color:#666; margin-top:4px;">Total Orders</div>
+        </div>
+        <div style="flex:1; min-width:160px; background:white; border-radius:12px; padding:1.25rem 1.5rem; box-shadow:0 4px 15px rgba(0,0,0,.08); text-align:center;">
+            <div style="font-size:1.8rem; font-weight:700; color:#f59e0b;">{{ pending_count }}</div>
+            <div style="font-size:0.85rem; color:#666; margin-top:4px;">Pending</div>
+        </div>
+        <div style="flex:1; min-width:160px; background:white; border-radius:12px; padding:1.25rem 1.5rem; box-shadow:0 4px 15px rgba(0,0,0,.08); text-align:center;">
+            <div style="font-size:1.8rem; font-weight:700; color:#11998e;">NPR {{ total_revenue }}</div>
+            <div style="font-size:0.85rem; color:#666; margin-top:4px;">Total Revenue</div>
+        </div>
+    </div>
+
+    <!-- Status Filter -->
+    <div class="mkt-category-strip">
+        <a href="{% url 'vendor-orders' %}" class="mkt-cat-pill {% if not status_filter %}active{% endif %}">All</a>
+        {% for s in status_choices %}
+        <a href="?status={{ s }}" class="mkt-cat-pill {% if status_filter == s %}active{% endif %}">{{ s|capfirst }}</a>
+        {% endfor %}
+    </div>
+
+    <!-- Header -->
+    <div class="mkt-header-row">
+        <div class="header"><h1>Orders</h1></div>
+    </div>
+
+    {% if orders %}
+    <div class="table-responsive">
+        <table class="patient-table">
+            <thead>
+                <tr>
+                    <th>Order #</th>
+                    <th>Customer</th>
+                    <th>Phone</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td><strong>{{ order.order_number }}</strong></td>
+                    <td>{{ order.customer_name }}</td>
+                    <td>{{ order.customer_phone }}</td>
+                    <td>NPR {{ order.total_amount }}</td>
+                    <td>
+                        <span class="mkt-status-badge mkt-status-{{ order.status }}">
+                            {{ order.get_status_display }}
+                        </span>
+                    </td>
+                    <td>{{ order.created_at|date:"d M Y, H:i" }}</td>
+                    <td>
+                        <a href="{% url 'vendor-order-detail' order.order_number %}"
+                           class="btn-gradient" style="font-size:0.82rem; padding:6px 14px;">View</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div style="font-size:3rem; margin-bottom:1rem;">📋</div>
+        <h3>No orders found</h3>
+        <p>{% if status_filter %}No orders with status "{{ status_filter }}".{% else %}No orders placed yet.{% endif %}</p>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

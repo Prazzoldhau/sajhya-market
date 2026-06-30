@@ -1834,8 +1834,10 @@ body {
 
 .mkt-status-pending   { background: rgba(245, 158, 11, 0.12); color: #d97706; }
 .mkt-status-confirmed { background: rgba(16, 185, 129, 0.12); color: #059669; }
-.mkt-status-delivered { background: rgba(102, 126, 234, 0.12); color: #667eea; }
-.mkt-status-cancelled { background: rgba(239, 68, 68, 0.12);  color: #dc2626; }
+.mkt-status-delivered   { background: rgba(102, 126, 234, 0.12); color: #667eea; }
+.mkt-status-cancelled   { background: rgba(239, 68, 68, 0.12);  color: #dc2626; }
+.mkt-status-processing  { background: rgba(99, 102, 241, 0.12);  color: #4f46e5; }
+.mkt-status-shipped     { background: rgba(14, 165, 233, 0.12);  color: #0284c7; }
 
 .mkt-ordered-items {
     background: #f9f9fb;
