@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ referral.referral_code }} — Referral{% endblock %}
+
+{% block extra_css %}
+<style>
+    .info-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; color: #6c757d; }
+    .info-value { font-size: 0.95rem; font-weight: 500; }
+    .status-bar { display: flex; border-radius: 6px; overflow: hidden; }
+    .status-step { flex: 1; text-align: center; padding: 0.5rem 0.25rem; font-size: 0.72rem; background: #f0f0f0; color: #adb5bd; }
+    .status-step.active { background: #0d6efd; color: #fff; font-weight: 600; }
+    .status-step.done   { background: #d1e7dd; color: #198754; }
+    .status-step.rejected-step { background: #f8d7da; color: #842029; font-weight: 600; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 820px;">
+
+    <!-- Header -->
+    <div class="d-flex align-items-center mb-4">
+        <a href="{% url 'my-referrals' %}" class="btn btn-sm btn-outline-secondary me-3">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <div class="flex-grow-1">
+            <h5 class="mb-0 fw-bold">
+                Referral <code class="ms-1 text-secondary fs-6">{{ referral.referral_code }}</code>
+            </h5>
+            <small class="text-muted">
+                Created {{ referral.created_at|date:"d M Y, H:i" }}
+                by <strong>{{ referral.referred_by.get_full_name|default:referral.referred_by.username }}</strong>
+            </small>
+        </div>
+        <span class="badge bg-{{ referral.status_badge_class }} fs-6">{{ referral.get_status_display }}</span>
+    </div>
+
+    <!-- Status progress bar -->
+    {% if referral.status == 'rejected' %}
+    <div class="alert alert-danger mb-4">
+        <i class="fas fa-times-circle me-1"></i> This referral was rejected.
+    </div>
+    {% elif referral.status == 'cancelled' %}
+    <div class="alert alert-secondary mb-4">
+        <i class="fas fa-ban me-1"></i> This referral has been cancelled.
+    </div>
+    {% else %}
+    <div class="status-bar mb-4">
+        {% with s=referral.status %}
+        <div class="status-step {% if s == 'pending' %}active{% elif s in 'accepted,in_progress,completed' %}done{% endif %}">Pending</div>
+        <div class="status-step {% if s == 'accepted' %}active{% elif s in 'in_progress,completed' %}done{% endif %}">Accepted</div>
+        <div class="status-step {% if s == 'in_progress' %}active{% elif s == 'completed' %}done{% endif %}">In Progress</div>
+        <div class="status-step {% if s == 'completed' %}active{% endif %}">Completed</div>
+        {% endwith %}
+    </div>
+    {% endif %}
+
+    <div class="row g-4">
+
+        <!-- Left: details -->
+        <div class="col-md-7">
+
+            <!-- Referred by -->
+            <div class="card shadow-sm mb-3">
+                <div class="card-body">
+                    <h6 class="card-title text-muted mb-3"><i class="fas fa-user-md me-1"></i> Referred By</h6>
+                    <p class="info-label mb-0">Name</p>
+                    <p class="info-value">{{ referral.referred_by.get_full_name|default:referral.referred_by.username }}</p>
+                    <p class="info-label mb-0">Username</p>
+                    <p class="info-value mb-0">{{ referral.referred_by.username }}</p>
+                </div>
+            </div>
+
+            <!-- Patient -->
+            <div class="card shadow-sm mb-3">
+                <div class="card-body">
+                    <h6 class="card-title text-muted mb-3"><i class="fas fa-user me-1"></i> Patient</h6>
+                    {% if referral.patient %}
+                    <div class="alert alert-success py-2 mb-3 small">
+                        <i class="fas fa-check-circle me-1"></i>
+                        Patient record created: <strong>{{ referral.patient.patient_name }}</strong>
+                        <code class="ms-1">{{ referral.patient.patient_code }}</code>
+                    </div>
+                    {% endif %}
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <p class="info-label mb-0">Name</p>
+                            <p class="info-value">{{ referral.patient_name }}</p>
+                        </div>
+                        {% if referral.patient_contact %}
+                        <div class="col-6">
+                            <p class="info-label mb-0">Contact</p>
+                            <p class="info-value">{{ referral.patient_contact }}</p>
+                        </div>
+                        {% endif %}
+                        <div class="col-12">
+                            <p class="info-label mb-0">Diagnosis</p>
+                            <p class="info-value mb-0">{{ referral.patient_diagnosis }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reason -->
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h6 class="card-title text-muted mb-3"><i class="fas fa-notes-medical me-1"></i> Referral Notes</h6>
+                    <p class="info-label mb-0">Reason</p>
+                    <p class="info-value mb-3">{{ referral.reason }}</p>
+                    {% if referral.notes %}
+                    <p class="info-label mb-0">Additional notes</p>
+                    <p class="info-value mb-0">{{ referral.notes }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: actions -->
+        <div class="col-md-5">
+
+            <!-- Assigned to -->
+            <div class="card shadow-sm mb-3">
+                <div class="card-body">
+                    <h6 class="card-title text-muted mb-3"><i class="fas fa-stethoscope me-1"></i> Assigned To</h6>
+                    {% if referral.referred_to %}
+                    <p class="info-label mb-0">Physio</p>
+                    <p class="info-value">{{ referral.referred_to.get_full_name|default:referral.referred_to.username }}</p>
+                    {% else %}
+                    <p class="text-muted small mb-0">Open — any physio can claim this referral by searching the code.</p>
+                    {% endif %}
+                    {% if referral.referred_to_clinic %}
+                    <p class="info-label mb-0 mt-2">Clinic</p>
+                    <p class="info-value mb-0">{{ referral.referred_to_clinic.clinic_name }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Accept action -->
+            {% if referral.status == 'pending' and is_receiver and not is_sender %}
+            <div class="card border-success shadow-sm mb-3">
+                <div class="card-body">
+                    <h6 class="card-title text-success mb-2"><i class="fas fa-user-plus me-1"></i> Accept Referral</h6>
+                    <p class="small text-muted mb-3">Accepting creates a new patient record in your dashboard.</p>
+                    <a href="{% url 'accept-referral' referral.referral_code %}" class="btn btn-success btn-sm w-100">
+                        <i class="fas fa-check me-1"></i> Accept & Create Patient
+                    </a>
+                </div>
+            </div>
+
+            <!-- Reject action -->
+            <div class="card border-danger shadow-sm mb-3">
+                <div class="card-body">
+                    <a href="{% url 'reject-referral' referral.referral_code %}" class="btn btn-outline-danger btn-sm w-100">
+                        <i class="fas fa-times me-1"></i> Reject Referral
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Status update (sender or receiver, non-terminal states) -->
+            {% if referral.status not in 'completed,rejected,cancelled' %}
+            <div class="card shadow-sm mb-3">
+                <div class="card-body">
+                    <h6 class="card-title text-muted mb-2">Update Status</h6>
+                    <form method="post" action="{% url 'update-referral-status' referral.referral_code %}">
+                        {% csrf_token %}
+                        <select name="status" class="form-select form-select-sm mb-2">
+                            {% for value, label in referral.STATUS_CHOICES %}
+                            <option value="{{ value }}" {% if referral.status == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="btn btn-sm btn-outline-primary w-100">
+                            <i class="fas fa-sync-alt me-1"></i> Update
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Link to patient record -->
+            {% if referral.patient %}
+            <a href="{% url 'patient-detail' patient_id=referral.patient.id %}" class="btn btn-outline-success btn-sm w-100">
+                <i class="fas fa-external-link-alt me-1"></i> Open Patient Record
+            </a>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+{% endblock %}

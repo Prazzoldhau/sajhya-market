@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Check - Sajhya Healthcare{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <h3>Welcome</h3>
+                <p>Check if your clinic is available</p>
+            </div>
+            <div class="auth-body">
+                <div class="form-group">
+                    <label for="clinic_search" class="form-label">Search Clinic</label>
+                    <input type="text" 
+                           id="clinic_search" 
+                           class="form-control" 
+                           placeholder="Type clinic name..."
+                           autocomplete="off"
+                           autofocus>
+                </div>
+
+                <!-- Search Results Container -->
+                <div id="search_results" style="display: none;">
+                    <div class="search-results mt-3">
+                        <h6>Matching Clinics:</h6>
+                        <div id="results_list" class="list-group"></div>
+                    </div>
+                </div>
+
+                <!-- Loading Indicator -->
+                <div id="loading" style="display: none;" class="text-center mt-3">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <!-- Create New Clinic Button -->
+                <div class="d-grid gap-2">
+                    <button onclick="location.href='{% url 'clinic_register'%}' "class="btn-gradient-a">
+                        Create New Clinic
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Debounce function to prevent too many API calls
+    function debounce(func, delay) {
+        let timeout;
+        return function() {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this, arguments), delay);
+        };
+    }
+
+    // Search function
+    async function searchClinics() {
+        const searchTerm = document.getElementById('clinic_search').value.trim();
+        const resultsDiv = document.getElementById('search_results');
+        const loadingDiv = document.getElementById('loading');
+        const resultsList = document.getElementById('results_list');
+        
+        if (searchTerm.length < 2) {
+            resultsDiv.style.display = 'none';
+            return;
+        }
+
+
+        
+        // Show loading indicator
+        loadingDiv.style.display = 'block';
+        resultsDiv.style.display = 'none';
+        
+        try {
+            // Make AJAX request
+            const url = "{% url 'search_clinics_api' %}?q=" + encodeURIComponent(searchTerm);
+            const response = await fetch(url);
+            //const response = await fetch(`/api/search-clinics/?q=${encodeURIComponent(searchTerm)}`);
+            const clinics = await response.json();
+            
+            // Hide loading
+            loadingDiv.style.display = 'none';
+            
+            // Display results
+            if (clinics.length > 0) {
+                resultsList.innerHTML = clinics.map(clinic => `
+                    <div class="list-group-item list-group-item-action">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>${clinic.name}</strong><br>
+                                <small class="text-muted">Reg: ${clinic.registration_number}</small>
+                            </div>
+                            <button class="btn btn-sm btn-primary" onclick="claimClinic(${clinic.id})">
+                                Claim
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+                resultsDiv.style.display = 'block';
+            } else {
+                resultsList.innerHTML = `
+                    <div class="alert alert-info">
+                        No clinics found. <a href="#">Create one?</a>
+                    </div>
+                `;
+                resultsDiv.style.display = 'block';
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            loadingDiv.style.display = 'none';
+            resultsList.innerHTML = `
+                <div class="alert alert-danger">
+                    Error searching clinics. Please try again.
+                </div>
+            `;
+            resultsDiv.style.display = 'block';
+        }
+    }
+    
+    // Claim clinic function
+    function claimClinic(clinicId) {
+        window.location.href = `/clinic/claim/${clinicId}/`;
+    }
+    
+    // Attach event listener with debounce
+    const searchInput = document.getElementById('clinic_search');
+    searchInput.addEventListener('input', debounce(searchClinics, 500));
+</script>
+
+<style>
+    .search-results {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    .list-group-item {
+        margin-bottom: 5px;
+        border-radius: 5px;
+    }
+    .btn-gradient-a {
+        width: 100%;
+    }
+</style>
+
+{% endblock %}

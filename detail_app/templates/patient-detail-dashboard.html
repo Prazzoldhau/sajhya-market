@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ patient.patient_full_name }} - Patient Details{% endblock %}
+
+{% block content %}
+<div class="container py-3">
+
+    <div class="navbar">#push to git
+        <div class="navbar-left">
+            {% if patient.qr_code %}
+                <img src="{{ patient.qr_code }}" alt="QR Code for {{ patient.patient_name }}"
+                    style="width: 60px; height: 60px;">
+            {% endif %}
+            <h1 class="patient-title">{{ patient.patient_name }}</h1>
+        </div>
+        <a href="{% url 'refer-to' patient_id=patient.id %}" class="btn-gradient-a">Refer To</a>
+    </div>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('sessions')">📅 Session Status</button>
+    </div>
+
+    <div class="table-responsive">
+        {% if sessions %}
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Sessions</th>
+                    <th>Rx Response</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for session in sessions %}
+                <tr>
+                    <td>{{ session.session_date|date:"Y-m-d H:i" }}</td>
+                    <td>{{ session.session_number }}</td>
+                    <td>{{ session.treatment_response }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <h3>📭 No Sessions Yet</h3>
+            <p>Click "Add New Session" to record the first treatment session.</p>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function switchTab(tabName) {
+        document.querySelectorAll('.tab-content').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        document.getElementById(`${tabName}-tab`).classList.add('active');
+        event.target.classList.add('active');
+    }
+</script>
+{% endblock %}

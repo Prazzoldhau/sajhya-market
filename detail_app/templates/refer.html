@@ -1,0 +1,1103 @@
+{% extends 'base.html' %}
+
+{% block title %}Refer — {{ patient.patient_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .refer-page {
+        padding: 20px 0 40px;
+    }
+
+    /* Patient info bar */
+    .patient-bar {
+        background: white;
+        border-radius: 12px;
+        padding: 16px 24px;
+        margin-bottom: 28px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        display: flex;
+        align-items: center;
+        gap: 28px;
+        flex-wrap: wrap;
+    }
+    .patient-bar-label {
+        font-size: 0.72rem;
+        color: #aaa;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        margin-bottom: 3px;
+    }
+    .patient-bar-name {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #333;
+    }
+    .patient-bar-value {
+        font-size: 0.95rem;
+        color: #555;
+        font-weight: 500;
+    }
+    .patient-bar-divider {
+        width: 1px;
+        height: 42px;
+        background: #eee;
+        flex-shrink: 0;
+    }
+
+    /* Section title */
+    .section-title {
+        color: white;
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 14px;
+        letter-spacing: 0.3px;
+    }
+
+    /* Service grid */
+    .service-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 14px;
+        margin-bottom: 28px;
+    }
+    .service-card {
+        background: white;
+        border-radius: 14px;
+        padding: 22px 14px 18px;
+        text-align: center;
+        cursor: pointer;
+        border: 2px solid transparent;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.07);
+        transition: all 0.22s ease;
+        user-select: none;
+    }
+    .service-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(102,126,234,0.18);
+        border-color: rgba(102,126,234,0.3);
+    }
+    .service-card.selected {
+        border-color: #667eea;
+        background: linear-gradient(135deg, rgba(102,126,234,0.09) 0%, rgba(118,75,162,0.09) 100%);
+        box-shadow: 0 6px 20px rgba(102,126,234,0.22);
+    }
+    .service-icon {
+        font-size: 2rem;
+        display: block;
+        margin-bottom: 10px;
+        transition: transform 0.2s ease;
+    }
+    .service-card.selected .service-icon {
+        transform: scale(1.12);
+    }
+    .service-label {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: #555;
+        line-height: 1.3;
+    }
+    .service-card.selected .service-label {
+        color: #667eea;
+    }
+
+    /* Panels */
+    .panels-container {
+        margin-bottom: 24px;
+    }
+    .empty-selection {
+        text-align: center;
+        padding: 40px 20px;
+        color: rgba(255,255,255,0.7);
+        font-size: 0.95rem;
+    }
+    .service-panel {
+        background: white;
+        border-radius: 14px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        margin-bottom: 16px;
+        overflow: hidden;
+        border-left: 4px solid #667eea;
+        animation: slideDown 0.28s ease;
+    }
+    @keyframes slideDown {
+        from { opacity: 0; transform: translateY(-8px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+    .panel-header {
+        padding: 14px 20px;
+        background: linear-gradient(135deg, rgba(102,126,234,0.06) 0%, rgba(118,75,162,0.06) 100%);
+        border-bottom: 1px solid rgba(102,126,234,0.1);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .panel-header-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #333;
+    }
+    .panel-body {
+        padding: 20px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+    .field-group {
+        display: flex;
+        flex-direction: column;
+    }
+    .field-group.full-width {
+        grid-column: 1 / -1;
+    }
+    .field-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #667eea;
+        margin-bottom: 6px;
+    }
+    .field-group textarea {
+        flex: 1;
+        border: 1.5px solid #e9ecef;
+        border-radius: 8px;
+        padding: 10px 12px;
+        font-size: 0.88rem;
+        font-family: inherit;
+        resize: vertical;
+        min-height: 80px;
+        color: #444;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        line-height: 1.5;
+    }
+    .field-group textarea:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+    }
+    .field-group select {
+        border: 1.5px solid #e9ecef;
+        border-radius: 8px;
+        padding: 10px 12px;
+        font-size: 0.88rem;
+        font-family: inherit;
+        background: white;
+        color: #444;
+        cursor: pointer;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .field-group select:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+    }
+
+    /* Per-panel footer & submit */
+    .panel-footer {
+        padding: 14px 20px;
+        border-top: 1px solid rgba(102,126,234,0.1);
+        display: flex;
+        justify-content: flex-end;
+        background: linear-gradient(135deg, rgba(102,126,234,0.03) 0%, rgba(118,75,162,0.03) 100%);
+    }
+    .panel-submit-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 0.55rem 1.8rem;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.25s ease;
+    }
+    .panel-submit-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(102,126,234,0.35);
+    }
+
+    /* Done state */
+    .service-card.done {
+        border-color: #16a34a;
+        background: linear-gradient(135deg, rgba(22,163,74,0.07) 0%, rgba(21,128,61,0.07) 100%);
+        box-shadow: 0 6px 20px rgba(22,163,74,0.18);
+        cursor: pointer;
+    }
+    .service-card.done .service-label { color: #16a34a; }
+    .service-panel.done { border-left-color: #16a34a; }
+    .done-header-badge {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: #16a34a;
+        background: #dcfce7;
+        padding: 3px 12px;
+        border-radius: 20px;
+        white-space: nowrap;
+    }
+    .undo-btn {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #6b7280;
+        background: white;
+        border: 1px solid #d1d5db;
+        border-radius: 12px;
+        padding: 2px 9px;
+        cursor: pointer;
+        transition: all 0.18s ease;
+    }
+    .undo-btn:hover {
+        background: #f3f4f6;
+        color: #374151;
+        border-color: #9ca3af;
+    }
+
+    /* Lab test search */
+    .lab-search-wrap {
+        position: relative;
+        margin-bottom: 12px;
+    }
+    .lab-search-wrap input[type="text"] {
+        width: 100%;
+        border: 1.5px solid #e9ecef;
+        border-radius: 10px;
+        padding: 10px 14px 10px 38px;
+        font-size: 0.88rem;
+        font-family: inherit;
+        color: #444;
+        box-sizing: border-box;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .lab-search-wrap input[type="text"]:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+    }
+    .lab-search-icon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 1rem;
+        pointer-events: none;
+    }
+    .lab-list {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        max-height: 260px;
+        overflow-y: auto;
+        padding-right: 4px;
+    }
+    .lab-list::-webkit-scrollbar { width: 5px; }
+    .lab-list::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+    .lab-list::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+    .lab-no-results {
+        grid-column: 1 / -1;
+        text-align: center;
+        color: #aaa;
+        font-size: 0.85rem;
+        padding: 16px 0;
+    }
+    .lab-selected-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 10px;
+        min-height: 28px;
+    }
+    .lab-tag {
+        background: linear-gradient(135deg, rgba(102,126,234,0.12) 0%, rgba(118,75,162,0.12) 100%);
+        border: 1px solid rgba(102,126,234,0.3);
+        color: #667eea;
+        font-size: 0.78rem;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 20px;
+    }
+
+    /* Pharmacy prescription builder */
+    .pharm-cat-badge {
+        font-size: 0.68rem;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 20px;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+    .badge-nsaid        { background:#fee2e2; color:#dc2626; }
+    .badge-analgesic    { background:#fed7aa; color:#ea580c; }
+    .badge-opioid       { background:#fecaca; color:#b91c1c; }
+    .badge-neuropathic  { background:#ede9fe; color:#7c3aed; }
+    .badge-muscle       { background:#dbeafe; color:#2563eb; }
+    .badge-supplement   { background:#dcfce7; color:#16a34a; }
+    .badge-corticosteroid { background:#fef3c7; color:#d97706; }
+    .badge-gi           { background:#ccfbf1; color:#0d9488; }
+    .badge-topical      { background:#fce7f3; color:#db2777; }
+
+    .pharm-med-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        max-height: 220px;
+        overflow-y: auto;
+        padding-right: 4px;
+        margin-bottom: 16px;
+    }
+    .pharm-med-list::-webkit-scrollbar { width: 5px; }
+    .pharm-med-list::-webkit-scrollbar-track { background:#f1f1f1; border-radius:4px; }
+    .pharm-med-list::-webkit-scrollbar-thumb { background:#ccc; border-radius:4px; }
+
+    .pharm-med-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #f8f9ff;
+        border: 1.5px solid #e9ecef;
+        border-radius: 10px;
+        padding: 10px 14px;
+        gap: 10px;
+        transition: border-color 0.2s ease, background 0.2s ease;
+    }
+    .pharm-med-item:not(.added):hover {
+        border-color: rgba(102,126,234,0.4);
+        background: rgba(102,126,234,0.05);
+    }
+    .pharm-med-item.added {
+        border-color: #16a34a;
+        background: #f0fdf4;
+        opacity: 0.8;
+    }
+    .pharm-med-name { font-size: 0.88rem; font-weight: 600; color: #444; }
+    .pharm-add-btn {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #667eea;
+        background: rgba(102,126,234,0.1);
+        border: none;
+        border-radius: 6px;
+        padding: 4px 12px;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background 0.2s;
+        flex-shrink: 0;
+    }
+    .pharm-add-btn:hover { background: rgba(102,126,234,0.2); }
+    .pharm-add-btn.added-btn { color: #16a34a; background: #dcfce7; cursor: default; }
+
+    .pharm-prescription-title {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #667eea;
+        margin-bottom: 8px;
+    }
+    .pharm-empty {
+        text-align: center;
+        color: #aaa;
+        font-size: 0.85rem;
+        padding: 16px 0;
+        border: 1.5px dashed #e9ecef;
+        border-radius: 10px;
+        margin-bottom: 8px;
+    }
+    .pharm-row {
+        display: grid;
+        grid-template-columns: 1fr auto auto auto auto;
+        gap: 8px;
+        align-items: center;
+        background: white;
+        border: 1.5px solid #e9ecef;
+        border-radius: 10px;
+        padding: 10px 12px;
+        margin-bottom: 8px;
+        animation: slideDown 0.22s ease;
+    }
+    .pharm-row-name { font-size: 0.85rem; font-weight: 700; color: #333; }
+    .pharm-row select {
+        border: 1.5px solid #e9ecef;
+        border-radius: 7px;
+        padding: 5px 8px;
+        font-size: 0.8rem;
+        font-family: inherit;
+        background: white;
+        color: #444;
+        cursor: pointer;
+    }
+    .pharm-row select:focus { outline: none; border-color: #667eea; }
+    .pharm-remove-btn {
+        background: #fee2e2;
+        border: none;
+        border-radius: 7px;
+        color: #dc2626;
+        font-size: 0.85rem;
+        padding: 5px 10px;
+        cursor: pointer;
+        transition: background 0.2s;
+        flex-shrink: 0;
+    }
+    .pharm-remove-btn:hover { background: #fca5a5; }
+
+    /* Physio checkboxes */
+    .checkbox-group-title {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #667eea;
+        margin-bottom: 10px;
+    }
+    .checkbox-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+    .checkbox-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: #f8f9ff;
+        border: 1.5px solid #e9ecef;
+        border-radius: 10px;
+        padding: 12px 14px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        user-select: none;
+    }
+    .checkbox-item:hover {
+        border-color: rgba(102,126,234,0.4);
+        background: rgba(102,126,234,0.05);
+    }
+    .checkbox-item input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        accent-color: #667eea;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+    .checkbox-item label {
+        font-size: 0.88rem;
+        font-weight: 600;
+        color: #444;
+        cursor: pointer;
+        margin: 0;
+    }
+    .checkbox-item:has(input:checked) {
+        border-color: #667eea;
+        background: linear-gradient(135deg, rgba(102,126,234,0.09) 0%, rgba(118,75,162,0.09) 100%);
+    }
+    .checkbox-item:has(input:checked) label {
+        color: #667eea;
+    }
+
+    @media (max-width: 768px) {
+        .patient-bar-divider { display: none; }
+        .panel-body { grid-template-columns: 1fr; }
+        .sticky-submit { padding: 12px 16px; }
+        .checkbox-grid { grid-template-columns: 1fr; }
+        .lab-list { grid-template-columns: 1fr; }
+        .pharm-row { grid-template-columns: 1fr 1fr; }
+        .pharm-row-name { grid-column: 1 / -1; }
+        .pharm-remove-btn { grid-column: 1 / -1; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container refer-page">
+
+    <!-- Patient Info Bar -->
+    <div class="patient-bar">
+        <div>
+            <div class="patient-bar-label">Patient</div>
+            <div class="patient-bar-name">{{ patient.patient_name }}</div>
+        </div>
+        <div class="patient-bar-divider"></div>
+        <div>
+            <div class="patient-bar-label">Diagnosis</div>
+            <div class="patient-bar-value">{{ patient.patient_diagnosis|default:"Not specified" }}</div>
+        </div>
+        <div class="patient-bar-divider"></div>
+        <div>
+            <div class="patient-bar-label">Referred By</div>
+            <div class="patient-bar-value">{{ request.user.get_full_name|default:request.user.username }}</div>
+        </div>
+        <div class="patient-bar-divider"></div>
+        <div>
+            <div class="patient-bar-label">Date</div>
+            <div class="patient-bar-value">{% now "d M Y" %}</div>
+        </div>
+    </div>
+
+    <!-- Grid title -->
+    <p class="section-title">Select Referral Services — you can select multiple</p>
+
+    <!-- Service Cards -->
+    <div class="service-grid">
+        <div class="service-card" data-service="nursing" onclick="toggleService(this)">
+            <span class="service-icon">🏥</span>
+            <div class="service-label">Nursing Care</div>
+        </div>
+        <div class="service-card" data-service="physio" onclick="toggleService(this)">
+            <span class="service-icon">🦴</span>
+            <div class="service-label">Physiotherapy</div>
+        </div>
+        <div class="service-card" data-service="speech" onclick="toggleService(this)">
+            <span class="service-icon">🗣️</span>
+            <div class="service-label">Speech Therapy</div>
+        </div>
+        <div class="service-card" data-service="behavioural" onclick="toggleService(this)">
+            <span class="service-icon">🧠</span>
+            <div class="service-label">Behavioural Therapy</div>
+        </div>
+        <div class="service-card" data-service="lab" onclick="toggleService(this)">
+            <span class="service-icon">🧪</span>
+            <div class="service-label">Lab Test</div>
+        </div>
+        <div class="service-card" data-service="pharmacy" onclick="toggleService(this)">
+            <span class="service-icon">💊</span>
+            <div class="service-label">Pharmacy</div>
+        </div>
+        <div class="service-card" data-service="rehab" onclick="toggleService(this)">
+            <span class="service-icon">🏋️</span>
+            <div class="service-label">Rehab Center</div>
+        </div>
+    </div>
+
+    <!-- Detail Panels (injected by JS) -->
+    <div class="panels-container" id="panelsContainer">
+        <div class="empty-selection" id="emptyMsg">
+            ☝️ Select one or more services above to fill in referral details
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const templates = {
+    nursing: {
+        label: "Nursing Care", icon: "🏥",
+        notes: "Patient requires nursing assessment and care planning. Please review medication schedule and wound care requirements.",
+        redflags: "Signs of infection, sudden deterioration in vital signs, altered consciousness, uncontrolled pain.",
+        dos: "Monitor vitals every 4 hours. Maintain hygiene. Ensure adequate hydration. Document all observations.",
+        donts: "Do not administer medication without valid prescription. Avoid pressure on affected areas."
+    },
+    physio: {
+        label: "Physiotherapy", icon: "🦴",
+        notes: "Patient requires physiotherapy assessment. Focus on mobility, strength, and functional recovery.",
+        redflags: "Increased pain during exercise, new swelling, numbness or tingling, sudden weakness.",
+        dos: "Gentle range-of-motion exercises. Gradual weight bearing as tolerated. Ice/heat as directed.",
+        donts: "Do not push through sharp pain. Avoid high-impact activities. Do not skip prescribed rest days."
+    },
+    speech: {
+        label: "Speech Therapy", icon: "🗣️",
+        notes: "Patient requires speech and language assessment. Evaluate swallowing, communication, and cognitive-linguistic function.",
+        redflags: "Choking or aspiration during meals, sudden speech regression, difficulty breathing while speaking.",
+        dos: "Soft diet as advised. Upright positioning during meals. Use visual aids for communication.",
+        donts: "Do not rush meals. Avoid thin liquids without clearance. Do not ignore signs of aspiration."
+    },
+    behavioural: {
+        label: "Behavioural Therapy", icon: "🧠",
+        notes: "Patient requires behavioural therapy assessment. Address emotional regulation, coping strategies, and behavioural patterns.",
+        redflags: "Self-harm ideation, aggression toward others, severe anxiety attacks, psychotic symptoms.",
+        dos: "Maintain consistent daily routine. Use positive reinforcement. Document behavioural episodes with timestamps.",
+        donts: "Do not use punitive measures. Avoid known triggering environments. Do not leave patient unsupervised if at risk."
+    },
+    lab: {
+        label: "Lab Test", icon: "🧪",
+        notes: "Please conduct investigations as clinically indicated. Specify required tests in the notes field.",
+        redflags: "Report immediately — Hb <7, Na <120 or >160, K <2.5 or >6.5, glucose <3 or >25 mmol/L.",
+        dos: "Collect samples per protocol. Label correctly with patient ID. Report critical values immediately.",
+        donts: "Do not delay critical value reporting. Avoid hemolysis during collection."
+    },
+    pharmacy: {
+        label: "Pharmacy", icon: "💊",
+        notes: "Medication review and dispensing required. Please verify current medications and check for interactions.",
+        redflags: "Allergic reactions, signs of toxicity, patient refusing medications, suspected medication errors.",
+        dos: "Verify patient identity before dispensing. Counsel on dosage and timing. Check drug-drug interactions.",
+        donts: "Do not dispense without a valid prescription. Avoid substitution without physician approval."
+    },
+    rehab: {
+        label: "Rehab Center", icon: "🏋️",
+        notes: "Patient requires a comprehensive rehabilitation program. Goals: functional independence and community reintegration.",
+        redflags: "Sudden neurological changes, cardiac events during therapy, severe or worsening fatigue or pain.",
+        dos: "Set realistic goals with patient. Involve family in rehabilitation plan. Review progress weekly.",
+        donts: "Do not overexert the patient. Avoid activities beyond current functional capacity."
+    }
+};
+
+const selectedServices = new Set();
+const doneServices = new Set();
+
+function toggleService(card) {
+    const service = card.dataset.service;
+    if (doneServices.has(service)) {
+        // Toggle panel body visibility for done panels
+        const body  = document.querySelector(`#panel-${service} .panel-body`);
+        const footer = document.querySelector(`#panel-${service} .panel-footer`);
+        if (body) {
+            const wasHidden = body.style.display === 'none';
+            body.style.display  = wasHidden ? '' : 'none';
+            if (footer) footer.style.display = wasHidden ? '' : 'none';
+        }
+        return;
+    }
+    if (selectedServices.has(service)) {
+        selectedServices.delete(service);
+        card.classList.remove('selected');
+        document.getElementById(`panel-${service}`)?.remove();
+    } else {
+        selectedServices.add(service);
+        card.classList.add('selected');
+        addPanel(service);
+    }
+}
+
+function submitPanel(service) {
+    doneServices.add(service);
+    selectedServices.delete(service);
+
+    const panel = document.getElementById(`panel-${service}`);
+    if (panel) {
+        panel.classList.add('done');
+        const body   = panel.querySelector('.panel-body');
+        const footer = panel.querySelector('.panel-footer');
+        if (body)   body.style.display   = 'none';
+        if (footer) footer.style.display = 'none';
+        const header = panel.querySelector('.panel-header');
+        if (header && !header.querySelector('.done-header-badge')) {
+            const badge = document.createElement('span');
+            badge.className = 'done-header-badge';
+            badge.innerHTML = `✓ Referral Sent <button class="undo-btn" onclick="undoPanel('${service}')">Undo</button>`;
+            header.appendChild(badge);
+        }
+    }
+
+    const card = document.querySelector(`.service-card[data-service="${service}"]`);
+    if (card) {
+        card.classList.remove('selected');
+        card.classList.add('done');
+        const icon = card.querySelector('.service-icon');
+        if (icon) icon.textContent = '✅';
+    }
+}
+
+function undoPanel(service) {
+    doneServices.delete(service);
+    selectedServices.add(service);
+
+    const panel = document.getElementById(`panel-${service}`);
+    if (panel) {
+        panel.classList.remove('done');
+        const body   = panel.querySelector('.panel-body');
+        const footer = panel.querySelector('.panel-footer');
+        if (body)   body.style.display   = '';
+        if (footer) footer.style.display = '';
+        panel.querySelector('.done-header-badge')?.remove();
+    }
+
+    const card = document.querySelector(`.service-card[data-service="${service}"]`);
+    if (card) {
+        card.classList.remove('done');
+        card.classList.add('selected');
+        const icon = card.querySelector('.service-icon');
+        if (icon) icon.textContent = templates[service].icon;
+    }
+}
+
+const pharmacyMeds = [
+    // Pain Killers / NSAIDs
+    { value:'paracetamol',       label:'Paracetamol',           cat:'Analgesic',      badge:'analgesic',    doses:['500mg','650mg','1000mg'] },
+    { value:'ibuprofen',         label:'Ibuprofen',             cat:'NSAID',          badge:'nsaid',        doses:['200mg','400mg','600mg','800mg'] },
+    { value:'diclofenac',        label:'Diclofenac',            cat:'NSAID',          badge:'nsaid',        doses:['25mg','50mg','75mg'] },
+    { value:'naproxen',          label:'Naproxen',              cat:'NSAID',          badge:'nsaid',        doses:['250mg','375mg','500mg'] },
+    { value:'mefenamic_acid',    label:'Mefenamic Acid',        cat:'NSAID',          badge:'nsaid',        doses:['250mg','500mg'] },
+    { value:'celecoxib',         label:'Celecoxib',             cat:'NSAID',          badge:'nsaid',        doses:['100mg','200mg'] },
+    { value:'etoricoxib',        label:'Etoricoxib',            cat:'NSAID',          badge:'nsaid',        doses:['60mg','90mg','120mg'] },
+    { value:'meloxicam',         label:'Meloxicam',             cat:'NSAID',          badge:'nsaid',        doses:['7.5mg','15mg'] },
+    { value:'ketorolac',         label:'Ketorolac',             cat:'NSAID',          badge:'nsaid',        doses:['10mg'] },
+    { value:'tramadol',          label:'Tramadol',              cat:'Opioid',         badge:'opioid',       doses:['50mg','100mg'] },
+    // Neuropathic
+    { value:'pregabalin',        label:'Pregabalin',            cat:'Neuropathic',    badge:'neuropathic',  doses:['25mg','50mg','75mg','100mg','150mg','200mg','300mg'] },
+    { value:'gabapentin',        label:'Gabapentin',            cat:'Neuropathic',    badge:'neuropathic',  doses:['100mg','300mg','400mg','600mg','800mg'] },
+    { value:'amitriptyline',     label:'Amitriptyline',         cat:'Neuropathic',    badge:'neuropathic',  doses:['10mg','25mg','50mg'] },
+    { value:'duloxetine',        label:'Duloxetine',            cat:'Neuropathic',    badge:'neuropathic',  doses:['30mg','60mg'] },
+    // Muscle Relaxants
+    { value:'baclofen',          label:'Baclofen',              cat:'Muscle Relaxant',badge:'muscle',       doses:['5mg','10mg','20mg'] },
+    { value:'tizanidine',        label:'Tizanidine',            cat:'Muscle Relaxant',badge:'muscle',       doses:['2mg','4mg'] },
+    { value:'methocarbamol',     label:'Methocarbamol',         cat:'Muscle Relaxant',badge:'muscle',       doses:['500mg','750mg'] },
+    { value:'cyclobenzaprine',   label:'Cyclobenzaprine',       cat:'Muscle Relaxant',badge:'muscle',       doses:['5mg','10mg'] },
+    // Calcium & Bone
+    { value:'calcium_carbonate', label:'Calcium Carbonate',     cat:'Supplement',     badge:'supplement',   doses:['500mg','1000mg','1250mg'] },
+    { value:'calcium_citrate',   label:'Calcium Citrate',       cat:'Supplement',     badge:'supplement',   doses:['250mg','500mg'] },
+    { value:'calcium_vit_d',     label:'Calcium + Vit D3',      cat:'Supplement',     badge:'supplement',   doses:['500mg+250IU','1000mg+500IU'] },
+    // Vitamins & Supplements
+    { value:'vit_d3',            label:'Vitamin D3',            cat:'Supplement',     badge:'supplement',   doses:['1000IU','2000IU','5000IU','60,000IU'] },
+    { value:'vit_b12',           label:'Vitamin B12',           cat:'Supplement',     badge:'supplement',   doses:['500mcg','1000mcg','1500mcg'] },
+    { value:'folic_acid',        label:'Folic Acid',            cat:'Supplement',     badge:'supplement',   doses:['0.4mg','1mg','5mg'] },
+    { value:'magnesium',         label:'Magnesium',             cat:'Supplement',     badge:'supplement',   doses:['250mg','400mg','500mg'] },
+    { value:'vit_b_complex',     label:'Vitamin B Complex',     cat:'Supplement',     badge:'supplement',   doses:['1 tablet'] },
+    { value:'omega3',            label:'Omega-3 / Fish Oil',    cat:'Supplement',     badge:'supplement',   doses:['500mg','1000mg','2000mg'] },
+    { value:'zinc',              label:'Zinc',                  cat:'Supplement',     badge:'supplement',   doses:['10mg','20mg','50mg'] },
+    { value:'iron',              label:'Iron (Ferrous Sulfate)',cat:'Supplement',     badge:'supplement',   doses:['150mg','200mg','325mg'] },
+    { value:'glucosamine',       label:'Glucosamine',           cat:'Supplement',     badge:'supplement',   doses:['500mg','1500mg'] },
+    { value:'collagen',          label:'Collagen',              cat:'Supplement',     badge:'supplement',   doses:['2.5g','5g','10g'] },
+    // Corticosteroids
+    { value:'prednisolone',      label:'Prednisolone',          cat:'Corticosteroid', badge:'corticosteroid', doses:['5mg','10mg','20mg','40mg'] },
+    { value:'dexamethasone',     label:'Dexamethasone',         cat:'Corticosteroid', badge:'corticosteroid', doses:['0.5mg','1mg','2mg','4mg','8mg'] },
+    // GI Protection (for NSAID cover)
+    { value:'omeprazole',        label:'Omeprazole',            cat:'GI Protection',  badge:'gi',           doses:['10mg','20mg','40mg'] },
+    { value:'pantoprazole',      label:'Pantoprazole',          cat:'GI Protection',  badge:'gi',           doses:['20mg','40mg'] },
+    // Topical
+    { value:'diclofenac_gel',    label:'Diclofenac Gel 1%',     cat:'Topical',        badge:'topical',      doses:['Apply BD','Apply TDS','Apply QID'] },
+    { value:'capsaicin_cream',   label:'Capsaicin Cream',       cat:'Topical',        badge:'topical',      doses:['0.025%','0.075%'] },
+];
+
+let pharmRowCounter = 0;
+
+function buildPharmacyPanel(t) {
+    const items = pharmacyMeds.map(med => `
+        <div class="pharm-med-item" id="pharm-item-${med.value}"
+             data-search="${med.label.toLowerCase()} ${med.cat.toLowerCase()}">
+            <div style="display:flex;align-items:center;gap:8px;min-width:0;">
+                <span class="pharm-med-name">${med.label}</span>
+                <span class="pharm-cat-badge badge-${med.badge}">${med.cat}</span>
+            </div>
+            <button class="pharm-add-btn" onclick="addPharmMed('${med.value}')">+ Add</button>
+        </div>`).join('');
+
+    return `
+        <div class="panel-header">
+            <span>${t.icon}</span>
+            <div class="panel-header-title">${t.label}</div>
+        </div>
+        <div class="panel-body">
+            <div class="field-group full-width">
+                <div class="checkbox-group-title">Search & Add Medicines</div>
+                <div class="lab-search-wrap">
+                    <span class="lab-search-icon">🔍</span>
+                    <input type="text" id="pharmSearchInput"
+                           placeholder="Search — e.g. pregabalin, calcium, ibuprofen..."
+                           oninput="filterPharmMeds(this.value)">
+                </div>
+                <div class="pharm-med-list" id="pharmMedList">${items}</div>
+                <div class="pharm-prescription-title">💊 Prescription</div>
+                <div class="pharm-empty" id="pharmEmpty">No medicines added yet — search and click + Add above</div>
+                <div id="pharmRows"></div>
+            </div>
+            <div class="field-group full-width">
+                <div class="field-label">📝 Pharmacist Notes</div>
+                <textarea name="pharmacy_notes"
+                          placeholder="Allergies, special instructions, interactions to watch..."></textarea>
+            </div>
+            <div class="field-group">
+                <div class="field-label">📅 Follow-up After</div>
+                <select name="pharmacy_followup">
+                    <option value="">Select period</option>
+                    <option value="3d">3 Days</option>
+                    <option value="1w">1 Week</option>
+                    <option value="2w">2 Weeks</option>
+                    <option value="1m">1 Month</option>
+                    <option value="3m">3 Months</option>
+                    <option value="6m">6 Months</option>
+                </select>
+            </div>
+        </div>
+        <div class="panel-footer">
+            <button class="panel-submit-btn" onclick="submitPanel('pharmacy')">Send Referral ➜</button>
+        </div>
+    `;
+}
+
+function filterPharmMeds(query) {
+    const q = query.toLowerCase().trim();
+    document.querySelectorAll('.pharm-med-item').forEach(item => {
+        item.style.display = (!q || item.dataset.search.includes(q)) ? '' : 'none';
+    });
+}
+
+function addPharmMed(value) {
+    const med = pharmacyMeds.find(m => m.value === value);
+    if (!med) return;
+
+    const item = document.getElementById(`pharm-item-${value}`);
+    if (item) {
+        item.classList.add('added');
+        const btn = item.querySelector('.pharm-add-btn');
+        btn.textContent = '✓ Added';
+        btn.classList.add('added-btn');
+        btn.onclick = null;
+    }
+
+    document.getElementById('pharmEmpty').style.display = 'none';
+
+    const rowId = ++pharmRowCounter;
+    const doseOptions = med.doses.map(d => `<option value="${d}">${d}</option>`).join('');
+
+    const row = document.createElement('div');
+    row.className = 'pharm-row';
+    row.id = `pharm-row-${rowId}`;
+    row.innerHTML = `
+        <div class="pharm-row-name">💊 ${med.label}</div>
+        <select name="pharm_${value}_${rowId}_dose" title="Dose">${doseOptions}</select>
+        <select name="pharm_${value}_${rowId}_freq" title="Frequency">
+            <option value="OD">OD</option>
+            <option value="BD">BD</option>
+            <option value="TDS">TDS</option>
+            <option value="QID">QID</option>
+            <option value="SOS">SOS</option>
+            <option value="Weekly">Weekly</option>
+            <option value="Monthly">Monthly</option>
+        </select>
+        <select name="pharm_${value}_${rowId}_dur" title="Duration">
+            <option value="">Duration</option>
+            <option value="3d">3 Days</option>
+            <option value="5d">5 Days</option>
+            <option value="1w">1 Week</option>
+            <option value="2w">2 Weeks</option>
+            <option value="1m">1 Month</option>
+            <option value="2m">2 Months</option>
+            <option value="3m">3 Months</option>
+            <option value="ongoing">Ongoing</option>
+        </select>
+        <button class="pharm-remove-btn" onclick="removePharmMed(${rowId}, '${value}')">✕</button>
+    `;
+    document.getElementById('pharmRows').appendChild(row);
+}
+
+function removePharmMed(rowId, value) {
+    document.getElementById(`pharm-row-${rowId}`)?.remove();
+    const item = document.getElementById(`pharm-item-${value}`);
+    if (item) {
+        item.classList.remove('added');
+        const btn = item.querySelector('.pharm-add-btn');
+        btn.textContent = '+ Add';
+        btn.classList.remove('added-btn');
+        btn.onclick = () => addPharmMed(value);
+    }
+    if (!document.querySelector('#pharmRows .pharm-row')) {
+        document.getElementById('pharmEmpty').style.display = 'block';
+    }
+}
+
+const labTests = [
+    { value: 'cbc',           label: 'CBC',                     full: 'Complete Blood Count' },
+    { value: 'crp',           label: 'CRP',                     full: 'C-Reactive Protein' },
+    { value: 'esr',           label: 'ESR',                     full: 'Erythrocyte Sedimentation Rate' },
+    { value: 'calcium',       label: 'Calcium',                 full: 'Serum Calcium' },
+    { value: 'uric_acid',     label: 'Uric Acid',               full: 'Serum Uric Acid' },
+    { value: 'vit_d',         label: 'Vitamin D',               full: '25-OH Vitamin D' },
+    { value: 'vit_b12',       label: 'Vitamin B12',             full: 'Serum Vitamin B12' },
+    { value: 'magnesium',     label: 'Magnesium',               full: 'Serum Magnesium' },
+    { value: 'phosphorus',    label: 'Phosphorus',              full: 'Serum Phosphorus' },
+    { value: 'potassium',     label: 'Potassium',               full: 'Serum Potassium' },
+    { value: 'sodium',        label: 'Sodium',                  full: 'Serum Sodium' },
+    { value: 'hba1c',         label: 'HbA1c',                   full: 'Glycated Haemoglobin' },
+    { value: 'fbs',           label: 'Blood Glucose',           full: 'Fasting Blood Sugar' },
+    { value: 'rf',            label: 'RF',                      full: 'Rheumatoid Factor' },
+    { value: 'anti_ccp',      label: 'Anti-CCP',                full: 'Anti-Cyclic Citrullinated Peptide' },
+    { value: 'ana',           label: 'ANA',                     full: 'Antinuclear Antibodies' },
+    { value: 'hla_b27',       label: 'HLA-B27',                 full: 'HLA-B27 (Ankylosing Spondylitis)' },
+    { value: 'tsh',           label: 'TSH',                     full: 'Thyroid Stimulating Hormone' },
+    { value: 'cpk',           label: 'CPK / CK',                full: 'Creatine Kinase (Muscle Damage)' },
+    { value: 'ldh',           label: 'LDH',                     full: 'Lactate Dehydrogenase' },
+    { value: 'ferritin',      label: 'Ferritin',                full: 'Serum Ferritin (Iron Stores)' },
+    { value: 'iron',          label: 'Iron',                    full: 'Serum Iron' },
+    { value: 'folate',        label: 'Folate',                  full: 'Serum Folate (B9)' },
+    { value: 'albumin',       label: 'Albumin',                 full: 'Serum Albumin' },
+    { value: 'alk_phos',      label: 'Alk. Phosphatase',        full: 'Alkaline Phosphatase' },
+    { value: 'pth',           label: 'PTH',                     full: 'Parathyroid Hormone' },
+    { value: 'urea',          label: 'Urea',                    full: 'Blood Urea Nitrogen' },
+    { value: 'creatinine',    label: 'Creatinine',              full: 'Serum Creatinine' },
+    { value: 'lipid_profile', label: 'Lipid Profile',           full: 'Total Cholesterol / LDL / HDL / TG' },
+    { value: 'lft',           label: 'LFT',                     full: 'Liver Function Tests' },
+];
+
+function buildLabPanel(t) {
+    const items = labTests.map(test => `
+        <div class="checkbox-item lab-test-item" data-search="${test.label.toLowerCase()} ${test.full.toLowerCase()}">
+            <input type="checkbox" id="lab_${test.value}" name="lab_${test.value}" value="${test.value}" onchange="updateLabTags()">
+            <label for="lab_${test.value}" title="${test.full}">${test.label} <span style="font-weight:400;color:#999;font-size:0.78rem;">— ${test.full}</span></label>
+        </div>`).join('');
+
+    return `
+        <div class="panel-header">
+            <span>${t.icon}</span>
+            <div class="panel-header-title">${t.label}</div>
+        </div>
+        <div class="panel-body">
+            <div class="field-group full-width">
+                <div class="checkbox-group-title">Search & Select Lab Tests</div>
+                <div class="lab-search-wrap">
+                    <span class="lab-search-icon">🔍</span>
+                    <input type="text" id="labSearchInput" placeholder="Type to search — e.g. calcium, CRP, vitamin..." oninput="filterLabTests(this.value)">
+                </div>
+                <div class="lab-list" id="labList">${items}</div>
+                <div class="lab-selected-tags" id="labTags"></div>
+            </div>
+            <div class="field-group full-width">
+                <div class="field-label">📝 Additional Notes</div>
+                <textarea name="lab_notes" placeholder="Specify urgency, fasting requirements, or clinical context..."></textarea>
+            </div>
+            <div class="field-group">
+                <div class="field-label">📅 Follow-up After</div>
+                <select name="lab_followup">
+                    <option value="">Select period</option>
+                    <option value="3d">3 Days</option>
+                    <option value="1w">1 Week</option>
+                    <option value="2w">2 Weeks</option>
+                    <option value="1m">1 Month</option>
+                    <option value="3m">3 Months</option>
+                    <option value="6m">6 Months</option>
+                </select>
+            </div>
+        </div>
+        <div class="panel-footer">
+            <button class="panel-submit-btn" onclick="submitPanel('lab')">Send Referral ➜</button>
+        </div>
+    `;
+}
+
+function filterLabTests(query) {
+    const q = query.toLowerCase().trim();
+    const items = document.querySelectorAll('.lab-test-item');
+    let visible = 0;
+    items.forEach(item => {
+        const match = !q || item.dataset.search.includes(q);
+        item.style.display = match ? '' : 'none';
+        if (match) visible++;
+    });
+    let noResult = document.getElementById('labNoResult');
+    if (visible === 0) {
+        if (!noResult) {
+            noResult = document.createElement('div');
+            noResult.id = 'labNoResult';
+            noResult.className = 'lab-no-results';
+            noResult.textContent = 'No tests found';
+            document.getElementById('labList').appendChild(noResult);
+        }
+    } else if (noResult) {
+        noResult.remove();
+    }
+}
+
+function updateLabTags() {
+    const checked = document.querySelectorAll('.lab-test-item input:checked');
+    const tags = document.getElementById('labTags');
+    if (!tags) return;
+    tags.innerHTML = [...checked].map(cb => {
+        const test = labTests.find(t => t.value === cb.value);
+        return `<span class="lab-tag">${test ? test.label : cb.value}</span>`;
+    }).join('');
+}
+
+function buildPhysioPanel(t) {
+    const physioOptions = [
+        { value: 'active_rom',           label: '🔄 Active ROM' },
+        { value: 'passive_rom',          label: '🤝 Passive ROM' },
+        { value: 'resistance_exercises', label: '💪 Resistance Exercises' },
+        { value: 'vigorous_rom',         label: '⚡ Vigorous ROM' },
+        { value: 'weight_bearing',       label: '🦶 Weight Bearing' },
+        { value: 'non_weight_bearing',   label: '🚫 Non Weight Bearing' },
+    ];
+    return `
+        <div class="panel-header">
+            <span>${t.icon}</span>
+            <div class="panel-header-title">${t.label}</div>
+        </div>
+        <div class="panel-body">
+            <div class="field-group full-width">
+                <div class="checkbox-group-title">Physiotherapy Instructions — select all that apply</div>
+                <div class="checkbox-grid">
+                    ${physioOptions.map(opt => `
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="physio_${opt.value}" name="physio_${opt.value}" value="${opt.value}">
+                        <label for="physio_${opt.value}">${opt.label}</label>
+                    </div>`).join('')}
+                </div>
+            </div>
+            <div class="field-group full-width">
+                <div class="field-label">📝 Additional Notes</div>
+                <textarea name="physio_extra_notes" placeholder="Any additional notes for the physiotherapist...">${t.notes}</textarea>
+            </div>
+            <div class="field-group">
+                <div class="field-label">📅 Follow-up After</div>
+                <select name="physio_followup">
+                    <option value="">Select period</option>
+                    <option value="3d">3 Days</option>
+                    <option value="1w">1 Week</option>
+                    <option value="2w">2 Weeks</option>
+                    <option value="1m">1 Month</option>
+                    <option value="3m">3 Months</option>
+                    <option value="6m">6 Months</option>
+                </select>
+            </div>
+        </div>
+        <div class="panel-footer">
+            <button class="panel-submit-btn" onclick="submitPanel('physio')">Send Referral ➜</button>
+        </div>
+    `;
+}
+
+function addPanel(service) {
+    const t = templates[service];
+    const panel = document.createElement('div');
+    panel.className = 'service-panel';
+    panel.id = `panel-${service}`;
+    panel.innerHTML = service === 'physio' ? buildPhysioPanel(t)
+                   : service === 'lab'    ? buildLabPanel(t)
+                   : service === 'pharmacy' ? buildPharmacyPanel(t)
+                   : `
+        <div class="panel-header">
+            <span>${t.icon}</span>
+            <div class="panel-header-title">${t.label}</div>
+        </div>
+        <div class="panel-body">
+            <div class="field-group full-width">
+                <div class="field-label">📝 Notes</div>
+                <textarea name="${service}_notes">${t.notes}</textarea>
+            </div>
+            <div class="field-group">
+                <div class="field-label">🚩 Red Flags</div>
+                <textarea name="${service}_redflags">${t.redflags}</textarea>
+            </div>
+            <div class="field-group">
+                <div class="field-label">✅ Dos</div>
+                <textarea name="${service}_dos">${t.dos}</textarea>
+            </div>
+            <div class="field-group">
+                <div class="field-label">❌ Don'ts</div>
+                <textarea name="${service}_donts">${t.donts}</textarea>
+            </div>
+            <div class="field-group">
+                <div class="field-label">📅 Follow-up After</div>
+                <select name="${service}_followup">
+                    <option value="">Select period</option>
+                    <option value="3d">3 Days</option>
+                    <option value="1w">1 Week</option>
+                    <option value="2w">2 Weeks</option>
+                    <option value="1m">1 Month</option>
+                    <option value="3m">3 Months</option>
+                    <option value="6m">6 Months</option>
+                </select>
+            </div>
+        </div>
+        <div class="panel-footer">
+            <button class="panel-submit-btn" onclick="submitPanel('${service}')">Send Referral ➜</button>
+        </div>
+    `;
+    document.getElementById('panelsContainer').appendChild(panel);
+    document.getElementById('emptyMsg').style.display = 'none';
+    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+</script>
+{% endblock %}

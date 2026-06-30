@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Physiotherapy Treatment Record</title>
+    <style>
+        /* Your existing CSS (unchanged) */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .header { text-align: center; color: white; margin-bottom: 40px; }
+        .header h1 { font-size: 2rem; margin-bottom: 10px; }
+        .selection-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: 600; margin-bottom: 8px; color: #333; font-size: 0.9rem; }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px 12px;
+            font-size: 1rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        .grid-2col {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-success { background: #28a745; color: white; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .modalities-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .modality-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: 0.2s;
+            position: relative;
+        }
+        .modality-card.selected {
+            border-color: #28a745;
+            background: #f0fff4;
+        }
+        .modality-card.selected::before {
+            content: "✓";
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #28a745;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+        .modality-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+        .modality-name { font-size: 1rem; font-weight: bold; }
+        .stats {
+            background: white;
+            border-radius: 10px;
+            padding: 12px 20px;
+            margin-bottom: 20px;
+            display: none;
+            justify-content: space-between;
+        }
+        .stats.show { display: flex; }
+        .selected-modalities-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .selected-modality-badge {
+            background: #28a745;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            display: inline-flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .edit-modality, .remove-modality { cursor: pointer; background: rgba(0,0,0,0.2); padding: 0 4px; border-radius: 12px; }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+        }
+        .modal-param-group { margin-bottom: 15px; }
+        .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+        .action-buttons { display: flex; justify-content: flex-end; gap: 15px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <input type="hidden" id="patientId" value="{{ patient.id }}">
+    
+    <div class="header">
+        <h1>Physiotherapy Treatment Record</h1>
+        <p>{{ patient.patient_name }} | {{ patient.id }}</p>
+        <p>{{ patient.patient_diagnosis }}</p>
+    </div>
+
+    <!-- Session Info -->
+    <div class="selection-card">
+        <div class="grid-2col">
+            <div class="form-group">
+                <label>🔢 Session Number (auto)</label>
+                <input type="number" id="sessionNumber" name="session_number" value="{{ new_session }}" readonly style="background:#f0f0f0;">
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- Pre-session -->
+    {% comment %} <div class="selection-card">
+        <h3>📝 Pre-Session Assessment</h3>
+        <div class="form-group"><label>📄 Pre-session notes</label><textarea id="preNotes" name="pre_notes" rows="2"></textarea></div>
+    </div> {% endcomment %}
+
+    <!-- Modalities Grid -->
+    <div class="selection-card">
+        <h3>⚡ Select Modalities Performed</h3>
+        <div class="stats" id="stats">
+            <span class="modality-count" id="modalityCount">0</span>
+            <span>modalities selected</span>
+            <span id="selectedCount"></span>
+        </div>
+        <div class="modalities-grid" id="modalitiesGrid"></div>
+    </div>
+
+    <!-- Post-session -->
+    <div class="selection-card">
+        {% comment %} <h3>📈 Post-Session Assessment</h3> {% endcomment %}
+        <div class="grid-2col">
+            <div class="form-group"><label>📊 Treatment Response</label>
+                <select id="response" name="treatment_response">
+                    <option value="excellent">Excellent</option>
+                    <option value="good">Good</option>
+                    <option value="moderate">Moderate</option>
+                    <option value="minimal">Minimal</option>
+                    <option value="worse">Worse</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary -->
+    <div class="session-summary" id="sessionSummary" style="display: none;">
+        <h3>📋 Selected Modalities</h3>
+        <div class="selected-modalities-list" id="selectedModalitiesList"></div>
+        <div class="action-buttons">
+            <button class="btn btn-secondary" onclick="clearAllSelections()">Clear All</button>
+            <button class="btn btn-success" onclick="saveTreatmentSession('exercise')">💾 Save + Exercise</button>
+            <button class="btn btn-success" onclick="saveTreatmentSession('return')">💾 Save and Return</button>
+        </div>
+    </div>
+</div>
+
+<!-- Parameter Modal -->
+<div id="paramModal" class="modal">
+    <div class="modal-content">
+        <h3 id="modalTitle">Set Parameters</h3>
+        <div id="modalParamsContainer"></div>
+        <div class="modal-buttons">
+            <button class="btn btn-secondary" onclick="closeParameterModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="saveParameterModal()">Save</button>
+        </div>
+    </div>
+</div>
+
+        {% comment %} const sessionData = {
+            patient_id: parseInt(document.getElementById("patientId").value),
+            session_number: parseInt(document.getElementById("sessionNumber").value),
+            pre_pain: parseInt(prePain),
+            pre_bp: document.getElementById("preBP").value,
+            pre_hr: document.getElementById("preHR").value,
+            pre_notes: document.getElementById("preNotes").value,
+            modalities: selectedModalities,
+            post_pain: document.getElementById("postPain").value ? parseInt(document.getElementById("postPain").value) : null,
+            treatment_response: document.getElementById("response").value,
+            post_remarks: document.getElementById("postRemarks").value,
+            follow_up_instructions: document.getElementById("followUpInstructions").value,
+            next_session: document.getElementById("nextSessionDate").value || null,
+            redirect_to: redirectTarget          // <-- NEW field
+        }; {% endcomment %}
+
+
+<script>
+    // ======================== MODALITIES MASTER LIST ========================
+    const modalities = [
+        { id: "electrotherapy", name: "Electrotherapy", params: [{ name: "TENS", default: "20mins" }, { name: "USG", default: "5min" }, { name: "Traction", default: "15min" }] },
+        { id: "soft-tissue", name: "Soft Tissue Work", params: [{ name: "Manual Therapy", default: "Maitland" }, { name: "IASTM", default: "SS" }, { name: "Dry Needling", default: "0.25mm"},  { name: "Cupping", default: "dry cupping" }] },
+        { id: "mobilization", name: "Mobilization", params: [{ name: "Mulligan", default: "mild" }, { name: "Maitland", default: "moderate" }, { name: "HLVMT", default: "High Intensity" }]},
+        { id: "exercisetherapy", name: "Exercise Therapy", params: [{ name: "Therapeutic Exercise", default: "Low Intensity" }, { name: "Functional Exercise", default: "Intense" }, { name: "Strength & Conditioning", default: "High Intensity"}] },
+        { id: "rehab", name: "Rehab", params: [{ name: "Neuro Rehab", default: "1.5 hour" }, { name: "Orhto Rehab", default: "1 hour" }, { name: "Pediatric Rehab", default: "1 hour"}] },
+    ];
+
+    let selectedModalities = [];
+    let pendingModality = null;
+
+    function renderModalitiesGrid() {
+        const grid = document.getElementById("modalitiesGrid");
+        if (!grid) return console.error("No grid container");
+        grid.innerHTML = "";
+        modalities.forEach(mod => {
+            const card = document.createElement("div");
+            card.className = "modality-card";
+            card.setAttribute("data-modality-id", mod.id);
+            card.innerHTML = `<div class="modality-header"><div class="modality-name">${mod.name}</div></div>`;
+            card.onclick = () => {
+                const already = selectedModalities.find(m => m.id === mod.id);
+                if (already) removeModalityById(mod.id);
+                else openParameterModal(mod);
+            };
+            grid.appendChild(card);
+        });
+        updateCardHighlights();
+    }
+
+    function updateCardHighlights() {
+        document.querySelectorAll(".modality-card").forEach(card => {
+            const id = card.getAttribute("data-modality-id");
+            if (selectedModalities.some(m => m.id === id)) card.classList.add("selected");
+            else card.classList.remove("selected");
+        });
+    }
+
+    function openParameterModal(modality) {
+        pendingModality = JSON.parse(JSON.stringify(modality));
+        const container = document.getElementById("modalParamsContainer");
+        document.getElementById("modalTitle").innerText = `Parameters for ${modality.name}`;
+        container.innerHTML = "";
+        modality.params.forEach(param => {
+            const div = document.createElement("div");
+            div.className = "modal-param-group";
+            const label = document.createElement("label");
+            label.innerText = param.name;
+            const input = document.createElement("input");
+            input.type = param.type || "text";
+            input.value = param.default;
+            input.setAttribute("data-param-name", param.name);
+            div.append(label, input);
+            container.appendChild(div);
+        });
+        document.getElementById("paramModal").style.display = "flex";
+    }
+
+    function closeParameterModal() {
+        document.getElementById("paramModal").style.display = "none";
+        pendingModality = null;
+    }
+
+    function saveParameterModal() {
+        if (!pendingModality) return;
+        const inputs = document.querySelectorAll("#modalParamsContainer input");
+        const params = {};
+        inputs.forEach(inp => {
+            const name = inp.getAttribute("data-param-name");
+            params[name] = inp.value;
+        });
+        selectedModalities.push({
+            id: pendingModality.id,
+            name: pendingModality.name,
+            params: params
+        });
+        closeParameterModal();
+        updateSummary();
+        updateCardHighlights();
+    }
+
+    function removeModalityById(id) {
+        selectedModalities = selectedModalities.filter(m => m.id !== id);
+        updateSummary();
+        updateCardHighlights();
+    }
+
+    function editModalityParameters(id) {
+        const existing = selectedModalities.find(m => m.id === id);
+        if (!existing) return;
+        const original = modalities.find(m => m.id === id);
+        if (!original) return;
+        pendingModality = JSON.parse(JSON.stringify(original));
+        const container = document.getElementById("modalParamsContainer");
+        document.getElementById("modalTitle").innerText = `Edit ${existing.name}`;
+        container.innerHTML = "";
+        original.params.forEach(param => {
+            const div = document.createElement("div");
+            div.className = "modal-param-group";
+            const label = document.createElement("label");
+            label.innerText = param.name;
+            const input = document.createElement("input");
+            input.type = param.type || "text";
+            input.value = existing.params[param.name] || param.default;
+            input.setAttribute("data-param-name", param.name);
+            div.append(label, input);
+            container.appendChild(div);
+        });
+        const originalSave = window.saveParameterModal;
+        window.saveParameterModal = () => {
+            const newParams = {};
+            document.querySelectorAll("#modalParamsContainer input").forEach(inp => {
+                const pname = inp.getAttribute("data-param-name");
+                newParams[pname] = inp.value;
+            });
+            existing.params = newParams;
+            closeParameterModal();
+            updateSummary();
+            window.saveParameterModal = originalSave;
+        };
+        document.getElementById("paramModal").style.display = "flex";
+    }
+
+    function updateSummary() {
+        const summaryDiv = document.getElementById("sessionSummary");
+        const listDiv = document.getElementById("selectedModalitiesList");
+        const countSpan = document.getElementById("modalityCount");
+        const selectedSpan = document.getElementById("selectedCount");
+        const statsDiv = document.getElementById("stats");
+        if (selectedModalities.length) {
+            summaryDiv.style.display = "block";
+            statsDiv.classList.add("show");
+            countSpan.innerText = selectedModalities.length;
+            selectedSpan.innerText = `Selected: ${selectedModalities.length}`;
+            listDiv.innerHTML = selectedModalities.map(mod => `
+                <div class="selected-modality-badge">
+                    ${mod.name}
+                    <span class="edit-modality" onclick="event.stopPropagation(); editModalityParameters('${mod.id}')">✏️</span>
+                    <span class="remove-modality" onclick="event.stopPropagation(); removeModalityById('${mod.id}')">✕</span>
+                </div>
+            `).join("");
+        } else {
+            summaryDiv.style.display = "none";
+            statsDiv.classList.remove("show");
+        }
+    }
+
+    function clearAllSelections() {
+        selectedModalities = [];
+        updateSummary();
+        updateCardHighlights();
+    }
+
+    function getCsrfToken() {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.startsWith('csrftoken=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(10));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function saveTreatmentSession(redirectTarget) {
+         if (!selectedModalities.length) return alert("Select at least one modality");
+
+        const sessionData = {
+            patient_id: parseInt(document.getElementById("patientId").value),
+            session_number: parseInt(document.getElementById("sessionNumber").value),
+            //pre_notes: document.getElementById("preNotes").value,
+            modalities: selectedModalities,
+            treatment_response: document.getElementById("response").value,
+            redirect_to: redirectTarget          // <-- NEW field
+        };
+
+        console.log("Sending session data:", sessionData);
+
+        fetch("{% url 'save_treatment_session' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCsrfToken()
+            },
+            body: JSON.stringify(sessionData)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert("✅ Session saved successfully!");
+                window.location.href = data.next_url;   // redirect based on server response
+            } else {
+                alert("❌ Error: " + data.error);
+            }
+        })
+        .catch(err => {
+            console.error("Fetch error:", err);
+            alert("Network error: " + err);
+        });
+    }
+    document.addEventListener("DOMContentLoaded", () => {
+        renderModalitiesGrid();
+    });
+</script>
+</body>
+</html>

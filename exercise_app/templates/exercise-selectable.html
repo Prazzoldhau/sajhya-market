@@ -1,0 +1,75 @@
+<!-- exercise_template.html -->
+{% load static%}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exercise Library by Sub-Region</title>
+   <link rel="stylesheet" href="{% static 'css/exercise_selectable.css' %}"> 
+</head>
+<body>
+    
+    <div class="container">
+        <div class="navbar">
+            <div class="empty-state-header">
+                <h3 id="patientNameDisplay">{{ patient.patient_name }}</h3>
+                <p>{{ patient.patient_diagnosis }}</p>
+            </div>
+
+            <div class="form-group">
+                
+                <select id="subRegionSelect">
+                    <option value="">Exercises</option>
+                    {% for sub_region in sub_regions %}
+                        <option value="{{ sub_region.id }}">
+                            {{ sub_region.sub_region_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+        </div>
+
+        <div class="loader" id="loader">
+            <div class="spinner"></div>
+            <p style="margin-top: 15px; color: white;">Loading exercises...</p>
+        </div>
+
+        <div class="stats" id="stats">
+            <span class="exercise-count" id="exerciseCount"></span>
+            <span>exercises available</span>
+            <span id="selectedCount" style="color: #4caf50; margin-left: auto;"></span>
+        </div>
+
+        <div id="exercisesContainer">
+            <div class="empty-state">
+                <h3>✨ No exercises selected</h3>
+                <p>Please select a sub-region to view exercises</p>
+            </div>
+        </div>
+
+        <div class="selection-summary" id="selectionSummary">
+            <h4>Selected Exercises (<span id="selectedExercisesCount">0</span>)</h4>
+            <div class="selected-exercises-list" id="selectedExercisesList"></div>
+            <div class="action-buttons">
+                <button class="btn btn-secondary" onclick="clearAllSelections()">Clear All</button>
+                <button class="btn btn-primary" onclick="submitPrescription()">Prescribe Selected Exercises</button>
+            </div>
+        </div>
+    </div>
+
+   
+   
+
+    <script>
+        window.patientCode = '{{ patient_code }}';
+        window.patientId = {{ patient.id|default:'null' }};
+        window.selectedExercises = [];
+        window.currentExercises = [];
+
+    </script>
+    <!-- Then load your JS file -->
+    <script src="{% static 'js/exercise_selectable.js' %}"></script>
+</body>
+</html>

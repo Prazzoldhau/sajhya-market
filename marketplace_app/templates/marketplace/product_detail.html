@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ product.name }} — Physio Marketplace{% endblock %}
+
+{% block content %}
+<!-- Navbar -->
+<div class="navbar">
+    <div class="logo">Sa:jhya</div>
+    <div class="mkt-nav-center">
+        <span class="mkt-nav-title">🏪 Physio Marketplace</span>
+    </div>
+    <div class="mkt-nav-right">
+        <a href="{% url 'view-cart' %}" class="mkt-cart-btn">
+            🛒 Cart
+            {% if cart_count > 0 %}<span class="mkt-cart-badge">{{ cart_count }}</span>{% endif %}
+        </a>
+        <a href="{% url 'marketplace' %}" class="mkt-back-btn">← Shop</a>
+    </div>
+</div>
+
+<div class="container mkt-container">
+
+    <!-- Breadcrumb -->
+    <div class="mkt-breadcrumb">
+        <a href="{% url 'marketplace' %}">Marketplace</a>
+        {% if product.category %}
+        <span>›</span>
+        <a href="{% url 'marketplace' %}?category={{ product.category.id }}">{{ product.category.name }}</a>
+        {% endif %}
+        <span>›</span>
+        <span>{{ product.name }}</span>
+    </div>
+
+    <!-- Product Detail -->
+    <div class="mkt-detail-wrapper">
+        <!-- Image Panel -->
+        <div class="mkt-detail-img-panel">
+            {% if product.image %}
+                <img src="{{ product.image.url }}" alt="{{ product.name }}" class="mkt-detail-img">
+            {% else %}
+                <div class="mkt-detail-placeholder">
+                    <span>{{ product.category.icon|default:"📦" }}</span>
+                    <p>No image available</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Info Panel -->
+        <div class="mkt-detail-info">
+            {% if product.category %}
+            <span class="mkt-cat-badge mkt-cat-badge-lg">{{ product.category.icon }} {{ product.category.name }}</span>
+            {% endif %}
+
+            <h1 class="mkt-detail-title">{{ product.name }}</h1>
+
+            <div class="mkt-detail-price">
+                NPR {{ product.price }}
+                <small>/ {{ product.unit }}</small>
+            </div>
+
+            <div class="mkt-stock-status {% if product.in_stock %}in-stock{% else %}out-stock{% endif %}">
+                {% if product.in_stock %}✅ In Stock{% else %}❌ Out of Stock{% endif %}
+            </div>
+
+            {% if product.description %}
+            <div class="mkt-detail-desc">
+                <h4>Description</h4>
+                <p>{{ product.description }}</p>
+            </div>
+            {% endif %}
+
+            {% if product.in_stock %}
+            <div class="mkt-detail-actions">
+                <a href="{% url 'add-to-cart' product.id %}?next={% url 'view-cart' %}" class="mkt-btn-primary mkt-btn-lg">
+                    🛒 Add to Cart
+                </a>
+                <a href="{% url 'marketplace' %}" class="mkt-btn-outline mkt-btn-lg">
+                    Continue Shopping
+                </a>
+            </div>
+            {% else %}
+            <p class="mkt-out-of-stock-msg">This product is currently out of stock. Check back soon!</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Related Products -->
+    {% if related %}
+    <div class="mkt-section-header" style="margin-top:3rem;">
+        <h2>Related Products</h2>
+        <span class="mkt-section-sub">More from {{ product.category.name|default:"this category" }}</span>
+    </div>
+    <div class="mkt-product-grid">
+        {% for rp in related %}
+        <div class="mkt-product-card">
+            <div class="mkt-product-img">
+                {% if rp.image %}
+                    <img src="{{ rp.image.url }}" alt="{{ rp.name }}">
+                {% else %}
+                    <div class="mkt-img-placeholder">{{ rp.category.icon|default:"📦" }}</div>
+                {% endif %}
+            </div>
+            <div class="mkt-product-body">
+                <span class="mkt-cat-badge">{{ rp.category.name|default:"General" }}</span>
+                <h3 class="mkt-product-name">{{ rp.name }}</h3>
+                <div class="mkt-product-footer">
+                    <div class="mkt-price">NPR {{ rp.price }}</div>
+                    <div class="mkt-card-actions">
+                        <a href="{% url 'product-detail' rp.id %}" class="mkt-btn-view">Details</a>
+                        <a href="{% url 'add-to-cart' rp.id %}?next={{ request.get_full_path|urlencode }}" class="mkt-btn-add">+ Cart</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

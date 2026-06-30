@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Create Referral — Sajhya{% endblock %}
+
+{% block extra_css %}
+<style>
+    .section-divider {
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #6c757d;
+        border-bottom: 1px solid #dee2e6;
+        padding-bottom: 0.4rem;
+        margin-bottom: 1rem;
+        margin-top: 1.5rem;
+    }
+    .scanner-placeholder {
+        border: 2px dashed #ced4da;
+        border-radius: 8px;
+        padding: 1.5rem;
+        text-align: center;
+        color: #adb5bd;
+        background: #f8f9fa;
+        margin-bottom: 1.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 720px;">
+
+    <div class="d-flex align-items-center mb-4">
+        <a href="{% url 'my-referrals' %}" class="btn btn-sm btn-outline-secondary me-3">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <div>
+            <h4 class="mb-0 fw-bold">New Referral</h4>
+            <small class="text-muted">
+                Referring as <strong>{{ request.user.get_full_name|default:request.user.username }}</strong>
+            </small>
+        </div>
+    </div>
+
+    <!-- Image scanner placeholder -->
+    <div class="scanner-placeholder">
+        <i class="fas fa-camera fa-2x mb-2 d-block"></i>
+        <p class="mb-0 small">Image scanner coming soon — patient details will be auto-filled from a scanned referral document.</p>
+    </div>
+
+    <form method="post" novalidate>
+        {% csrf_token %}
+
+        <!-- Patient information -->
+        <p class="section-divider">Patient details</p>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">Patient name <span class="text-danger">*</span></label>
+                {{ form.patient_name }}
+                {% if form.patient_name.errors %}<div class="text-danger small mt-1">{{ form.patient_name.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Patient contact <span class="text-muted small">(optional)</span></label>
+                {{ form.patient_contact }}
+            </div>
+            <div class="col-12">
+                <label class="form-label">Diagnosis / condition <span class="text-danger">*</span></label>
+                {{ form.patient_diagnosis }}
+                {% if form.patient_diagnosis.errors %}<div class="text-danger small mt-1">{{ form.patient_diagnosis.errors.0 }}</div>{% endif %}
+            </div>
+        </div>
+
+        <!-- Assign to -->
+        <p class="section-divider">Refer to</p>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">Physio / User <span class="text-muted small">(optional)</span></label>
+                {{ form.referred_to }}
+                <div class="form-text">Leave blank if the receiving physio will claim the referral by code.</div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Clinic <span class="text-muted small">(optional)</span></label>
+                {{ form.referred_to_clinic }}
+            </div>
+        </div>
+
+        <!-- Reason -->
+        <p class="section-divider">Referral details</p>
+        <div class="row g-3">
+            <div class="col-12">
+                <label class="form-label">Reason for referral <span class="text-danger">*</span></label>
+                {{ form.reason }}
+                {% if form.reason.errors %}<div class="text-danger small mt-1">{{ form.reason.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="col-12">
+                <label class="form-label">Additional notes <span class="text-muted small">(optional)</span></label>
+                {{ form.notes }}
+            </div>
+        </div>
+
+        <div class="mt-4 d-flex gap-2">
+            <button type="submit" class="btn btn-primary px-4">
+                <i class="fas fa-paper-plane me-1"></i> Send Referral
+            </button>
+            <a href="{% url 'my-referrals' %}" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

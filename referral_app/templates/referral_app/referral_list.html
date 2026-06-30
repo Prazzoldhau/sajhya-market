@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Referrals — Sajhya{% endblock %}
+
+{% block extra_css %}
+<style>
+    .referral-card { border-left: 4px solid #dee2e6; transition: border-color 0.2s; }
+    .referral-card:hover { border-left-color: #0d6efd; }
+    .status-pending   { border-left-color: #ffc107; }
+    .status-accepted  { border-left-color: #0dcaf0; }
+    .status-in_progress { border-left-color: #0d6efd; }
+    .status-completed { border-left-color: #198754; }
+    .status-cancelled { border-left-color: #6c757d; }
+    .section-header { font-size: 1rem; font-weight: 600; color: #495057; margin-bottom: 1rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="mb-0 fw-bold">Referrals</h4>
+            <small class="text-muted">Manage incoming and outgoing patient referrals</small>
+        </div>
+        <a href="{% url 'create-referral' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i> New Referral
+        </a>
+    </div>
+
+    <!-- Status filter pills -->
+    <div class="mb-4 d-flex flex-wrap gap-2">
+        <a href="{% url 'referral-list' %}"
+           class="btn btn-sm {% if not active_status %}btn-dark{% else %}btn-outline-secondary{% endif %}">
+            All
+        </a>
+        {% for value, label in status_choices %}
+        <a href="?status={{ value }}"
+           class="btn btn-sm {% if active_status == value %}btn-dark{% else %}btn-outline-secondary{% endif %}">
+            {{ label }}
+        </a>
+        {% endfor %}
+    </div>
+
+    <div class="row g-4">
+
+        <!-- Incoming referrals (referred TO this user) -->
+        <div class="col-12">
+            <p class="section-header">
+                <i class="fas fa-inbox me-1 text-primary"></i>
+                Incoming Referrals
+                <span class="badge bg-primary ms-1">{{ incoming.count }}</span>
+            </p>
+
+            {% if incoming %}
+                {% for ref in incoming %}
+                <div class="card referral-card status-{{ ref.status }} mb-3 shadow-sm">
+                    <div class="card-body py-3">
+                        <div class="row align-items-center">
+                            <div class="col-md-4">
+                                <p class="mb-0 fw-semibold">{{ ref.patient_name }}</p>
+                                <small class="text-muted">{{ ref.patient_diagnosis }}</small>
+                            </div>
+                            <div class="col-md-3">
+                                <small class="text-muted d-block">Referred by</small>
+                                <span>{{ ref.referrer_name }}</span>
+                                <span class="badge bg-light text-dark ms-1">{{ ref.get_referrer_type_display }}</span>
+                                {% if ref.referrer_organization %}
+                                <small class="text-muted d-block">{{ ref.referrer_organization }}</small>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-2 text-md-center">
+                                <span class="badge bg-{{ ref.status_badge_class }} text-dark">
+                                    {{ ref.get_status_display }}
+                                </span>
+                            </div>
+                            <div class="col-md-2 text-muted">
+                                <small>{{ ref.created_at|date:"d M Y" }}</small>
+                                <small class="d-block text-monospace">{{ ref.referral_code }}</small>
+                            </div>
+                            <div class="col-md-1 text-end">
+                                <a href="{% url 'referral-detail' ref.referral_code %}"
+                                   class="btn btn-sm btn-outline-primary">
+                                    View
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
+                    No incoming referrals{% if active_status %} with status "{{ active_status }}"{% endif %}.
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Referrals created by this user for others -->
+        {% if created %}
+        <div class="col-12 mt-2">
+            <p class="section-header">
+                <i class="fas fa-share me-1 text-secondary"></i>
+                Referrals You Created for Others
+                <span class="badge bg-secondary ms-1">{{ created.count }}</span>
+            </p>
+            {% for ref in created %}
+            <div class="card referral-card status-{{ ref.status }} mb-3 shadow-sm">
+                <div class="card-body py-3">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <p class="mb-0 fw-semibold">{{ ref.patient_name }}</p>
+                            <small class="text-muted">{{ ref.patient_diagnosis }}</small>
+                        </div>
+                        <div class="col-md-3">
+                            <small class="text-muted d-block">Assigned to</small>
+                            <span>{{ ref.referred_to.get_full_name|default:ref.referred_to.username }}</span>
+                        </div>
+                        <div class="col-md-2 text-md-center">
+                            <span class="badge bg-{{ ref.status_badge_class }} text-dark">
+                                {{ ref.get_status_display }}
+                            </span>
+                        </div>
+                        <div class="col-md-2 text-muted">
+                            <small>{{ ref.created_at|date:"d M Y" }}</small>
+                            <small class="d-block text-monospace">{{ ref.referral_code }}</small>
+                        </div>
+                        <div class="col-md-1 text-end">
+                            <a href="{% url 'referral-detail' ref.referral_code %}"
+                               class="btn btn-sm btn-outline-secondary">
+                                View
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Check - Sajhya Healthcare{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <h3>Welcome</h3>
+                <p>Personal Let get started</p>
+            </div>
+            <div class="auth-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'login-personal'%}" class="btn-gradient-a">
+                        Login to your Profile
+                    </a>
+                </div>
+
+                <hr class="my-4">
+
+                <!-- Create New Clinic Button -->
+                <div class="d-grid gap-2">
+                    <a href="{% url 'signup-personal'%}" class="btn-gradient">
+                        Create Your Profile
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{%endblock%}

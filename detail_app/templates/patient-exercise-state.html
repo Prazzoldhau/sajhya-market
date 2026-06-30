@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Prescriptions - {{ patient.patient_full_name }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Header Styles */
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .patient-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .patient-details h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .patient-details p {
+            color: #666;
+            margin: 5px 0;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 15px 25px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            color: white;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        /* Prescription Card Styles */
+        .prescription-card {
+            background: white;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .prescription-card:hover {
+            transform: translateY(-3px);
+        }
+
+        .prescription-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 25px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .prescription-title h3 {
+            margin-bottom: 5px;
+        }
+
+        .prescription-title p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .prescription-status {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .status-badge {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .status-active {
+            background: #4caf50;
+            color: white;
+        }
+
+        .status-completed {
+            background: #2196f3;
+            color: white;
+        }
+
+        .status-cancelled {
+            background: #f44336;
+            color: white;
+        }
+
+        .status-expired {
+            background: #ff9800;
+            color: white;
+        }
+
+        .progress-bar-container {
+            width: 150px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            background: #4caf50;
+            height: 8px;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            font-size: 0.85rem;
+            margin-left: 10px;
+        }
+
+        .prescription-body {
+            padding: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .prescription-body.open {
+            max-height: 2000px;
+        }
+
+        .exercises-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .exercises-table th,
+        .exercises-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .exercises-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .exercises-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .exercise-completed {
+            color: #4caf50;
+            font-weight: bold;
+        }
+
+        .exercise-pending {
+            color: #ff9800;
+        }
+
+        .checkbox-complete {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .prescription-footer {
+            padding: 15px 25px;
+            background: #f8f9fa;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+            text-decoration: None;
+            display: inline-block;
+        }
+
+        .btn-primary:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+            text-decoration: None;
+            display: inline-block;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-secondary:hover {
+            display: inline-block;
+            background: #5a6268;
+            text-decoration: none;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .toggle-icon {
+            font-size: 1.5rem;
+            transition: transform 0.3s ease;
+        }
+
+        .toggle-icon.rotated {
+            transform: rotate(180deg);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            background: white;
+            border-radius: 15px;
+            color: #999;
+        }
+
+        .back-button {
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .prescription-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .stats {
+                flex-direction: column;
+                width: 100%;
+            }
+            
+            .exercises-table {
+                font-size: 0.85rem;
+            }
+            
+            .exercises-table th,
+            .exercises-table td {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Back Button -->
+        <div class="back-button">
+            <button class="btn btn-secondary" onclick="window.history.back()">← Back</button>
+            {% if clinic_id %}
+                {% if user_type == 'clinic' %}
+                    <a href="{% url 'clinic-detail' clinic_id=clinic_id %}" class="btn btn-secondary">Clinic Page</a>
+                {% else %}
+                    <a href="{% url 'assigned-clinic-dashboard' clinic_id=clinic_id %}" class="btn btn-secondary">Clinic Page</a>
+                {% endif %}
+            {% else %}
+                {% if user_type == 'clinic' %}
+                    <a href="{% url 'clinic-dashboard' %}" class="btn btn-secondary">Clinic Page</a>                    
+                {% else %}
+                    <a href="{% url 'personal-dashboard' %}" class="btn btn-secondary">Clinic Page</a>
+                {% endif %}
+                
+            {% endif %}
+           
+        </div>
+     
+
+        <!-- Header with Patient Info -->
+        <div class="header">
+            <div class="patient-info">
+                <div class="patient-details">
+                    <h1>{{ patient.patient_name }}</h1>
+                    <p><strong>Diagnosis:</strong> {{ patient.diagnosis|default:"Not specified" }}</p>
+                </div>
+
+                {% if prescriptions %}
+                <form method="post" action="{% url 'reassign-exercise' patient_id=patient.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary">Reassign Exercise</button>
+                </form>
+                {% else %}
+                    <button type="submit" disabled>Reassign Exercise</button>
+                {% endif %}
+               
+                {% comment %} <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-number">{{ total_prescriptions }}</div>
+                        <div class="stat-label">Total Prescriptions</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">{{ active_prescriptions }}</div>
+                        <div class="stat-label">Active</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">{{ completed_prescriptions }}</div>
+                        <div class="stat-label">Completed</div>
+                    </div>
+                </div> {% endcomment %}
+            </div>
+        </div>
+
+        <!-- Prescriptions List -->
+        {% if prescriptions %}
+            {% for prescription_data in prescriptions %}
+            <div class="prescription-card" data-prescription-id="{{ prescription_data.prescription.id }}">
+            {% comment %} <div class="prescription-card"> {% endcomment %}
+                
+                <div class="prescription-header" onclick="togglePrescription({{ forloop.counter0 }})">
+                    <div class="prescription-title">
+                        <h3>
+                            Prescription #{{ forloop.revcounter }} – 
+                            {{ prescription_data.prescription.created_at|date:"F j" }}
+                        </h3>
+                    </div>
+                    <div class="prescription-status">
+                        <span class="status-badge status-{{ prescription_data.prescription.status }}">
+                            {{ prescription_data.prescription.status|title }}
+                        </span>
+                        <div style="display: flex; align-items: center;">
+                            <div class="progress-bar-container">
+                                <div class="progress-bar" style="width: {{ prescription_data.progress_percentage }}%"></div>
+                            </div>
+                            <span class="progress-text">{{ prescription_data.completed_exercises }}/{{ prescription_data.total_exercises }}</span>
+                        </div>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                </div>
+                
+                <div class="prescription-body" id="prescription-body-{{ forloop.counter0 }}">
+                    <table class="exercises-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 40px"></th>
+                                <th>Exercise Name</th>
+                                <th>Sets</th>
+                                <th>Reps</th>
+                                <th>Hold (s)</th>
+                                <th>Rest (s)</th>
+                                <th>Difficulty</th>
+                                <th>Status</th>
+                                <th style="width: 60px"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in prescription_data.exercises_with_feedback %}
+                            {% with exercise=item.exercise %}
+                            <tr id="exercise-row-{{ exercise.id }}">
+                                <td>
+                                    <input type="checkbox"
+                                           class="checkbox-complete"
+                                           data-exercise-id="{{ exercise.id }}"
+                                           {% if exercise.is_completed %}checked{% endif %}
+                                           onchange="toggleExerciseCompletion({{ exercise.id }}, this)">
+                                </td>
+                                <td><strong>{{ exercise.exercise_name }}</strong></td>
+                                <td class="dose-cell" data-field="sets">{{ exercise.sets }}</td>
+                                <td class="dose-cell" data-field="reps">{{ exercise.reps }}</td>
+                                <td class="dose-cell" data-field="hold_time_sec">{{ exercise.hold_time_sec }}</td>
+                                <td class="dose-cell" data-field="rest_time_sec">{{ exercise.rest_time_sec }}</td>
+                                <td>
+                                    <span class="difficulty difficulty-{{ exercise.difficulty_level }}">
+                                        Level {{ exercise.difficulty_level }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if exercise.is_completed %}
+                                        <span class="exercise-completed">✓ Completed</span>
+                                    {% else %}
+                                        <span class="exercise-pending">○ Pending</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button class="btn-edit" onclick="startEdit({{ exercise.id }})" title="Edit doses">✏️</button>
+                                    {% if item.feedback_logs %}
+                                    <button class="btn-feedback-toggle" onclick="toggleFeedbackLog({{ exercise.id }})" title="View feedback">💬</button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+
+                            {% if item.feedback_logs %}
+                            <tr class="feedback-log-row" id="feedback-log-{{ exercise.id }}" style="display:none;">
+                                <td colspan="9" class="feedback-log-cell">
+                                    <div class="feedback-log-header">Patient Feedback (last {{ item.feedback_logs|length }})</div>
+                                    {% for log in item.feedback_logs %}
+                                    <div class="feedback-log-entry {% if log.feedback_type == 'painful' or log.feedback_type == 'increased_symptom' %}feedback-alert{% endif %}">
+                                        <span class="fb-date">{{ log.logged_at|date:"M j, g:i a" }}</span>
+                                        <span class="fb-type fb-type-{{ log.feedback_type }}">{{ log.get_feedback_type_display }}</span>
+                                        {% if log.note %}
+                                        <span class="fb-note">"{{ log.note }}"</span>
+                                        {% endif %}
+                                    </div>
+                                    {% endfor %}
+                                </td>
+                            </tr>
+                            {% endif %}
+
+                            {% if exercise.exercise_notes %}
+                            <tr>
+                                <td colspan="9" style="background: #fff3cd; padding: 10px 15px;">
+                                    <strong>📝 Note:</strong> {{ exercise.exercise_notes }}
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% endwith %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    
+                    {% if prescription_data.prescription.prescription_notes %}
+                    <div style="padding: 15px 25px; background: #e3f2fd; margin-top: 10px;">
+                        <strong>📋 Prescription Notes:</strong><br>
+                        {{ prescription_data.prescription.prescription_notes }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <h3>📋 No Prescriptions Yet</h3>
+                <p>This patient doesn't have any exercise prescriptions.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <style>
+        .difficulty {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .difficulty-1 { background: #4caf50; color: white; }
+        .difficulty-2 { background: #8bc34a; color: white; }
+        .difficulty-3 { background: #ff9800; color: white; }
+        .difficulty-4 { background: #f44336; color: white; }
+        .difficulty-5 { background: #9c27b0; color: white; }
+
+        .btn-edit {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 2px 4px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        .btn-edit:hover { background: #e8eaf6; }
+
+        .dose-input {
+            width: 54px;
+            padding: 3px 5px;
+            border: 1px solid #667eea;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+
+        .inline-actions {
+            display: flex;
+            gap: 4px;
+        }
+        .btn-save {
+            background: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 3px 8px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        .btn-cancel-edit {
+            background: #9e9e9e;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 3px 8px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .btn-feedback-toggle {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 2px 4px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        .btn-feedback-toggle:hover { background: #e8f5e9; }
+
+        .feedback-log-cell {
+            background: #fafafa;
+            padding: 12px 20px;
+            border-top: 1px dashed #e0e0e0;
+        }
+        .feedback-log-header {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #666;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .feedback-log-entry {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            padding: 5px 8px;
+            border-radius: 6px;
+            margin-bottom: 4px;
+            background: white;
+            border: 1px solid #f0f0f0;
+        }
+        .feedback-log-entry.feedback-alert {
+            background: #fff3e0;
+            border-color: #ffcc80;
+        }
+        .fb-date { font-size: 0.78rem; color: #999; min-width: 110px; }
+        .fb-type { font-size: 0.82rem; font-weight: 700; padding: 2px 8px; border-radius: 10px; }
+        .fb-type-normal           { background: #e8f5e9; color: #2e7d32; }
+        .fb-type-hard             { background: #fff9c4; color: #f57f17; }
+        .fb-type-painful          { background: #ffebee; color: #c62828; }
+        .fb-type-increased_symptom { background: #fce4ec; color: #880e4f; }
+        .fb-note { font-size: 0.82rem; color: #555; font-style: italic; }
+    </style>
+
+    <script>
+        function togglePrescription(index) {
+            const body = document.getElementById(`prescription-body-${index}`);
+            const icon = document.querySelector(`#prescription-body-${index}`).previousElementSibling.querySelector('.toggle-icon');
+            
+            body.classList.toggle('open');
+            icon.classList.toggle('rotated');
+        }
+        async function toggleExerciseCompletion(exerciseId, checkbox) {
+            // Disable checkbox while request is in flight
+            checkbox.disabled = true;
+
+            try {
+                const response = await fetch(`/detail-app/api/exercise/${exerciseId}/toggle-completion/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken()
+                    },
+                    body: JSON.stringify({ is_completed: checkbox.checked })
+                });
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    // Revert checkbox on error
+                    checkbox.checked = !checkbox.checked;
+                    alert(data.error || 'Failed to update exercise status');
+                    return;
+                }
+
+                // --- Update the prescription card dynamically ---
+                const prescriptionCard = document.querySelector(`.prescription-card[data-prescription-id="${data.prescription_id}"]`);
+                if (!prescriptionCard) return;
+
+                // Update the progress text (completed/total)
+                const progressTextSpan = prescriptionCard.querySelector('.progress-text');
+                if (progressTextSpan) {
+                    progressTextSpan.textContent = `${data.completed_exercises}/${data.total_exercises}`;
+                }
+
+                // Update the percentage display if you have a separate element
+                const percentSpan = prescriptionCard.querySelector('.progress-percentage');
+                if (percentSpan) {
+                    percentSpan.textContent = `${data.progress_percentage}%`;
+                }
+
+                // Update the progress bar width
+                const progressBar = prescriptionCard.querySelector('.progress-bar');
+                if (progressBar) {
+                    progressBar.style.width = `${data.progress_percentage}%`;
+                }
+
+                // Update the exercise status text in the same row (optional but nice)
+                // You can either change the "Completed"/"Pending" text or just rely on the checkbox.
+                // To do that, find the parent row and update the status cell:
+                const row = checkbox.closest('tr');
+                if (row) {
+                    const statusCell = row.querySelector('td:last-child');
+                    if (statusCell) {
+                        if (checkbox.checked) {
+                            statusCell.innerHTML = '<span class="exercise-completed">✓ Completed</span>';
+                        } else {
+                            statusCell.innerHTML = '<span class="exercise-pending">○ Pending</span>';
+                        }
+                    }
+                }
+
+                // If prescription is now fully completed, update the status badge
+                if (data.prescription_completed) {
+                    const statusBadge = prescriptionCard.querySelector('.status-badge');
+                    if (statusBadge && !statusBadge.classList.contains('status-completed')) {
+                        statusBadge.textContent = 'Completed';
+                        statusBadge.classList.remove('status-active', 'status-pending', 'status-prescribed');
+                        statusBadge.classList.add('status-completed');
+                    }
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                checkbox.checked = !checkbox.checked;
+                alert('Error updating exercise status. Please try again.');
+            } finally {
+                checkbox.disabled = false;
+            }
+        }
+
+        async function toggleExerciseCompletion1(exerciseId, checkbox) {
+            try {
+                const response = await fetch(`/detail-app/api/exercise/${exerciseId}/toggle-completion/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken()
+                    },
+                    body: JSON.stringify({
+                        is_completed: checkbox.checked
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (!data.success) {
+                    checkbox.checked = !checkbox.checked;
+                    alert('Failed to update exercise status');
+                } else {
+                    // Reload page to update progress
+                    location.reload();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                checkbox.checked = !checkbox.checked;
+                alert('Error updating exercise status');
+            }
+        }
+        function getCsrfToken() {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, 10) === 'csrftoken=') {
+                        cookieValue = decodeURIComponent(cookie.substring(10));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function toggleFeedbackLog(exerciseId) {
+            const row = document.getElementById(`feedback-log-${exerciseId}`);
+            if (row) row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+        }
+
+        function startEdit(exerciseId) {
+            const row = document.getElementById(`exercise-row-${exerciseId}`);
+            const doseCells = row.querySelectorAll('.dose-cell');
+            const editBtn = row.querySelector('.btn-edit');
+
+            // Swap each dose cell to an input
+            doseCells.forEach(cell => {
+                const field = cell.dataset.field;
+                const current = cell.textContent.trim();
+                cell.innerHTML = `<input class="dose-input" type="number" min="0" data-field="${field}" value="${current}">`;
+            });
+
+            // Swap edit button to save/cancel
+            editBtn.style.display = 'none';
+            const actionCell = editBtn.parentElement;
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'inline-actions';
+            actionsDiv.id = `inline-actions-${exerciseId}`;
+            actionsDiv.innerHTML = `
+                <button class="btn-save" onclick="saveEdit(${exerciseId})">Save</button>
+                <button class="btn-cancel-edit" onclick="cancelEdit(${exerciseId})">✕</button>
+            `;
+            actionCell.appendChild(actionsDiv);
+        }
+
+        function cancelEdit(exerciseId) {
+            const row = document.getElementById(`exercise-row-${exerciseId}`);
+            const doseCells = row.querySelectorAll('.dose-cell');
+
+            doseCells.forEach(cell => {
+                const input = cell.querySelector('input');
+                if (input) cell.textContent = input.defaultValue;
+            });
+
+            const actionsDiv = document.getElementById(`inline-actions-${exerciseId}`);
+            if (actionsDiv) actionsDiv.remove();
+            row.querySelector('.btn-edit').style.display = '';
+        }
+
+        async function saveEdit(exerciseId) {
+            const row = document.getElementById(`exercise-row-${exerciseId}`);
+            const inputs = row.querySelectorAll('.dose-input');
+            const payload = {};
+            inputs.forEach(input => { payload[input.dataset.field] = input.value; });
+
+            try {
+                const response = await fetch(`/detail-app/api/exercise/${exerciseId}/update-params/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken()
+                    },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+
+                if (!data.success) {
+                    alert(data.error || 'Failed to save');
+                    return;
+                }
+
+                // Update cells with returned values
+                row.querySelectorAll('.dose-cell').forEach(cell => {
+                    const field = cell.querySelector('input').dataset.field;
+                    cell.textContent = data[field];
+                });
+
+                const actionsDiv = document.getElementById(`inline-actions-${exerciseId}`);
+                if (actionsDiv) actionsDiv.remove();
+                row.querySelector('.btn-edit').style.display = '';
+
+            } catch (err) {
+                console.error(err);
+                alert('Error saving. Please try again.');
+            }
+        }
+
+        // Open first prescription by default
+        document.addEventListener('DOMContentLoaded', function() {
+            const firstPrescription = document.getElementById('prescription-body-0');
+            if (firstPrescription) {
+                firstPrescription.classList.add('open');
+                const icon = document.querySelector('.prescription-header .toggle-icon');
+                if (icon) icon.classList.add('rotated');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Find Referral — Sajhya{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 680px;">
+
+    <div class="d-flex align-items-center mb-4">
+        <a href="{% url 'my-referrals' %}" class="btn btn-sm btn-outline-secondary me-3">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <div>
+            <h4 class="mb-0 fw-bold">Find a Referral</h4>
+            <small class="text-muted">Enter the referral code shared by the referring physio / doctor / nurse</small>
+        </div>
+    </div>
+
+    <!-- Search form -->
+    <form method="get" class="mb-4">
+        <div class="input-group input-group-lg">
+            <input type="text"
+                   name="code"
+                   value="{{ searched_code }}"
+                   class="form-control text-uppercase"
+                   placeholder="REF-XXXXXX"
+                   autocomplete="off"
+                   autofocus
+                   style="letter-spacing: 0.1em; font-family: monospace;">
+            <button class="btn btn-primary" type="submit">
+                <i class="fas fa-search me-1"></i> Search
+            </button>
+        </div>
+    </form>
+
+    <!-- Result -->
+    {% if searched_code and not referral %}
+        <div class="alert alert-danger">
+            <i class="fas fa-times-circle me-1"></i>
+            No referral found with code <strong>{{ searched_code }}</strong>.
+        </div>
+    {% endif %}
+
+    {% if referral %}
+    <div class="card shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span class="fw-semibold">
+                <code>{{ referral.referral_code }}</code>
+            </span>
+            <span class="badge bg-{{ referral.status_badge_class }}">{{ referral.get_status_display }}</span>
+        </div>
+        <div class="card-body">
+            <div class="row g-3 mb-3">
+                <div class="col-6">
+                    <p class="text-muted small mb-0">Patient</p>
+                    <p class="fw-semibold mb-0">{{ referral.patient_name }}</p>
+                    <small class="text-muted">{{ referral.patient_diagnosis }}</small>
+                </div>
+                <div class="col-6">
+                    <p class="text-muted small mb-0">Referred by</p>
+                    <p class="fw-semibold mb-0">
+                        {{ referral.referred_by.get_full_name|default:referral.referred_by.username|default:"Unknown" }}
+                    </p>
+                    <small class="text-muted">{{ referral.created_at|date:"d M Y" }}</small>
+                </div>
+                <div class="col-12">
+                    <p class="text-muted small mb-0">Reason</p>
+                    <p class="mb-0">{{ referral.reason }}</p>
+                </div>
+                {% if referral.referred_to %}
+                <div class="col-12">
+                    <p class="text-muted small mb-0">Assigned to</p>
+                    <p class="mb-0">
+                        {{ referral.referred_to.get_full_name|default:referral.referred_to.username }}
+                        {% if referral.referred_to != request.user %}
+                        <span class="badge bg-warning text-dark ms-1">Not assigned to you</span>
+                        {% endif %}
+                    </p>
+                </div>
+                {% else %}
+                <div class="col-12">
+                    <div class="alert alert-info py-2 mb-0 small">
+                        <i class="fas fa-info-circle me-1"></i>
+                        This referral is open — any physio can claim it.
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Action buttons -->
+            <div class="d-flex gap-2 mt-3">
+                <a href="{% url 'referral-detail' referral.referral_code %}" class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-eye me-1"></i> Full Details
+                </a>
+                {% if referral.status == 'pending' %}
+                    {% if not referral.referred_to or referral.referred_to == request.user %}
+                    <a href="{% url 'accept-referral' referral.referral_code %}" class="btn btn-success btn-sm">
+                        <i class="fas fa-check me-1"></i> Accept
+                    </a>
+                    <a href="{% url 'reject-referral' referral.referral_code %}" class="btn btn-outline-danger btn-sm">
+                        <i class="fas fa-times me-1"></i> Reject
+                    </a>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

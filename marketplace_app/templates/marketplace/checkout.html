@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Checkout — Physio Marketplace{% endblock %}
+
+{% block content %}
+<!-- Navbar -->
+<div class="navbar">
+    <div class="logo">Sa:jhya</div>
+    <div class="mkt-nav-center">
+        <span class="mkt-nav-title">📋 Checkout</span>
+    </div>
+    <div class="mkt-nav-right">
+        <a href="{% url 'view-cart' %}" class="mkt-back-btn">← Back to Cart</a>
+    </div>
+</div>
+
+<div class="container mkt-container">
+    <div class="mkt-checkout-layout">
+
+        <!-- Checkout Form -->
+        <div class="mkt-checkout-form-panel">
+            <h2 class="mkt-cart-heading">Delivery Details</h2>
+            <form method="POST" action="" class="mkt-checkout-form">
+                {% csrf_token %}
+
+                <div class="mkt-form-row">
+                    <div class="mkt-form-group">
+                        <label class="mkt-label">Full Name <span class="mkt-required">*</span></label>
+                        <input type="text" name="customer_name" class="mkt-input" placeholder="Your full name" required
+                               value="{{ request.user.get_full_name|default:'' }}">
+                    </div>
+                    <div class="mkt-form-group">
+                        <label class="mkt-label">Phone Number <span class="mkt-required">*</span></label>
+                        <input type="tel" name="customer_phone" class="mkt-input" placeholder="98XXXXXXXX" required
+                               value="{{ request.user.phone|default:'' }}">
+                    </div>
+                </div>
+
+                <div class="mkt-form-group">
+                    <label class="mkt-label">Email Address <span class="mkt-required">*</span></label>
+                    <input type="email" name="customer_email" class="mkt-input" placeholder="your@email.com" required
+                           value="{{ request.user.email|default:'' }}">
+                </div>
+
+                <div class="mkt-form-group">
+                    <label class="mkt-label">Delivery Address <span class="mkt-required">*</span></label>
+                    <textarea name="delivery_address" class="mkt-input mkt-textarea" rows="3"
+                              placeholder="Full delivery address (City, District)" required></textarea>
+                </div>
+
+                <div class="mkt-form-group">
+                    <label class="mkt-label">Additional Notes</label>
+                    <textarea name="notes" class="mkt-input mkt-textarea" rows="2"
+                              placeholder="Any special instructions or notes for your order..."></textarea>
+                </div>
+
+                <button type="submit" class="mkt-btn-primary mkt-btn-full mkt-btn-lg">
+                    ✅ Place Order
+                </button>
+            </form>
+        </div>
+
+        <!-- Order Summary -->
+        <div class="mkt-order-summary">
+            <h3 class="mkt-summary-title">Your Order</h3>
+            {% for item in cart_items %}
+            <div class="mkt-summary-item">
+                <span>{{ item.name }} <span class="mkt-qty-tag">×{{ item.quantity }}</span></span>
+                <span>NPR {{ item.item_total }}</span>
+            </div>
+            {% endfor %}
+            <div class="mkt-summary-divider"></div>
+            <div class="mkt-summary-row mkt-summary-total">
+                <span>Total</span>
+                <span>NPR {{ total }}</span>
+            </div>
+            <div class="mkt-checkout-note">
+                <p>📞 Our team will contact you within 24 hours to confirm your order and arrange delivery.</p>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

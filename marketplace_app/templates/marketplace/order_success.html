@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Order Placed — Physio Marketplace{% endblock %}
+
+{% block content %}
+<!-- Navbar -->
+<div class="navbar">
+    <div class="logo">Sa:jhya</div>
+    <div class="mkt-nav-right">
+        <a href="{% url 'marketplace' %}" class="mkt-back-btn">← Marketplace</a>
+    </div>
+</div>
+
+<div class="container mkt-container">
+    <div class="mkt-success-card">
+        <div class="mkt-success-icon">✅</div>
+        <h1 class="mkt-success-title">Order Placed Successfully!</h1>
+        <p class="mkt-success-sub">Thank you for your order. Our team will be in touch with you shortly.</p>
+
+        <div class="mkt-order-details">
+            <div class="mkt-order-detail-row">
+                <span class="mkt-detail-label">Order Number</span>
+                <span class="mkt-detail-val mkt-order-num">#{{ order.order_number }}</span>
+            </div>
+            <div class="mkt-order-detail-row">
+                <span class="mkt-detail-label">Customer</span>
+                <span class="mkt-detail-val">{{ order.customer_name }}</span>
+            </div>
+            <div class="mkt-order-detail-row">
+                <span class="mkt-detail-label">Phone</span>
+                <span class="mkt-detail-val">{{ order.customer_phone }}</span>
+            </div>
+            <div class="mkt-order-detail-row">
+                <span class="mkt-detail-label">Total</span>
+                <span class="mkt-detail-val mkt-order-total">NPR {{ order.total_amount }}</span>
+            </div>
+            <div class="mkt-order-detail-row">
+                <span class="mkt-detail-label">Delivery To</span>
+                <span class="mkt-detail-val">{{ order.delivery_address }}</span>
+            </div>
+            <div class="mkt-order-detail-row">
+                <span class="mkt-detail-label">Status</span>
+                <span class="mkt-status-badge mkt-status-{{ order.status }}">{{ order.get_status_display }}</span>
+            </div>
+        </div>
+
+        <!-- Items Ordered -->
+        <div class="mkt-ordered-items">
+            <h3>Items Ordered</h3>
+            {% for item in order.items.all %}
+            <div class="mkt-ordered-row">
+                <span>{{ item.product_name }} <span class="mkt-qty-tag">×{{ item.quantity }}</span></span>
+                <span>NPR {{ item.total_price }}</span>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="mkt-success-actions">
+            <a href="{% url 'marketplace' %}" class="mkt-btn-primary mkt-btn-lg">Continue Shopping</a>
+        </div>
+
+        <p class="mkt-contact-note">
+            📞 Questions? Contact us at <strong>sajhya.com</strong>
+        </p>
+    </div>
+</div>
+{% endblock %}

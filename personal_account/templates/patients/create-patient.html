@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Add Patient{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <i class="fas fa-user-plus fa-2x mb-2"></i>
+                <h3>Add Your Patient</h3>
+            </div>
+            <div class="auth-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    {% for field in patient_form %}
+                        <div class="form-group">
+                            <label for="{{ field.id_for_label }}" class="form-label">
+                                {{ field.label }}
+                                {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                            </label>
+                            
+                            {{ field }}  <!-- ✅ Renders the actual input widget -->
+                            
+                            {% if field.help_text %}
+                                <small class="form-text text-muted">{{ field.help_text }}</small>
+                            {% endif %}
+                            {% for error in field.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+                    
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn-gradient">
+                            Add Patient <i class="fas fa-plus-circle"></i>  <!-- ✅ Changed from "Sign Up" -->
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

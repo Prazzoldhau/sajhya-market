@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+*.pyo
+.env
+media/
+static/admin/
+static/import_export/
+stderr.log
+tmp/
+venv/

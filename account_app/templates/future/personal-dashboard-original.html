@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Clinic Dashboard - Sajhya Healthcare{% endblock %}
+
+{% block content %}
+
+<div class="navbar">
+    <div class="logo">Sa:jhya
+
+    </div>
+    
+    <!-- Single Settings Dropdown -->
+    <div class="dropdown">
+        <button class="btn-gradient dropdown-toggle">⚙️ Settings </button>
+        <div class="dropdown-menu">
+            <a href="{% url 'create-patient'%}" class="dropdown-item">
+                🏥 Add Patient
+            </a>
+            <a href="#" class="dropdown-item">
+                📋 Manage Patient
+            </a>
+            <a href="#" class="dropdown-item">
+                👤 Profile Settings
+            </a>
+            <div class="dropdown-divider"></div>
+            <form method="POST" action="{% url 'logout-personal' %}" class="logout-form-dropdown">
+                {% csrf_token %}
+                <button type="submit" class="dropdown-item logout-item">
+                    🚪 Logout
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% if user.is_authenticated %}
+<div class="container">
+    <div class="welcome-card">
+        <h2>Welcome {{ user.username }}</h2>
+        <div class="user-info">
+            {{ user.personal_code|default:"No code" }} | {{ user.user_type }}
+        </div>
+        <p>Manage your staffs, junior and work-division from your dashboard.</p>
+    </div>
+</div>
+{% endif %}
+
+<style>
+/* Dropdown CSS - Add this to your main CSS file or here */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    margin-top: 10px;
+    min-width: 220px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    z-index: 1000;
+    overflow: hidden;
+}
+
+.dropdown.open .dropdown-menu {
+    display: block;
+    animation: fadeIn 0.2s ease;
+}
+
+.dropdown-item {
+    display: block;
+    padding: 12px 20px;
+    color: #333;
+    text-decoration: none;
+    font-size: 14px;
+    transition: background 0.2s ease;
+    border: none;
+    background: white;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    box-sizing: border-box;
+}
+
+.dropdown-item:hover {
+    background: #f5f5f5;
+}
+
+.dropdown-divider {
+    height: 1px;
+    background: #e0e0e0;
+    margin: 8px 0;
+}
+
+.logout-item {
+    color: #dc3545 !important;
+}
+
+.logout-item:hover {
+    background: #ffe5e5 !important;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.logout-form-dropdown {
+    margin: 0;
+    padding: 0;
+}
+
+/* Make sure navbar doesn't clip the dropdown */
+.navbar {
+    overflow: visible !important;
+}
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const dropdown = document.querySelector('.dropdown');
+        const dropdownToggle = document.querySelector('.dropdown-toggle');
+        
+        if (dropdown && dropdownToggle) {
+            // Toggle dropdown on button click
+            dropdownToggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                dropdown.classList.toggle('open');
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!dropdown.contains(e.target)) {
+                    dropdown.classList.remove('open');
+                }
+            });
+            
+            // Close dropdown when an item is clicked
+            const dropdownItems = document.querySelectorAll('.dropdown-item');
+            dropdownItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    dropdown.classList.remove('open');
+                });
+            });
+        }
+    });
+</script>
+
+{% endblock %}

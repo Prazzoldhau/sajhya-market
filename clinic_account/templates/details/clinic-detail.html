@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Clinic{% endblock %}
+
+{% block content %}
+<div class="navbar">
+        <div class="logo">Sa:jhya </div>
+
+    
+  
+        <!-- Settings Dropdown -->
+        <div class="dropdown">
+            <button class="btn-gradient dropdown-toggle">⚙️ Settings</button>
+            <div class="dropdown-menu">
+                <a href="{% url 'add-patient-by-clinicuser' clinic_id=clinic.id%}" class="dropdown-item">
+                    🏥 Add Patient
+                </a>
+                <a href="{% url 'search-physio' clinic.id %}" class="dropdown-item">
+                    👥 Add Staff
+                </a>
+                <a href="#" class="dropdown-item">
+                    📋 Manage Clinics
+                </a>
+                <a href="#" class="dropdown-item">
+                    📋 Manage Staff
+                </a>
+                <a href="#" class="dropdown-item">
+                    ⚙️ Clinic Settings
+                </a>
+                <a href="#" class="dropdown-item">
+                    👤 Profile Settings
+                </a>
+            </div>
+        </div>
+</div>  <!-- ✅ Closing navbar properly -->
+<div class="container">
+        <!-- Header -->
+    <div class="header">
+        <br>
+        <h2>{{clinic.clinic_name }}</h2>
+    </div>
+
+
+
+    <!-- Search Box -->
+    <div class="search-container">
+        <span class="total-patients">📊 Total Patients: <span>{{ total_count }}</span></span>
+        🔍 Search by:
+        <select id="searchType">
+            <option value="name">Name</option>
+            <option value="code">Patient Code</option>
+            <option value="contact">Contact Number</option>
+        </select>
+        <input type="text" id="searchValue" placeholder="Enter value...">
+        <button onclick="searchPatients()">Search</button>
+        <button onclick="clearSearch()">Clear</button>
+    </div>
+
+    {% comment %} <!-- Date Range Filter -->
+    <div class="search-container">
+        📅 Date Range:
+        <input type="date" id="fromDate">
+        to
+        <input type="date" id="toDate">
+        <button onclick="filterByDate()">Apply</button>
+    </div> {% endcomment %}
+
+    <!-- Patients Table -->
+    {% if patients %}
+    <div class="table-responsive">
+        <table class="patient-table">
+            <thead>
+                <tr>
+                    {% comment %} <th>Patient Code</th> {% endcomment %}
+                    <th>Full Name</th>
+                    <th>Diagnosis</th>
+                    {% comment %} <th>Contact</th> {% endcomment %}
+                    {% comment %} <th>Added On</th> {% endcomment %}
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for patient in patients %}
+                <tr>
+                    {% comment %} <td>{{ patient.patient_code }}</td> {% endcomment %}
+                    <td><strong>{{ patient.patient_name }}</strong></td>
+                    <td>{{ patient.patient_diagnosis|default:"-" }}</td>
+                    {% comment %} <td>{{ patient.patient_contact|default:"-" }}</td> {% endcomment %}
+                    {% comment %} <td>{{ patient.created_at|date:"Y-m-d"|default:"-" }}</td> {% endcomment %}
+                    <td>
+                        <a href="{% url 'patient-detail' patient_id=patient.id %}" class="btn btn-info">Stat</a>
+                        <a href="{% url 'patient-exercise-status' patient_id=patient.id %}" class="btn btn-success">Track</a>
+                        <a href="{% url 'prescription-page' patient_id=patient.id %}" class="btn btn-info">Rx</a>
+                        <a href="{% url 'exercise-selectable' patient_id=patient.id %}" class="btn btn-success">Exe</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <h3>No Patients Found</h3>
+        <p>You haven't created any patients yet.</p>
+        <a href="#" class="btn btn-primary" style="margin-top: 15px;">+ Add New Patient</a>
+    </div>
+    {% endif %}
+</div>  <!-- ✅ Closing container -->
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dropdown = document.querySelector('.dropdown');
+    const dropdownToggle = document.querySelector('.dropdown-toggle');
+    
+    if (dropdown && dropdownToggle) {
+        // Toggle dropdown on button click
+        dropdownToggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            dropdown.classList.toggle('open');
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!dropdown.contains(e.target)) {
+                dropdown.classList.remove('open');
+            }
+        });
+        
+        // Close dropdown when an item is clicked
+        const dropdownItems = document.querySelectorAll('.dropdown-item');
+        dropdownItems.forEach(item => {
+            item.addEventListener('click', function() {
+                dropdown.classList.remove('open');
+            });
+        });
+    }
+});
+function searchPatients() {
+    let searchType = document.getElementById('searchType').value;
+    let searchValue = document.getElementById('searchValue').value;
+    //let fromDate = document.getElementById('fromDate').value;
+    //let toDate = document.getElementById('toDate').value;
+    //let url = `?search_type=${searchType}&search_value=${searchValue}&from_date=${fromDate}&to_date=${toDate}`;
+    let url = `?search_type=${searchType}&search_value=${searchValue}`;
+    window.location.href = url;
+}
+
+function clearSearch() {
+    document.getElementById('searchValue').value = '';
+    window.location.href = window.location.pathname;
+}
+
+function filterByDate() {
+    let fromDate = document.getElementById('fromDate').value;
+    let toDate = document.getElementById('toDate').value;
+    let url = `?from_date=${fromDate}&to_date=${toDate}`;
+    window.location.href = url;
+}
+
+document.getElementById('searchType').addEventListener('change', function() {
+    let input = document.getElementById('searchValue');
+    switch(this.value) {
+        case 'name': input.placeholder = 'Enter full name...'; break;
+        case 'code': input.placeholder = 'Enter patient code...'; break;
+        case 'contact': input.placeholder = 'Enter 10-digit number...'; break;
+    }
+});
+</script>
+{% endblock %}
