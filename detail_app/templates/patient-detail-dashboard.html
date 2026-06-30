@@ -5,7 +5,7 @@
 {% block content %}
 <div class="container py-3">
 
-    <div class="navbar">#push to git
+    <div class="navbar">
         <div class="navbar-left">
             {% if patient.qr_code %}
                 <img src="{{ patient.qr_code }}" alt="QR Code for {{ patient.patient_name }}"
@@ -17,7 +17,7 @@
     </div>
 
     <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('sessions')">📅 Session Status</button>
+        <button class="tab-btn active">📅 Session Status</button>
     </div>
 
     <div class="table-responsive">

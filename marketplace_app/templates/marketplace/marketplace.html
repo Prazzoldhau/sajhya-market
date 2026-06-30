@@ -4,22 +4,6 @@
 {% block title %}Physio Marketplace — Sajhya{% endblock %}
 
 {% block content %}
-<!-- Navbar -->
-<div class="navbar">
-    <div class="logo">Sa:jhya</div>
-    <div class="mkt-nav-center">
-        <span class="mkt-nav-title">🏪 Physio Marketplace</span>
-    </div>
-    <div class="mkt-nav-right">
-        <a href="{% url 'view-cart' %}" class="mkt-cart-btn">
-            🛒 Cart
-            {% if cart_count > 0 %}
-            <span class="mkt-cart-badge">{{ cart_count }}</span>
-            {% endif %}
-        </a>
-        <a href="javascript:history.back()" class="mkt-back-btn">← Back</a>
-    </div>
-</div>
 
 <div class="container mkt-container">
 
@@ -35,6 +19,15 @@
             <button type="submit" class="mkt-search-btn">🔍 Search</button>
             {% if search %}<a href="?{% if selected_category %}category={{ selected_category }}{% endif %}" class="mkt-clear-btn">✕ Clear</a>{% endif %}
         </form>
+            <div class="mkt-nav-right">
+                <a href="{% url 'view-cart' %}" class="mkt-cart-btn">
+                    🛒 Cart
+                    {% if cart_count > 0 %}
+                    <span class="mkt-cart-badge">{{ cart_count }}</span>
+                    {% endif %}
+                </a>
+                <a href="javascript:history.back()" class="mkt-back-btn">← Back</a>
+            </div>
     </div>
 
     <!-- Category Pills -->

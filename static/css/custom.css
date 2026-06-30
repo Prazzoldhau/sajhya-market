@@ -144,6 +144,8 @@ body {
 }
 
 .btn-gradient-a {
+    display: inline-flex;
+    align-items: center;
     background: linear-gradient(135deg, #57ae85 0%, #e65fdd 100%);
     color: white;
     border: none;
@@ -155,6 +157,7 @@ body {
     width: auto;
     cursor: pointer;
     text-decoration: none;
+    white-space: nowrap;
 }
 
 .btn-gradient-a:hover {
@@ -808,6 +811,23 @@ body {
     flex-wrap: wrap;
 }
 
+.mkt-header-row .header {
+    display: inline-flex;
+    align-items: center;
+    background: white;
+    border-radius: 12px;
+    padding: 12px 22px;
+    margin-bottom: 0;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.mkt-header-row .header h1 {
+    margin-bottom: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #333;
+}
+
 .btn-marketplace {
     display: inline-flex;
     align-items: center;
@@ -860,22 +880,23 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-    color: white;
+    background: white;
+    color: #11998e;
     border: none;
     padding: 0.5rem 1rem;
     border-radius: 10px;
-    font-weight: 600;
+    font-weight: 700;
     font-size: 0.875rem;
     text-decoration: none;
     transition: all 0.3s ease;
     position: relative;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .mkt-cart-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(17, 153, 142, 0.4);
-    color: white;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+    color: #11998e;
     text-decoration: none;
 }
 
@@ -895,19 +916,19 @@ body {
 .mkt-back-btn {
     display: inline-block;
     padding: 0.5rem 1rem;
-    background: rgba(102, 126, 234, 0.1);
-    color: #667eea;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
     border-radius: 10px;
     font-weight: 600;
     font-size: 0.875rem;
     text-decoration: none;
     transition: all 0.3s ease;
-    border: 1px solid rgba(102, 126, 234, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
 .mkt-back-btn:hover {
-    background: rgba(102, 126, 234, 0.2);
-    color: #667eea;
+    background: rgba(255, 255, 255, 0.35);
+    color: white;
     text-decoration: none;
 }
 
