@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from decimal import Decimal
 import uuid
 
 
@@ -70,6 +71,53 @@ class Order(models.Model):
         if not self.order_number:
             self.order_number = f"ORD-{uuid.uuid4().hex[:8].upper()}"
         super().save(*args, **kwargs)
+
+
+class CommissionRate(models.Model):
+    physio = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+        null=True, blank=True, related_name='commission_rate'
+    )  # null = global default rate
+    rate = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('10.00'))
+
+    def __str__(self):
+        return f"{'Global default' if not self.physio else self.physio.username} — {self.rate}%"
+
+    @classmethod
+    def get_rate_for_physio(cls, physio):
+        try:
+            return cls.objects.get(physio=physio).rate
+        except cls.DoesNotExist:
+            pass
+        try:
+            return cls.objects.get(physio__isnull=True).rate
+        except cls.DoesNotExist:
+            return Decimal('10.00')
+
+
+class Commission(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('paid', 'Paid'),
+    ]
+    order = models.OneToOneField(Order, on_delete=models.CASCADE, related_name='commission')
+    physio = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, related_name='commissions'
+    )
+    patient_code = models.CharField(max_length=20, blank=True)
+    order_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    commission_rate = models.DecimalField(max_digits=5, decimal_places=2)
+    commission_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Commission {self.order.order_number} — {self.physio}"
 
 
 class OrderItem(models.Model):

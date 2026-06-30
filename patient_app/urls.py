@@ -3,10 +3,25 @@ from . import views
 
 
 urlpatterns = [
-    path ('patient-login/', views.patient_login, name = "patient-login"),
-    path ('patient-dashboard/', views.patient_dashboard, name = "patient-dashboard"),
-    path ('api/login/', views.patient_api_login, name='patient_api_login'),# ✅ NEW: Mobile API endpoint (JSON)
-    path ('api/csrf/', views.csrf_token_view, name='csrf_token'),
-    path ('api/me/', views.patient_api_me, name='patient_api_me'),
-    path ('api/exercise/<int:exercise_id>/feedback/', views.submit_exercise_feedback, name='submit_exercise_feedback'),
+    path('patient-login/', views.patient_login, name='patient-login'),
+    path('patient-dashboard/', views.patient_dashboard, name='patient-dashboard'),
+
+    # Auth
+    path('api/csrf/', views.csrf_token_view, name='csrf_token'),
+    path('api/login/', views.patient_api_login, name='patient_api_login'),
+    path('api/logout/', views.patient_api_logout, name='patient_api_logout'),
+    path('api/me/', views.patient_api_me, name='patient_api_me'),
+
+    # Exercises
+    path('api/exercise/<int:exercise_id>/feedback/', views.submit_exercise_feedback, name='submit_exercise_feedback'),
+
+    # Marketplace
+    path('api/categories/', views.patient_api_categories, name='patient_api_categories'),
+    path('api/products/', views.patient_api_products, name='patient_api_products'),
+    path('api/cart/', views.patient_api_cart, name='patient_api_cart'),
+    path('api/cart/add/<int:product_id>/', views.patient_api_cart_add, name='patient_api_cart_add'),
+    path('api/cart/update/', views.patient_api_cart_update, name='patient_api_cart_update'),
+    path('api/order/', views.patient_api_order, name='patient_api_order'),
+    path('api/orders/', views.patient_api_orders, name='patient_api_orders'),
+    path('api/physio/', views.patient_api_physio, name='patient_api_physio'),
 ]

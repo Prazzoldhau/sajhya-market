@@ -2,7 +2,7 @@ from django.contrib import admin
 from import_export import resources, fields
 from import_export.admin import ImportExportModelAdmin
 from import_export.widgets import ForeignKeyWidget
-from .models import Category, Product, Order, OrderItem
+from .models import Category, Product, Order, OrderItem, Commission, CommissionRate
 
 
 class CategoryResource(resources.ModelResource):
@@ -10,6 +10,7 @@ class CategoryResource(resources.ModelResource):
         model = Category
         fields = ('id', 'name', 'icon', 'description')
         export_order = ('id', 'name', 'icon', 'description')
+        import_id_fields = ('id',)
 
 
 class ProductResource(resources.ModelResource):
@@ -56,3 +57,18 @@ class OrderAdmin(admin.ModelAdmin):
     readonly_fields = ['order_number', 'created_at']
     inlines = [OrderItemInline]
     list_editable = ['status']
+
+
+@admin.register(CommissionRate)
+class CommissionRateAdmin(admin.ModelAdmin):
+    list_display = ['physio', 'rate']
+    list_editable = ['rate']
+
+
+@admin.register(Commission)
+class CommissionAdmin(admin.ModelAdmin):
+    list_display = ['order', 'physio', 'patient_code', 'order_amount', 'commission_rate', 'commission_amount', 'status', 'created_at']
+    list_filter = ['status', 'physio']
+    list_editable = ['status']
+    readonly_fields = ['order', 'physio', 'patient_code', 'order_amount', 'commission_rate', 'commission_amount', 'created_at']
+    search_fields = ['patient_code', 'order__order_number']

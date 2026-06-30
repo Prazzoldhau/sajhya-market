@@ -1,10 +1,12 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from personal_account.models import AddPatient
 from exercise_app.models import Prescription, PrescriptionExercise, ExerciseFeedback
+from marketplace_app.models import Category, Product, Order, OrderItem, Commission, CommissionRate
 from django.http import JsonResponse
-from django.contrib.auth.decorators import login_required
+from django.conf import settings
 import json
-from django.http import JsonResponse
+from decimal import Decimal
+from urllib.parse import quote
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -229,3 +231,232 @@ def submit_exercise_feedback(request, exercise_id):
         return JsonResponse({'success': False, 'error': 'Invalid JSON'}, status=400)
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+# ==================== LOGOUT ====================
+
+@csrf_exempt
+@require_http_methods(['POST'])
+def patient_api_logout(request):
+    request.session.flush()
+    return JsonResponse({'success': True})
+
+
+# ==================== MARKETPLACE API ====================
+
+def _patient_required(request):
+    pid = request.session.get('patient_id')
+    if not pid:
+        return None, JsonResponse({'error': 'Not authenticated'}, status=401)
+    try:
+        return AddPatient.objects.get(id=pid), None
+    except AddPatient.DoesNotExist:
+        return None, JsonResponse({'error': 'Patient not found'}, status=404)
+
+
+def _image_url(request, image_path):
+    if not image_path:
+        return None
+    encoded = quote(image_path, safe='/')
+    return request.build_absolute_uri(f'{settings.STATIC_URL}{encoded}')
+
+
+def _get_patient_cart(request):
+    return request.session.get('patient_cart', {})
+
+
+def _save_patient_cart(request, cart):
+    request.session['patient_cart'] = cart
+    request.session.modified = True
+
+
+def patient_api_categories(request):
+    patient, err = _patient_required(request)
+    if err:
+        return err
+    cats = Category.objects.all().order_by('id')
+    return JsonResponse({'categories': [{'id': c.id, 'name': c.name, 'icon': c.icon} for c in cats]})
+
+
+def patient_api_products(request):
+    patient, err = _patient_required(request)
+    if err:
+        return err
+    qs = Product.objects.filter(in_stock=True).select_related('category')
+    cat_id = request.GET.get('category', '').strip()
+    if cat_id:
+        qs = qs.filter(category_id=cat_id)
+    search = request.GET.get('search', '').strip()
+    if search:
+        qs = qs.filter(name__icontains=search)
+    data = [{
+        'id': p.id,
+        'name': p.name,
+        'price': str(p.price),
+        'unit': p.unit,
+        'category': p.category.name if p.category else '',
+        'image_url': _image_url(request, p.image),
+        'description': p.description,
+    } for p in qs]
+    return JsonResponse({'products': data})
+
+
+def patient_api_cart(request):
+    patient, err = _patient_required(request)
+    if err:
+        return err
+    cart = _get_patient_cart(request)
+    items = []
+    total = Decimal('0')
+    for pid, item in cart.items():
+        item_total = Decimal(str(item['price'])) * item['quantity']
+        total += item_total
+        items.append({
+            'product_id': int(pid),
+            'name': item['name'],
+            'price': str(item['price']),
+            'quantity': item['quantity'],
+            'unit': item.get('unit', ''),
+            'image_url': item.get('image_url', ''),
+            'item_total': str(item_total),
+        })
+    return JsonResponse({
+        'items': items,
+        'total': str(total),
+        'count': sum(i['quantity'] for i in cart.values()),
+    })
+
+
+@csrf_exempt
+@require_http_methods(['POST'])
+def patient_api_cart_add(request, product_id):
+    patient, err = _patient_required(request)
+    if err:
+        return err
+    product = get_object_or_404(Product, id=product_id, in_stock=True)
+    cart = _get_patient_cart(request)
+    pid = str(product_id)
+    if pid in cart:
+        cart[pid]['quantity'] += 1
+    else:
+        cart[pid] = {
+            'name': product.name,
+            'price': str(product.price),
+            'quantity': 1,
+            'unit': product.unit,
+            'image_url': _image_url(request, product.image),
+        }
+    _save_patient_cart(request, cart)
+    return JsonResponse({'success': True, 'cart_count': sum(i['quantity'] for i in cart.values())})
+
+
+@csrf_exempt
+@require_http_methods(['POST'])
+def patient_api_cart_update(request):
+    patient, err = _patient_required(request)
+    if err:
+        return err
+    try:
+        data = json.loads(request.body)
+        pid = str(data['product_id'])
+        qty = int(data.get('quantity', 0))
+    except (json.JSONDecodeError, KeyError, ValueError):
+        return JsonResponse({'error': 'Invalid data'}, status=400)
+    cart = _get_patient_cart(request)
+    if pid in cart:
+        if qty <= 0:
+            del cart[pid]
+        else:
+            cart[pid]['quantity'] = qty
+    _save_patient_cart(request, cart)
+    return JsonResponse({'success': True, 'cart_count': sum(i['quantity'] for i in cart.values())})
+
+
+@csrf_exempt
+@require_http_methods(['POST'])
+def patient_api_order(request):
+    patient, err = _patient_required(request)
+    if err:
+        return err
+    cart = _get_patient_cart(request)
+    if not cart:
+        return JsonResponse({'error': 'Cart is empty'}, status=400)
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    delivery_address = data.get('delivery_address', '').strip()
+    notes = data.get('notes', '').strip()
+    if not delivery_address:
+        return JsonResponse({'error': 'Delivery address required'}, status=400)
+
+    total = sum(Decimal(str(item['price'])) * item['quantity'] for item in cart.values())
+
+    order = Order.objects.create(
+        customer_name=patient.patient_name,
+        customer_email=f'{patient.patient_code}@sajhya.local',
+        customer_phone=patient.patient_contact,
+        delivery_address=delivery_address,
+        notes=notes,
+        total_amount=total,
+    )
+    for pid, item in cart.items():
+        try:
+            product = Product.objects.get(id=int(pid))
+        except Product.DoesNotExist:
+            product = None
+        OrderItem.objects.create(
+            order=order,
+            product=product,
+            product_name=item['name'],
+            quantity=item['quantity'],
+            unit_price=Decimal(str(item['price'])),
+        )
+
+    # Auto-create commission for referring physio
+    physio = patient.created_by
+    if physio:
+        rate = CommissionRate.get_rate_for_physio(physio)
+        Commission.objects.create(
+            order=order,
+            physio=physio,
+            patient_code=patient.patient_code,
+            order_amount=total,
+            commission_rate=rate,
+            commission_amount=(total * rate / Decimal('100')).quantize(Decimal('0.01')),
+        )
+
+    _save_patient_cart(request, {})
+    return JsonResponse({'success': True, 'order_number': order.order_number, 'total': str(total)})
+
+
+def patient_api_orders(request):
+    patient, err = _patient_required(request)
+    if err:
+        return err
+    orders = Order.objects.filter(
+        customer_email=f'{patient.patient_code}@sajhya.local'
+    ).order_by('-created_at')[:20]
+    data = [{
+        'order_number': o.order_number,
+        'total': str(o.total_amount),
+        'status': o.status,
+        'status_display': o.get_status_display(),
+        'created_at': o.created_at.strftime('%d %b %Y'),
+        'items_count': o.items.count(),
+    } for o in orders]
+    return JsonResponse({'orders': data})
+
+
+def patient_api_physio(request):
+    patient, err = _patient_required(request)
+    if err:
+        return err
+    physio = patient.created_by
+    if not physio:
+        return JsonResponse({'physio': None})
+    return JsonResponse({'physio': {
+        'name': physio.get_full_name() or physio.username,
+        'email': physio.email,
+        'username': physio.username,
+    }})
