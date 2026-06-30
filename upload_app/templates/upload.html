@@ -61,6 +61,7 @@
         <p>Select the <strong>.apk</strong> file you want to deploy.</p>
 
         <div class="file-input-wrapper">
+            <input type="text" id="versionInput" placeholder="Version (e.g. 1.2.0)" style="padding:10px; border:2px solid #ccc; border-radius:4px; width:100%; margin-bottom:12px; font-size:15px; box-sizing:border-box;" />
             <input type="file" id="apkInput" accept=".apk" />
         </div>
 
@@ -88,8 +89,16 @@
 
         async function uploadAPK() {
             const fileInput = document.getElementById('apkInput');
+            const versionInput = document.getElementById('versionInput');
             const statusDiv = document.getElementById('status');
             const uploadBtn = document.getElementById('uploadBtn');
+
+            const version = versionInput.value.trim();
+            if (!version) {
+                statusDiv.className = 'error';
+                statusDiv.textContent = '❌ Please enter a version number (e.g. 1.2.0).';
+                return;
+            }
 
             // 1. Validate that a file is selected
             if (!fileInput.files || fileInput.files.length === 0) {
@@ -118,6 +127,7 @@
             // 4. Prepare FormData
             const formData = new FormData();
             formData.append('apkFile', file);
+            formData.append('version', version);
 
             // 5. UI Feedback: Disable button and show uploading status
             uploadBtn.disabled = true;
@@ -143,7 +153,8 @@
                 if (response.ok) {
                     statusDiv.className = 'success';
                     statusDiv.textContent = `✅ Success! ${result.message} (Size: ${(result.fileSize / 1024 / 1024).toFixed(2)} MB)`;
-                    fileInput.value = ''; // Reset file input
+                    fileInput.value = '';
+                    versionInput.value = '';
                 } else {
                     statusDiv.className = 'error';
                     statusDiv.textContent = `❌ Error: ${result.error || result.message || 'Unknown error occurred.'}`;

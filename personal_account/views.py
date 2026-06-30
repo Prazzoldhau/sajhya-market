@@ -4,10 +4,11 @@ from django.contrib import messages
 from .patientform import PatientForm
 from .models import AddPatient
 from datetime import datetime
-from django.db.models import Q
+from django.db.models import Q, Sum
 from django.http import JsonResponse
 from clinic_account.models import ClinicPhysio, Clinic
 from account_app.models import User
+from marketplace_app.models import Commission
 
 
 
@@ -61,9 +62,17 @@ def personal_dashboard(request):
 
     total_count = patients.count()
 
+    # Commission summary
+    commissions = Commission.objects.filter(physio=request.user).order_by('-created_at')
+    commission_pending = commissions.filter(status='pending').aggregate(t=Sum('commission_amount'))['t'] or 0
+    commission_earned  = commissions.filter(status__in=['approved', 'paid']).aggregate(t=Sum('commission_amount'))['t'] or 0
+
     context = {
         'patients': patients,
         'total_count': total_count,
+        'commissions': commissions[:10],
+        'commission_pending': commission_pending,
+        'commission_earned': commission_earned,
     }
     return render(request, 'dashboard/personal-dashboard.html', context)
 

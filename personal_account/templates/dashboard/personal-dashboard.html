@@ -118,6 +118,66 @@
         <a href="#" class="btn btn-primary" style="margin-top: 15px;">+ Add New Patient</a>
     </div>
     {% endif %}
+
+    <!-- Commission Section -->
+    <div style="margin-top:2rem;">
+        <div class="mkt-header-row">
+            <div class="header"><h1>My Commissions</h1></div>
+        </div>
+
+        <!-- Summary cards -->
+        <div style="display:flex; gap:1rem; margin-bottom:1.5rem; flex-wrap:wrap;">
+            <div style="flex:1; min-width:150px; background:white; border-radius:12px; padding:1.25rem 1.5rem; box-shadow:0 4px 15px rgba(0,0,0,.08); text-align:center;">
+                <div style="font-size:1.6rem; font-weight:700; color:#11998e;">NPR {{ commission_earned }}</div>
+                <div style="font-size:0.82rem; color:#666; margin-top:4px;">Total Earned</div>
+            </div>
+            <div style="flex:1; min-width:150px; background:white; border-radius:12px; padding:1.25rem 1.5rem; box-shadow:0 4px 15px rgba(0,0,0,.08); text-align:center;">
+                <div style="font-size:1.6rem; font-weight:700; color:#f59e0b;">NPR {{ commission_pending }}</div>
+                <div style="font-size:0.82rem; color:#666; margin-top:4px;">Pending</div>
+            </div>
+        </div>
+
+        {% if commissions %}
+        <div class="table-responsive">
+            <table class="patient-table">
+                <thead>
+                    <tr>
+                        <th>Order #</th>
+                        <th>Patient</th>
+                        <th>Order Amount</th>
+                        <th>Rate</th>
+                        <th>Commission</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in commissions %}
+                    <tr>
+                        <td><strong>{{ c.order.order_number }}</strong></td>
+                        <td>{{ c.patient_code }}</td>
+                        <td>NPR {{ c.order_amount }}</td>
+                        <td>{{ c.commission_rate }}%</td>
+                        <td><strong>NPR {{ c.commission_amount }}</strong></td>
+                        <td>
+                            <span class="mkt-status-badge mkt-status-{% if c.status == 'paid' %}delivered{% elif c.status == 'approved' %}confirmed{% else %}pending{% endif %}">
+                                {{ c.get_status_display }}
+                            </span>
+                        </td>
+                        <td>{{ c.created_at|date:"d M Y" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <h3>No Commissions Yet</h3>
+            <p>Commissions appear here when your patients place orders on the marketplace.</p>
+        </div>
+        {% endif %}
+    </div>
+
 </div>  <!-- ✅ Closing container -->
 
 <script>

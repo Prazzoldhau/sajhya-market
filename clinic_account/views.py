@@ -6,15 +6,14 @@ from datetime import datetime
 from .clinicform import ClinicForm
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
-from account_app.models import User  
-from django.db import models  # for Q lookups
+from account_app.models import User
+from django.db import models
+from django.db.models import Sum
 from django.shortcuts import get_object_or_404
-from django.http import JsonResponse
 from .models import Clinic, ClinicPhysio
-from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
-from .models import Clinic, ClinicPhysio
+from marketplace_app.models import Commission
 
 
 
@@ -93,9 +92,16 @@ def clinic_dashboard(request):
 
     total_count = patients.count()
 
+    commissions = Commission.objects.filter(physio=request.user).order_by('-created_at')
+    commission_pending = commissions.filter(status='pending').aggregate(t=Sum('commission_amount'))['t'] or 0
+    commission_earned  = commissions.filter(status__in=['approved', 'paid']).aggregate(t=Sum('commission_amount'))['t'] or 0
+
     context = {
         'patients': patients,
         'total_count': total_count,
+        'commissions': commissions[:10],
+        'commission_pending': commission_pending,
+        'commission_earned': commission_earned,
     }
     return render(request, 'dashboard/clinic-dashboard.html', context)
 
