@@ -5,7 +5,7 @@ import uuid
 
 class Category(models.Model):
     name = models.CharField(max_length=100)
-    icon = models.CharField(max_length=10, default='📦')
+    icon = models.CharField(max_length=10, default='')
     description = models.TextField(blank=True)
 
     class Meta:

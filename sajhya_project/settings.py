@@ -26,7 +26,12 @@ if os.path.exists(BASE_DIR / '.env'):
 SECRET_KEY = env('SECRET_KEY')
 DEBUG = env.bool('DEBUG', default=False)
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS')
-DATABASES = {'default': env.db()}   # uses DATABASE_URL
+DATABASES = {
+    'default': {
+        **env.db(),
+        'OPTIONS': {'charset': 'utf8mb4'},
+    }
+}
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
