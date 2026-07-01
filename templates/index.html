@@ -116,6 +116,28 @@ h1.hero-h .strk{-webkit-text-stroke:1.5px var(--ink);color:transparent}
 .sec-h{font-family:'Playfair Display',serif;font-size:clamp(34px,4vw,60px);font-weight:900;line-height:1.05;letter-spacing:-.03em;color:var(--ink);margin-bottom:18px}
 .sec-h em{font-style:italic;color:var(--teal)}
 
+/* FIND CARE */
+.fc-sec{padding:72px 64px;background:#fff;border-bottom:1px solid var(--bd)}
+.fc-sec-hdr{text-align:center;margin-bottom:48px}
+.fc-sec-hdr p{font-size:15px;color:var(--tm);margin-top:10px}
+.fc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;max-width:1100px;margin:0 auto}
+.fc-cat{border-radius:20px;overflow:hidden;border:1.5px solid var(--bd);background:var(--snow);text-decoration:none;color:inherit;display:flex;flex-direction:column;transition:all .32s;position:relative;cursor:pointer}
+.fc-cat:hover{transform:translateY(-6px);box-shadow:var(--sh-lg);border-color:transparent}
+.fc-cat-img{height:160px;overflow:hidden;position:relative}
+.fc-cat-img img{width:100%;height:100%;object-fit:cover;transition:transform .6s;display:block}
+.fc-cat:hover .fc-cat-img img{transform:scale(1.07)}
+.fc-cat-ov{position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(8,18,28,.38))}
+.fc-cat-badge{position:absolute;top:11px;right:11px;font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.09em;text-transform:uppercase;padding:3px 9px;border-radius:20px;font-weight:700;backdrop-filter:blur(6px)}
+.fc-cat-body{padding:18px 20px 20px;flex:1;display:flex;flex-direction:column}
+.fc-cat-ico{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:11px;flex-shrink:0}
+.fc-cat-title{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:var(--ink);margin-bottom:6px}
+.fc-cat-desc{font-size:12.5px;color:var(--tm);line-height:1.65;flex:1}
+.fc-cat-cta{margin-top:14px;display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--teal);font-family:'Space Mono',monospace}
+.fc-cat-cta span{transition:transform .2s}
+.fc-cat:hover .fc-cat-cta span{transform:translate(3px,-2px)}
+@media(max-width:1060px){.fc-sec{padding:60px 32px}.fc-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:768px){.fc-sec{padding:48px 20px}.fc-grid{grid-template-columns:1fr 1fr;gap:12px}.fc-cat-img{height:130px}.fc-cat-body{padding:14px 16px 16px}}
+
 /* SERVICES */
 .svc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:60px}
 .svc-link {display: block;text-decoration: none;color: inherit;}
@@ -375,9 +397,9 @@ footer{padding:60px 64px 40px;background:var(--ink)}
     Sa:<em>jhya</em>
   </a>
   <div class="nav-links">
-    <a href="#">Services</a>
-    <a href="#">Doctors</a>
-    <a href="#">Pharmacy</a>
+    <a href="#find-care">Services</a>
+    <a href="{% url 'find-physio' %}">Doctors</a>
+    <a href="#find-care">Pharmacy</a>
     <a href="{% url 'app-download-page'%}">Tools</a>
     <a href="#">About</a>
     <a href="{% url 'login'%}" class="nbtn nbtn-o">Sign in</a>
@@ -387,7 +409,7 @@ footer{padding:60px 64px 40px;background:var(--ink)}
 </nav>
 
 <div class="mmenu" id="mm">
-  <a href="#">Services</a><a href="#">Doctors</a><a href="#">Pharmacy</a><a href="{% url 'app-download-page'%}">Tools</a><a href="#">About</a>
+  <a href="#find-care">Services</a><a href="{% url 'find-physio' %}">Find Physio</a><a href="#find-care">Pharmacy</a><a href="{% url 'app-download-page'%}">Tools</a><a href="#">About</a>
   <div class="mmenu-ctas">
     <a href="{% url 'login'%}" class="mc-o">Sign in</a>
     <a href="{% url 'package_page'%}" class="mc-f">Get Started</a>
@@ -439,6 +461,69 @@ footer{padding:60px 64px 40px;background:var(--ink)}
     <span class="mq-i">Verified Doctors</span><span class="mq-i">Physiotherapy Tools</span><span class="mq-i">Online Pharmacy</span><span class="mq-i">Speech Therapy</span><span class="mq-i">OT Assessment</span><span class="mq-i">Nursing Portal</span><span class="mq-i">Secure Records</span><span class="mq-i">Verified Doctors</span><span class="mq-i">Physiotherapy Tools</span><span class="mq-i">Online Pharmacy</span><span class="mq-i">Speech Therapy</span><span class="mq-i">OT Assessment</span><span class="mq-i">Nursing Portal</span><span class="mq-i">Secure Records</span>
   </div></div>
 </div>
+
+<!-- FIND CARE -->
+<section class="fc-sec sr" id="find-care">
+  <div class="fc-sec-hdr">
+    <div class="lbl c">For Patients</div>
+    <h2 class="sec-h">What are you<br><em>looking for?</em></h2>
+    <p>Browse our care categories and connect with the right provider in minutes.</p>
+  </div>
+  <div class="fc-grid">
+    <a href="{% url 'find-physio' %}" class="fc-cat">
+      <div class="fc-cat-img">
+        <img src="{% static 'pics/physio_activity.jpeg' %}" alt="Physiotherapy" loading="lazy">
+        <div class="fc-cat-ov"></div>
+        <span class="fc-cat-badge" style="background:rgba(11,143,132,.88);color:#fff">● Live</span>
+      </div>
+      <div class="fc-cat-body">
+        <div class="fc-cat-ico" style="background:var(--teal-p)">🦴</div>
+        <div class="fc-cat-title">Find a Physio</div>
+        <p class="fc-cat-desc">Search verified physiotherapists near you. Compare fees, specializations, and book instantly.</p>
+        <div class="fc-cat-cta">Browse Physios <span>↗</span></div>
+      </div>
+    </a>
+    <a href="#" class="fc-cat">
+      <div class="fc-cat-img">
+        <img src="{% static 'pics/referrals.jpg' %}" alt="Doctors" loading="lazy">
+        <div class="fc-cat-ov"></div>
+        <span class="fc-cat-badge" style="background:rgba(37,99,235,.85);color:#fff">Soon</span>
+      </div>
+      <div class="fc-cat-body">
+        <div class="fc-cat-ico" style="background:var(--blue-p)">🩺</div>
+        <div class="fc-cat-title">Find a Doctor</div>
+        <p class="fc-cat-desc">Browse GPs and specialists by location and expertise. Read reviews from verified patients.</p>
+        <div class="fc-cat-cta">Find Doctors <span>↗</span></div>
+      </div>
+    </a>
+    <a href="#" class="fc-cat">
+      <div class="fc-cat-img">
+        <img src="{% static 'pics/pharmacy.jpg' %}" alt="Pharmacy" loading="lazy">
+        <div class="fc-cat-ov"></div>
+        <span class="fc-cat-badge" style="background:rgba(4,120,87,.88);color:#fff">● Live</span>
+      </div>
+      <div class="fc-cat-body">
+        <div class="fc-cat-ico" style="background:var(--sage-p)">💊</div>
+        <div class="fc-cat-title">Pharmacy</div>
+        <p class="fc-cat-desc">Order prescribed medicines online. Delivered across Nepal with real-time tracking.</p>
+        <div class="fc-cat-cta">Shop Medicines <span>↗</span></div>
+      </div>
+    </a>
+    <a href="{% url 'app-download-page' %}" class="fc-cat">
+      <div class="fc-cat-img">
+        <img src="{% static 'pics/physio_tool.jpg' %}" alt="Clinical Tools" loading="lazy">
+        <div class="fc-cat-ov"></div>
+        <span class="fc-cat-badge" style="background:rgba(109,40,217,.85);color:#fff">Pro</span>
+      </div>
+      <div class="fc-cat-body">
+        <div class="fc-cat-ico" style="background:var(--violet-p)">🛠️</div>
+        <div class="fc-cat-title">Clinical Tools</div>
+        <p class="fc-cat-desc">SOAP notes, assessment forms, exercise libraries and patient tracking for clinicians.</p>
+        <div class="fc-cat-cta">Explore Tools <span>↗</span></div>
+      </div>
+    </a>
+  </div>
+</section>
 
 <!-- SERVICES -->
 <section class="sec" style="background:var(--snow)">
@@ -624,7 +709,7 @@ footer{padding:60px 64px 40px;background:var(--ink)}
       <p class="ft-tag">Your complete healthcare platform.</p>
     </div>
     <div class="ft-cols">
-      <div class="ft-col"><h5>Services</h5><ul><li><a href="#">Find Doctors</a></li><li><a href="#">Physio Tools</a></li><li><a href="#">OT Tools</a></li><li><a href="#">Speech Tools</a></li><li><a href="#">Nursing Tools</a></li><li><a href="#">Pharmacy Tools</a></li></ul></div>
+      <div class="ft-col"><h5>Services</h5><ul><li><a href="{% url 'find-physio' %}">Find Physio</a></li><li><a href="{% url 'app-download-page' %}">Physio Tools</a></li><li><a href="#">OT Tools</a></li><li><a href="#">Speech Tools</a></li><li><a href="#">Nursing Tools</a></li><li><a href="#">Pharmacy Tools</a></li></ul></div>
       <div class="ft-col"><h5>Company</h5><ul><li><a href="#">About</a></li><li><a href="#">Blog</a></li><li><a href="#">Careers</a></li><li><a href="#">Press</a></li></ul></div>
       <div class="ft-col"><h5>Support</h5><ul><li><a href="#">Help Centre</a></li><li><a href="#">Privacy Policy</a></li><li><a href="#">Terms of Use</a></li><li><a href="#">Contact</a></li></ul></div>
     </div>
