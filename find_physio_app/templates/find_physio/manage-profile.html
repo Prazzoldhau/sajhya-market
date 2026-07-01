@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Public Profile — Sajhya{% endblock %}
+
+{% block extra_css %}
+<style>
+.fp-manage-layout { max-width: 900px; margin: 1.5rem auto; padding: 0 1rem; }
+.fp-card { background: white; border-radius: 14px; padding: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,.07); margin-bottom: 1.2rem; }
+.fp-card h3 { font-size: 1rem; font-weight: 700; color: #374151; margin-bottom: 1.1rem;
+    padding-bottom: 0.5rem; border-bottom: 2px solid #f0f0f0; }
+.fp-form-group { margin-bottom: 1rem; }
+.fp-form-group label { display: block; font-size: 0.83rem; font-weight: 600; color: #374151; margin-bottom: 0.3rem; }
+.fp-form-group .form-control { border: 1.5px solid #e5e7eb; border-radius: 8px; font-size: 0.88rem; }
+.fp-form-group .form-control:focus { border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,.1); }
+.fp-form-row { display: flex; gap: 0.8rem; flex-wrap: wrap; }
+.fp-form-row > * { flex: 1; min-width: 140px; }
+.fp-spec-checks { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.fp-spec-check-item { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; }
+.fp-spec-check-item input { accent-color: #667eea; }
+.fp-url-box { background: #f8f9fa; border: 1.5px solid #e5e7eb; border-radius: 8px;
+    padding: 0.5rem 0.8rem; font-size: 0.82rem; color: #667eea; word-break: break-all; }
+.fp-avail-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.fp-avail-table th { background: linear-gradient(135deg,#667eea,#764ba2); color: white;
+    padding: 0.5rem 0.8rem; text-align: left; }
+.fp-avail-table td { padding: 0.45rem 0.8rem; border-bottom: 1px solid #f0f0f0; }
+.fp-avail-table tr:last-child td { border-bottom: none; }
+.fp-avail-add { display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: flex-end; margin-top: 0.8rem; }
+.fp-avail-add .form-control { flex: 1; min-width: 110px; border: 1.5px solid #e5e7eb;
+    border-radius: 8px; padding: 0.45rem 0.7rem; font-size: 0.84rem; }
+.fp-delete-btn { background: #fee2e2; color: #dc2626; border: none; border-radius: 6px;
+    padding: 0.25rem 0.6rem; font-size: 0.78rem; cursor: pointer; }
+.fp-delete-btn:hover { background: #fca5a5; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="navbar">
+    <div class="logo">Sa:jhya</div>
+    <div style="display:flex;gap:0.7rem;">
+        <a href="{% url 'manage-bookings' %}" class="mkt-back-btn">📅 My Bookings</a>
+        {% if request.user.user_type == 'clinic' %}
+        <a href="{% url 'clinic-dashboard' %}" class="mkt-back-btn">← Dashboard</a>
+        {% else %}
+        <a href="{% url 'personal-dashboard' %}" class="mkt-back-btn">← Dashboard</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="fp-manage-layout">
+    <div class="mkt-header-row" style="margin-bottom:1rem;">
+        <div class="header"><h1>My Public Profile</h1></div>
+        <a href="{% url 'physio-profile' request.user.username %}" class="fp-btn-view" target="_blank"
+            style="border:2px solid #667eea;color:#667eea;background:transparent;border-radius:8px;
+            padding:0.4rem 1rem;font-size:0.84rem;font-weight:600;text-decoration:none;">
+            Preview Listing ↗
+        </a>
+    </div>
+
+    <!-- Public URL -->
+    <div class="fp-card" style="padding:1rem 1.4rem;">
+        <p style="font-size:0.82rem;color:#6b7280;margin-bottom:0.4rem;">Your public listing URL:</p>
+        <div class="fp-url-box">{{ public_url }}</div>
+    </div>
+
+    <!-- Profile Form -->
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="fp-card">
+            <h3>Basic Info</h3>
+            <div class="fp-form-group">
+                <label>Bio / About</label>
+                {{ form.bio }}
+            </div>
+            <div class="fp-form-row">
+                <div class="fp-form-group">
+                    <label>Profile Photo</label>
+                    {{ form.photo }}
+                    {% if profile.photo %}
+                    <div style="margin-top:0.5rem;">
+                        <img src="{{ profile.photo.url }}" alt="Profile" style="width:60px;height:60px;border-radius:50%;object-fit:cover;">
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="fp-form-group">
+                    <label>Years of Experience</label>
+                    {{ form.experience_years }}
+                </div>
+                <div class="fp-form-group" style="flex:2;">
+                    <label>Location</label>
+                    {{ form.location }}
+                    <small style="color:#9ca3af;font-size:0.75rem;">e.g. Lalitpur, Kathmandu</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="fp-card">
+            <h3>Fees</h3>
+            <div class="fp-form-row">
+                <div class="fp-form-group">
+                    <label>Clinic Visit Fee (NPR)</label>
+                    {{ form.consultation_fee }}
+                </div>
+                <div class="fp-form-group">
+                    <label>Home Visit Fee (NPR)</label>
+                    {{ form.home_visit_fee }}
+                </div>
+                <div class="fp-form-group">
+                    <label>Travel Cost (NPR)</label>
+                    {{ form.travel_cost }}
+                </div>
+                <div class="fp-form-group">
+                    <label>Platform Fee (NPR)</label>
+                    {{ form.platform_fee }}
+                    <small style="color:#9ca3af;font-size:0.75rem;">Shown to patients as Sajhya fee</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="fp-card">
+            <h3>Visit Types &amp; Visibility</h3>
+            <div class="fp-form-row">
+                <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.88rem;cursor:pointer;">
+                    {{ form.is_clinic_visit }} Offer Clinic Visits
+                </label>
+                <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.88rem;cursor:pointer;">
+                    {{ form.is_home_visit }} Offer Home Visits
+                </label>
+                <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.88rem;cursor:pointer;">
+                    {{ form.is_public }} Show in Public Listings
+                </label>
+            </div>
+        </div>
+
+        <div class="fp-card">
+            <h3>Specializations</h3>
+            <div class="fp-spec-checks">
+                {% for checkbox in form.specializations %}
+                <label class="fp-spec-check-item">
+                    {{ checkbox.tag }} {{ checkbox.choice_label }}
+                </label>
+                {% endfor %}
+            </div>
+            {% if form.specializations.errors %}
+            <p style="color:#dc2626;font-size:0.78rem;">{{ form.specializations.errors.0 }}</p>
+            {% endif %}
+        </div>
+
+        <button type="submit" class="btn-gradient" style="width:100%;padding:0.8rem;font-size:0.95rem;border:none;border-radius:10px;cursor:pointer;">
+            Save Profile
+        </button>
+    </form>
+
+    <!-- Availability Section -->
+    <div class="fp-card" style="margin-top:1.2rem;">
+        <h3>Availability Schedule</h3>
+        {% if availability %}
+        <table class="fp-avail-table">
+            <thead>
+                <tr><th>Day</th><th>Start</th><th>End</th><th>Type</th><th></th></tr>
+            </thead>
+            <tbody>
+                {% for slot in availability %}
+                <tr>
+                    <td>{{ slot.get_day_of_week_display }}</td>
+                    <td>{{ slot.start_time|time:"g:i A" }}</td>
+                    <td>{{ slot.end_time|time:"g:i A" }}</td>
+                    <td>{% if slot.is_home %}🏠 Home{% else %}🏥 Clinic{% endif %}</td>
+                    <td>
+                        <form method="POST" action="{% url 'delete-availability' slot.pk %}" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="fp-delete-btn" onclick="return confirm('Remove this slot?')">Remove</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p style="color:#9ca3af;font-size:0.85rem;">No availability slots added yet.</p>
+        {% endif %}
+
+        <!-- Add Slot -->
+        <form method="POST" action="{% url 'add-availability' %}" class="fp-avail-add">
+            {% csrf_token %}
+            {{ av_form.day_of_week }}
+            {{ av_form.start_time }}
+            {{ av_form.end_time }}
+            <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.84rem;white-space:nowrap;">
+                {{ av_form.is_home }} Home Visit
+            </label>
+            <button type="submit" class="btn-gradient" style="padding:0.45rem 1rem;font-size:0.84rem;border:none;border-radius:8px;cursor:pointer;white-space:nowrap;">+ Add Slot</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -19,6 +19,7 @@ urlpatterns = [
     path ('upload-app/', include('upload_app.urls')),
     path ('referral/', include('referral_app.urls')),
     path ('marketplace/', include('marketplace_app.urls')),
+    path ('find-physio/', include('find_physio_app.urls')),
 
 ]
 

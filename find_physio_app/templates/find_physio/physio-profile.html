@@ -1,0 +1,245 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ physio.get_full_name|default:physio.username }} — Sajhya{% endblock %}
+
+{% block extra_css %}
+<style>
+.fp-profile-hero {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 2rem 1.5rem 3rem;
+    border-radius: 0 0 24px 24px;
+}
+.fp-profile-inner { max-width: 900px; margin: 0 auto; display: flex; gap: 1.5rem; align-items: center; flex-wrap: wrap; }
+.fp-profile-avatar {
+    width: 100px; height: 100px; border-radius: 50%; border: 3px solid rgba(255,255,255,.5);
+    object-fit: cover; background: rgba(255,255,255,.2);
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 2.5rem; font-weight: 700; flex-shrink: 0;
+}
+.fp-profile-avatar img { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; }
+.fp-profile-info { color: white; }
+.fp-profile-info h1 { font-size: 1.6rem; font-weight: 700; margin-bottom: 0.3rem; }
+.fp-profile-info p  { opacity: 0.85; font-size: 0.88rem; margin-bottom: 0.4rem; }
+.fp-stars-white { color: #fbbf24; font-size: 1rem; }
+
+.fp-content-layout { max-width: 900px; margin: -1.5rem auto 0; padding: 0 1rem 2rem; display: flex; gap: 1.2rem; align-items: flex-start; flex-wrap: wrap; }
+.fp-content-main { flex: 1; min-width: 280px; }
+.fp-content-sidebar { width: 260px; flex-shrink: 0; }
+
+.fp-section {
+    background: white; border-radius: 14px; padding: 1.3rem 1.5rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,.07); margin-bottom: 1rem;
+}
+.fp-section h3 { font-size: 1rem; font-weight: 700; color: #374151; margin-bottom: 0.9rem;
+    padding-bottom: 0.5rem; border-bottom: 2px solid #f0f0f0; }
+
+.fp-fee-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+.fp-fee-table td { padding: 0.45rem 0; }
+.fp-fee-table .label { color: #6b7280; }
+.fp-fee-table .value { text-align: right; font-weight: 600; color: #1f2937; }
+.fp-fee-table .total-row td { border-top: 2px solid #e5e7eb; padding-top: 0.6rem;
+    font-weight: 700; font-size: 0.95rem; }
+
+.fp-avail-grid { display: flex; flex-direction: column; gap: 0.4rem; }
+.fp-avail-row { display: flex; justify-content: space-between; align-items: center;
+    font-size: 0.85rem; padding: 0.35rem 0.6rem; background: #f8f9fa; border-radius: 6px; }
+.fp-avail-day { font-weight: 600; color: #374151; min-width: 90px; }
+.fp-avail-time { color: #6b7280; }
+.fp-avail-type { font-size: 0.75rem; padding: 1px 8px; border-radius: 10px; }
+.fp-avail-home { background: rgba(102,126,234,.1); color: #667eea; }
+.fp-avail-clinic { background: rgba(17,153,142,.12); color: #11998e; }
+
+.fp-spec-pill { display: inline-block; background: rgba(102,126,234,.1); color: #667eea;
+    border-radius: 12px; padding: 4px 12px; font-size: 0.8rem; margin: 3px; }
+
+.fp-clinic-item { display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0;
+    border-bottom: 1px solid #f0f0f0; font-size: 0.88rem; }
+.fp-clinic-item:last-child { border-bottom: none; }
+
+.fp-review-item { padding: 0.8rem 0; border-bottom: 1px solid #f0f0f0; }
+.fp-review-item:last-child { border-bottom: none; }
+.fp-review-stars { color: #f59e0b; font-size: 0.9rem; }
+.fp-review-name { font-weight: 600; font-size: 0.88rem; color: #374151; }
+.fp-review-date { font-size: 0.75rem; color: #9ca3af; margin-left: 8px; }
+.fp-review-comment { font-size: 0.85rem; color: #6b7280; margin-top: 4px; }
+
+/* Sticky booking card */
+.fp-book-card {
+    background: white; border-radius: 14px; padding: 1.4rem;
+    box-shadow: 0 8px 25px rgba(0,0,0,.1); position: sticky; top: 80px;
+}
+.fp-book-card h4 { font-size: 1rem; font-weight: 700; color: #374151; margin-bottom: 1rem; }
+.fp-price-line { display: flex; justify-content: space-between; font-size: 0.88rem;
+    padding: 0.35rem 0; color: #6b7280; }
+.fp-price-line.total { border-top: 2px solid #e5e7eb; padding-top: 0.5rem; margin-top: 0.3rem;
+    font-weight: 700; font-size: 1rem; color: #1f2937; }
+.fp-book-btn {
+    display: block; width: 100%; text-align: center;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white; border-radius: 10px; padding: 0.75rem;
+    font-weight: 700; font-size: 0.95rem; text-decoration: none; margin-top: 1rem;
+}
+.fp-book-btn:hover { opacity: 0.9; color: white; }
+
+@media (max-width: 700px) {
+    .fp-content-layout { flex-direction: column; }
+    .fp-content-sidebar { width: 100%; position: static; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="navbar">
+    <div class="logo">Sa:jhya</div>
+    <a href="{% url 'find-physio' %}" class="mkt-back-btn">← Find Physio</a>
+</div>
+
+<!-- Hero -->
+<div class="fp-profile-hero">
+    <div class="fp-profile-inner">
+        <div class="fp-profile-avatar">
+            {% if profile.photo %}
+            <img src="{{ profile.photo.url }}" alt="{{ physio.get_full_name }}">
+            {% else %}
+            {{ physio.first_name|slice:":1"|upper }}{{ physio.last_name|slice:":1"|upper }}
+            {% endif %}
+        </div>
+        <div class="fp-profile-info">
+            <h1>{{ physio.get_full_name|default:physio.username }}</h1>
+            <p>📍 {{ profile.location|default:"Nepal" }}
+               {% if profile.experience_years > 0 %} &nbsp;·&nbsp; {{ profile.experience_years }} year{% if profile.experience_years != 1 %}s{% endif %} experience{% endif %}
+            </p>
+            <div class="fp-stars-white">
+                {% for i in star_range %}{% if i <= profile.avg_rating %}★{% else %}☆{% endif %}{% endfor %}
+                <span style="font-size:0.9rem;"> {{ profile.avg_rating }} ({{ profile.total_reviews }} review{% if profile.total_reviews != 1 %}s{% endif %})</span>
+            </div>
+            <div style="margin-top:0.6rem;">
+                {% for spec in profile.specializations.all %}
+                <span class="fp-spec-pill" style="background:rgba(255,255,255,.2);color:white;">{{ spec.name }}</span>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="fp-content-layout">
+    <!-- Main Content -->
+    <div class="fp-content-main">
+
+        {% if profile.bio %}
+        <div class="fp-section">
+            <h3>About</h3>
+            <p style="font-size:0.88rem; color:#374151; line-height:1.6;">{{ profile.bio }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Fee Table -->
+        <div class="fp-section">
+            <h3>Consultation Fees</h3>
+            <table class="fp-fee-table">
+                {% if profile.is_clinic_visit %}
+                <tr><td class="label">Therapist Fee (Clinic Visit)</td><td class="value">NPR {{ profile.consultation_fee }}</td></tr>
+                {% endif %}
+                {% if profile.is_home_visit %}
+                <tr><td class="label">Therapist Fee (Home Visit)</td><td class="value">NPR {{ profile.home_visit_fee }}</td></tr>
+                <tr><td class="label">Travel Cost</td><td class="value">NPR {{ profile.travel_cost }}</td></tr>
+                {% endif %}
+                <tr><td class="label">Platform Fee (Sajhya)</td><td class="value">NPR {{ profile.platform_fee }}</td></tr>
+                {% if profile.is_clinic_visit %}
+                <tr class="total-row">
+                    <td>Total (Clinic Visit)</td>
+                    <td class="value">NPR {{ profile.clinic_total }}</td>
+                </tr>
+                {% endif %}
+                {% if profile.is_home_visit %}
+                <tr class="total-row">
+                    <td>Total (Home Visit)</td>
+                    <td class="value">NPR {{ profile.home_total }}</td>
+                </tr>
+                {% endif %}
+            </table>
+        </div>
+
+        <!-- Availability -->
+        {% if availability %}
+        <div class="fp-section">
+            <h3>Availability</h3>
+            <div class="fp-avail-grid">
+                {% for slot in availability %}
+                <div class="fp-avail-row">
+                    <span class="fp-avail-day">{{ slot.get_day_of_week_display }}</span>
+                    <span class="fp-avail-time">{{ slot.start_time|time:"g:i A" }} – {{ slot.end_time|time:"g:i A" }}</span>
+                    <span class="fp-avail-type {% if slot.is_home %}fp-avail-home{% else %}fp-avail-clinic{% endif %}">
+                        {% if slot.is_home %}Home{% else %}Clinic{% endif %}
+                    </span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Clinics -->
+        {% if clinics %}
+        <div class="fp-section">
+            <h3>Associated Clinics</h3>
+            {% for clinic in clinics %}
+            <div class="fp-clinic-item">
+                <span>🏥</span>
+                <div>
+                    <div style="font-weight:600; font-size:0.88rem;">{{ clinic.clinic_name }}</div>
+                    <div style="font-size:0.78rem; color:#9ca3af;">{{ clinic.address|default:"" }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Reviews -->
+        <div class="fp-section">
+            <h3>Patient Reviews</h3>
+            {% if reviews %}
+            {% for review in reviews %}
+            <div class="fp-review-item">
+                <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+                    <span class="fp-review-stars">{% for i in star_range %}{% if i <= review.rating %}★{% else %}☆{% endif %}{% endfor %}</span>
+                    <span class="fp-review-name">{{ review.reviewer_name }}</span>
+                    <span class="fp-review-date">{{ review.created_at|date:"d M Y" }}</span>
+                </div>
+                {% if review.comment %}
+                <p class="fp-review-comment">{{ review.comment }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+            {% else %}
+            <p style="color:#9ca3af; font-size:0.88rem;">No reviews yet.</p>
+            {% endif %}
+        </div>
+
+    </div>
+
+    <!-- Booking Sidebar -->
+    <div class="fp-content-sidebar">
+        <div class="fp-book-card">
+            <h4>Book Appointment</h4>
+
+            {% if profile.is_clinic_visit %}
+            <div class="fp-price-line"><span>Clinic Visit</span><span>NPR {{ profile.consultation_fee }}</span></div>
+            {% endif %}
+            {% if profile.is_home_visit %}
+            <div class="fp-price-line"><span>Home Visit</span><span>NPR {{ profile.home_visit_fee }}</span></div>
+            {% endif %}
+            <div class="fp-price-line"><span>Platform Fee</span><span>NPR {{ profile.platform_fee }}</span></div>
+            {% if profile.is_clinic_visit %}
+            <div class="fp-price-line total"><span>Total (Clinic)</span><span>NPR {{ profile.clinic_total }}</span></div>
+            {% endif %}
+
+            <a href="{% url 'book-physio' physio.username %}" class="fp-book-btn">📅 Book Now</a>
+
+            <p style="font-size:0.76rem; color:#9ca3af; text-align:center; margin-top:0.7rem;">
+                We'll confirm your appointment within 24 hours
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

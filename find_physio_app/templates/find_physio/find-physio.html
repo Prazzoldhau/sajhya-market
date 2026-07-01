@@ -1,0 +1,247 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Find a Physiotherapist — Sajhya{% endblock %}
+
+{% block extra_css %}
+<style>
+.fp-hero {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 2.5rem 1.5rem 1.5rem;
+    border-radius: 0 0 24px 24px;
+    margin-bottom: 1.5rem;
+}
+.fp-hero h1 { color: white; font-size: 1.8rem; font-weight: 700; margin-bottom: 0.3rem; }
+.fp-hero p  { color: rgba(255,255,255,.8); margin-bottom: 1.2rem; font-size: 0.9rem; }
+.fp-search-bar {
+    display: flex; flex-wrap: wrap; gap: 0.6rem;
+    background: white; border-radius: 14px; padding: 0.8rem 1rem;
+    box-shadow: 0 8px 30px rgba(0,0,0,.15);
+}
+.fp-search-bar input, .fp-search-bar select {
+    flex: 1; min-width: 140px; border: 1px solid #e2e8f0;
+    border-radius: 8px; padding: 0.5rem 0.8rem; font-size: 0.88rem; outline: none;
+}
+.fp-search-bar button {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white; border: none; border-radius: 8px;
+    padding: 0.55rem 1.4rem; font-weight: 600; cursor: pointer; font-size: 0.88rem;
+}
+.fp-layout { display: flex; gap: 1.2rem; align-items: flex-start; padding: 0 1rem; }
+.fp-sidebar {
+    width: 220px; flex-shrink: 0; background: white;
+    border-radius: 14px; padding: 1.2rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,.07);
+}
+.fp-sidebar h4 { font-size: 0.8rem; font-weight: 700; color: #6b7280;
+    text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.8rem; }
+.fp-sidebar-section { margin-bottom: 1.2rem; }
+.fp-check-label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.87rem;
+    cursor: pointer; padding: 3px 0; color: #374151; }
+.fp-check-label input { accent-color: #667eea; }
+.fp-main { flex: 1; min-width: 0; }
+.fp-results-header { display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 1rem; }
+.fp-results-header span { font-size: 0.85rem; color: #6b7280; }
+.fp-card {
+    background: white; border-radius: 14px; padding: 1.2rem 1.4rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,.07); display: flex; gap: 1rem;
+    margin-bottom: 1rem; transition: box-shadow 0.2s;
+}
+.fp-card:hover { box-shadow: 0 8px 25px rgba(0,0,0,.12); }
+.fp-card-photo {
+    width: 80px; height: 80px; border-radius: 50%; object-fit: cover;
+    flex-shrink: 0; background: linear-gradient(135deg,#667eea,#764ba2);
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 1.8rem; font-weight: 700;
+}
+.fp-card-photo img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; }
+.fp-card-body { flex: 1; min-width: 0; }
+.fp-card-name { font-size: 1.05rem; font-weight: 700; color: #1f2937; margin-bottom: 2px; }
+.fp-card-loc  { font-size: 0.82rem; color: #6b7280; margin-bottom: 0.5rem; }
+.fp-spec-pill {
+    display: inline-block; background: rgba(102,126,234,.1); color: #667eea;
+    border-radius: 12px; padding: 2px 10px; font-size: 0.75rem; margin: 2px 2px 4px 0;
+}
+.fp-stars { color: #f59e0b; font-size: 0.85rem; }
+.fp-review-count { color: #9ca3af; font-size: 0.78rem; margin-left: 4px; }
+.fp-fee-box {
+    background: #f8f9fa; border-radius: 8px; padding: 0.6rem 0.9rem;
+    margin: 0.6rem 0; font-size: 0.82rem;
+}
+.fp-fee-row { display: flex; justify-content: space-between; padding: 2px 0; color: #374151; }
+.fp-fee-total { font-weight: 700; border-top: 1px solid #dee2e6;
+    margin-top: 4px; padding-top: 4px; color: #1f2937; }
+.fp-avail-badge {
+    background: rgba(17,153,142,.12); color: #11998e;
+    padding: 2px 10px; border-radius: 12px; font-size: 0.75rem; display: inline-block;
+}
+.fp-home-badge {
+    background: rgba(102,126,234,.1); color: #667eea;
+    padding: 2px 10px; border-radius: 12px; font-size: 0.75rem; display: inline-block; margin-left: 4px;
+}
+.fp-card-actions { display: flex; gap: 0.5rem; margin-top: 0.7rem; flex-wrap: wrap; }
+.fp-btn-view {
+    border: 2px solid #667eea; color: #667eea; background: transparent;
+    border-radius: 8px; padding: 0.4rem 1rem; font-size: 0.84rem; font-weight: 600;
+    text-decoration: none; cursor: pointer;
+}
+.fp-btn-view:hover { background: #667eea; color: white; }
+.fp-btn-book {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white; border: none; border-radius: 8px;
+    padding: 0.4rem 1.1rem; font-size: 0.84rem; font-weight: 600;
+    text-decoration: none; cursor: pointer;
+}
+.fp-btn-book:hover { opacity: 0.9; color: white; }
+@media (max-width: 700px) {
+    .fp-layout { flex-direction: column; }
+    .fp-sidebar { width: 100%; }
+    .fp-card { flex-direction: column; }
+    .fp-card-photo { margin: 0 auto; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Navbar -->
+<div class="navbar">
+    <div class="logo">Sa:jhya</div>
+    <div style="display:flex; gap:0.7rem; align-items:center;">
+        <a href="{% url 'marketplace' %}" class="mkt-back-btn">🛒 Shop</a>
+        {% if request.user.is_authenticated %}
+        <a href="{% url 'manage-physio-profile' %}" class="btn-gradient" style="padding:0.4rem 1rem; font-size:0.85rem;">My Profile</a>
+        {% else %}
+        <a href="/acc/login/" class="btn-gradient" style="padding:0.4rem 1rem; font-size:0.85rem;">Physio Login</a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Hero + Search -->
+<div class="fp-hero">
+    <h1>Find Your Physiotherapist</h1>
+    <p>Search from verified physiotherapists across Nepal</p>
+    <form class="fp-search-bar" method="GET" action="">
+        <input type="text" name="location" value="{{ q_location }}" placeholder="📍 Location (e.g. Lalitpur)">
+        <input type="text" name="condition" value="{{ q_condition }}" placeholder="🩺 Condition (e.g. Back Pain)">
+        <input type="number" name="budget" value="{{ q_budget }}" placeholder="💰 Max Budget (NPR)" min="0">
+        <button type="submit">Search</button>
+        {% if q_location or q_condition or q_budget or q_spec or q_visit %}
+        <a href="{% url 'find-physio' %}" style="padding:0.5rem 0.8rem; color:#667eea; text-decoration:none; font-size:0.85rem; align-self:center;">✕ Clear</a>
+        {% endif %}
+    </form>
+</div>
+
+<div class="fp-layout container" style="max-width:1100px; margin:0 auto;">
+    <!-- Sidebar Filters -->
+    <form method="GET" action="" class="fp-sidebar">
+        {% if q_location %}<input type="hidden" name="location" value="{{ q_location }}">{% endif %}
+        {% if q_condition %}<input type="hidden" name="condition" value="{{ q_condition }}">{% endif %}
+        {% if q_budget %}<input type="hidden" name="budget" value="{{ q_budget }}">{% endif %}
+
+        <div class="fp-sidebar-section">
+            <h4>Specializations</h4>
+            {% for spec in specializations %}
+            <label class="fp-check-label">
+                <input type="checkbox" name="spec" value="{{ spec.slug }}"
+                    {% if spec.slug in q_spec %}checked{% endif %}>
+                {{ spec.name }}
+            </label>
+            {% endfor %}
+        </div>
+
+        <div class="fp-sidebar-section">
+            <h4>Visit Type</h4>
+            <label class="fp-check-label">
+                <input type="radio" name="visit" value="" {% if not q_visit %}checked{% endif %}> Any
+            </label>
+            <label class="fp-check-label">
+                <input type="radio" name="visit" value="clinic" {% if q_visit == 'clinic' %}checked{% endif %}> Clinic Visit
+            </label>
+            <label class="fp-check-label">
+                <input type="radio" name="visit" value="home" {% if q_visit == 'home' %}checked{% endif %}> Home Visit
+            </label>
+        </div>
+
+        <button type="submit" class="btn-gradient" style="width:100%; padding:0.5rem; font-size:0.85rem;">Apply Filters</button>
+    </form>
+
+    <!-- Listings -->
+    <div class="fp-main">
+        <div class="fp-results-header">
+            <span>{{ profiles|length }} physiotherapist{% if profiles|length != 1 %}s{% endif %} found</span>
+        </div>
+
+        {% if profiles %}
+        {% for profile in profiles %}
+        <div class="fp-card">
+            <div class="fp-card-photo">
+                {% if profile.photo %}
+                <img src="{{ profile.photo.url }}" alt="{{ profile.physio.get_full_name }}">
+                {% else %}
+                {{ profile.physio.first_name|slice:":1"|upper }}{{ profile.physio.last_name|slice:":1"|upper }}
+                {% endif %}
+            </div>
+            <div class="fp-card-body">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:0.3rem;">
+                    <div>
+                        <div class="fp-card-name">
+                            {{ profile.physio.get_full_name|default:profile.physio.username }}
+                        </div>
+                        <div class="fp-card-loc">📍 {{ profile.location|default:"Location not set" }}</div>
+                    </div>
+                    <div>
+                        {% if profile.is_clinic_visit %}<span class="fp-avail-badge">🏥 Clinic</span>{% endif %}
+                        {% if profile.is_home_visit %}<span class="fp-home-badge">🏠 Home Visit</span>{% endif %}
+                    </div>
+                </div>
+
+                <div style="margin:0.3rem 0;">
+                    {% for spec in profile.specializations.all %}
+                    <span class="fp-spec-pill">{{ spec.name }}</span>
+                    {% empty %}
+                    <span class="fp-spec-pill" style="background:rgba(156,163,175,.1);color:#9ca3af;">General Physiotherapy</span>
+                    {% endfor %}
+                </div>
+
+                <div class="fp-stars">
+                    {% for i in "12345" %}{% if forloop.counter <= profile.avg_rating|floatformat:"0"|add:"0" %}★{% else %}☆{% endif %}{% endfor %}
+                    <span style="color:#374151; font-weight:600;">{{ profile.avg_rating }}</span>
+                    <span class="fp-review-count">({{ profile.total_reviews }} review{% if profile.total_reviews != 1 %}s{% endif %})</span>
+                    {% if profile.experience_years > 0 %}
+                    <span style="color:#9ca3af; margin-left:8px; font-size:0.78rem;">{{ profile.experience_years }} yr{% if profile.experience_years != 1 %}s{% endif %} exp</span>
+                    {% endif %}
+                </div>
+
+                <div class="fp-fee-box">
+                    {% if profile.is_clinic_visit %}
+                    <div class="fp-fee-row"><span>Therapist Fee (Clinic)</span><span>NPR {{ profile.consultation_fee }}</span></div>
+                    {% endif %}
+                    {% if profile.is_home_visit %}
+                    <div class="fp-fee-row"><span>Therapist Fee (Home)</span><span>NPR {{ profile.home_visit_fee }}</span></div>
+                    <div class="fp-fee-row"><span>Travel Cost</span><span>NPR {{ profile.travel_cost }}</span></div>
+                    {% endif %}
+                    <div class="fp-fee-row"><span>Platform Fee</span><span>NPR {{ profile.platform_fee }}</span></div>
+                    <div class="fp-fee-row fp-fee-total">
+                        <span>Total (Clinic)</span>
+                        <span>NPR {{ profile.clinic_total }}</span>
+                    </div>
+                </div>
+
+                <div class="fp-card-actions">
+                    <a href="{% url 'physio-profile' profile.physio.username %}" class="fp-btn-view">View Profile</a>
+                    <a href="{% url 'book-physio' profile.physio.username %}" class="fp-btn-book">Book Now</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+        {% else %}
+        <div class="empty-state">
+            <h3>No Physiotherapists Found</h3>
+            <p>Try adjusting your search filters or <a href="{% url 'find-physio' %}">clear all filters</a>.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1942,3 +1942,56 @@ body {
         min-width: auto;
     }
 }
+
+/* =====================================================
+   Find Physio App Styles
+   ===================================================== */
+
+.fp-btn-view {
+    border: 2px solid #667eea;
+    color: #667eea;
+    background: transparent;
+    border-radius: 8px;
+    padding: 0.4rem 1rem;
+    font-size: 0.84rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.fp-btn-view:hover { background: #667eea; color: white; }
+
+.fp-btn-book {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 0.4rem 1.1rem;
+    font-size: 0.84rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+.fp-btn-book:hover { opacity: 0.9; color: white; }
+
+.fp-spec-pill-green {
+    display: inline-block;
+    background: rgba(17, 153, 142, 0.1);
+    color: #11998e;
+    border-radius: 12px;
+    padding: 2px 10px;
+    font-size: 0.75rem;
+    margin: 2px;
+}
+
+.fp-avail-badge {
+    background: rgba(17, 153, 142, 0.12);
+    color: #11998e;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    display: inline-block;
+}
+
+.mkt-status-completed { background: rgba(102, 126, 234, 0.12); color: #667eea; }

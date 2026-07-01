@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'upload_app',
     'referral_app',
     'marketplace_app',
+    'find_physio_app',
 
 ]
 

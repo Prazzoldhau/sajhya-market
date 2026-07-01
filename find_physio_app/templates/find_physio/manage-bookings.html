@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Bookings — Sajhya{% endblock %}
+
+{% block extra_css %}
+<style>
+.fp-manage-layout { max-width: 1000px; margin: 1.5rem auto; padding: 0 1rem; }
+.fp-pill-strip { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.2rem; }
+.fp-pill {
+    padding: 0.35rem 1rem; border-radius: 20px; font-size: 0.84rem; font-weight: 500;
+    text-decoration: none; color: #6b7280; background: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,.07); border: 2px solid transparent;
+}
+.fp-pill.active { background: linear-gradient(135deg,#667eea,#764ba2); color: white; }
+.fp-pill:hover:not(.active) { border-color: #667eea; color: #667eea; }
+.fp-inline-form { display: flex; gap: 0.5rem; align-items: center; }
+.fp-status-select { border: 1.5px solid #e5e7eb; border-radius: 6px; padding: 0.3rem 0.5rem;
+    font-size: 0.8rem; outline: none; }
+.fp-save-btn { background: linear-gradient(135deg,#667eea,#764ba2); color: white;
+    border: none; border-radius: 6px; padding: 0.3rem 0.8rem; font-size: 0.8rem;
+    cursor: pointer; white-space: nowrap; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="navbar">
+    <div class="logo">Sa:jhya</div>
+    <div style="display:flex;gap:0.7rem;">
+        <a href="{% url 'manage-physio-profile' %}" class="mkt-back-btn">⚙️ My Profile</a>
+        {% if request.user.user_type == 'clinic' %}
+        <a href="{% url 'clinic-dashboard' %}" class="mkt-back-btn">← Dashboard</a>
+        {% else %}
+        <a href="{% url 'personal-dashboard' %}" class="mkt-back-btn">← Dashboard</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="fp-manage-layout">
+    <div class="mkt-header-row" style="margin-bottom:1rem;">
+        <div class="header"><h1>My Bookings</h1></div>
+    </div>
+
+    <!-- Status Filter -->
+    <div class="fp-pill-strip">
+        <a href="{% url 'manage-bookings' %}" class="fp-pill {% if not status_filter %}active{% endif %}">All</a>
+        {% for code, label in status_choices %}
+        <a href="?status={{ code }}" class="fp-pill {% if status_filter == code %}active{% endif %}">{{ label }}</a>
+        {% endfor %}
+    </div>
+
+    {% if bookings %}
+    <div class="table-responsive">
+        <table class="patient-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Patient</th>
+                    <th>Contact</th>
+                    <th>Condition</th>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Fee</th>
+                    <th>Status</th>
+                    <th>Update</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in bookings %}
+                <tr>
+                    <td><strong>{{ b.pk }}</strong></td>
+                    <td>{{ b.patient_name }}</td>
+                    <td>{{ b.patient_contact }}</td>
+                    <td style="max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="{{ b.condition }}">{{ b.condition }}</td>
+                    <td>{{ b.preferred_date|date:"d M Y" }}{% if b.preferred_time %}<br><small style="color:#9ca3af;">{{ b.preferred_time|time:"g:i A" }}</small>{% endif %}</td>
+                    <td>{{ b.get_booking_type_display }}</td>
+                    <td><strong>NPR {{ b.total_fee }}</strong></td>
+                    <td>
+                        <span class="mkt-status-badge mkt-status-{% if b.status == 'completed' %}delivered{% elif b.status == 'confirmed' %}confirmed{% elif b.status == 'cancelled' %}cancelled{% else %}pending{% endif %}">
+                            {{ b.get_status_display }}
+                        </span>
+                    </td>
+                    <td>
+                        <form method="POST" action="{% url 'update-booking' b.pk %}" class="fp-inline-form">
+                            {% csrf_token %}
+                            <select name="status" class="fp-status-select">
+                                {% for code, label in status_choices %}
+                                <option value="{{ code }}" {% if b.status == code %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="fp-save-btn">Save</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <h3>No Bookings Yet</h3>
+        <p>When patients book appointments with you, they'll appear here.</p>
+        <a href="{% url 'manage-physio-profile' %}" class="btn-gradient" style="margin-top:1rem;display:inline-block;padding:0.6rem 1.5rem;text-decoration:none;">Complete Your Profile</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

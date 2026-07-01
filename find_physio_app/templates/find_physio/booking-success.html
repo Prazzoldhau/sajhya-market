@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Booking Confirmed — Sajhya{% endblock %}
+
+{% block content %}
+<div class="navbar">
+    <div class="logo">Sa:jhya</div>
+    <a href="{% url 'find-physio' %}" class="mkt-back-btn">← Find Physio</a>
+</div>
+
+<div style="max-width:520px; margin:3rem auto; padding:0 1rem; text-align:center;">
+    <div style="background:white; border-radius:20px; padding:2.5rem 2rem; box-shadow:0 8px 30px rgba(0,0,0,.1);">
+        <div style="font-size:3.5rem; margin-bottom:1rem;">✅</div>
+        <h2 style="font-size:1.4rem; font-weight:700; color:#1f2937; margin-bottom:0.5rem;">Booking Request Sent!</h2>
+        <p style="color:#6b7280; font-size:0.9rem; margin-bottom:1.5rem;">
+            The physiotherapist will confirm your appointment within 24 hours.
+        </p>
+
+        <div style="background:#f8f9fa; border-radius:12px; padding:1.2rem 1.4rem; text-align:left; margin-bottom:1.5rem;">
+            <div style="display:flex; justify-content:space-between; padding:0.35rem 0; font-size:0.88rem; border-bottom:1px solid #e5e7eb;">
+                <span style="color:#6b7280;">Booking #</span>
+                <strong>{{ booking.pk }}</strong>
+            </div>
+            <div style="display:flex; justify-content:space-between; padding:0.35rem 0; font-size:0.88rem; border-bottom:1px solid #e5e7eb;">
+                <span style="color:#6b7280;">Physiotherapist</span>
+                <strong>{{ booking.physio.get_full_name|default:booking.physio.username }}</strong>
+            </div>
+            <div style="display:flex; justify-content:space-between; padding:0.35rem 0; font-size:0.88rem; border-bottom:1px solid #e5e7eb;">
+                <span style="color:#6b7280;">Preferred Date</span>
+                <strong>{{ booking.preferred_date|date:"d M Y" }}</strong>
+            </div>
+            {% if booking.preferred_time %}
+            <div style="display:flex; justify-content:space-between; padding:0.35rem 0; font-size:0.88rem; border-bottom:1px solid #e5e7eb;">
+                <span style="color:#6b7280;">Preferred Time</span>
+                <strong>{{ booking.preferred_time|time:"g:i A" }}</strong>
+            </div>
+            {% endif %}
+            <div style="display:flex; justify-content:space-between; padding:0.35rem 0; font-size:0.88rem; border-bottom:1px solid #e5e7eb;">
+                <span style="color:#6b7280;">Visit Type</span>
+                <strong>{{ booking.get_booking_type_display }}</strong>
+            </div>
+            <div style="display:flex; justify-content:space-between; padding:0.45rem 0; font-size:0.9rem;">
+                <span style="font-weight:600;">Total Fee</span>
+                <strong style="color:#667eea;">NPR {{ booking.total_fee }}</strong>
+            </div>
+        </div>
+
+        <p style="font-size:0.82rem; color:#9ca3af; margin-bottom:1.5rem;">
+            We've noted your contact: <strong>{{ booking.patient_contact }}</strong>
+        </p>
+
+        <a href="{% url 'find-physio' %}" class="btn-gradient" style="text-decoration:none; padding:0.7rem 2rem; border-radius:10px; font-size:0.9rem;">
+            Find Another Physio
+        </a>
+    </div>
+</div>
+{% endblock %}

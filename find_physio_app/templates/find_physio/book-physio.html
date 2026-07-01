@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Book — {{ physio.get_full_name|default:physio.username }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.fp-book-layout { max-width: 820px; margin: 1.5rem auto; padding: 0 1rem; display: flex; gap: 1.2rem; align-items: flex-start; flex-wrap: wrap; }
+.fp-book-form-card { flex: 1; min-width: 280px; background: white; border-radius: 14px; padding: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,.07); }
+.fp-book-form-card h2 { font-size: 1.15rem; font-weight: 700; color: #374151; margin-bottom: 1.2rem; }
+.fp-form-group { margin-bottom: 1rem; }
+.fp-form-group label { display: block; font-size: 0.84rem; font-weight: 600; color: #374151; margin-bottom: 0.35rem; }
+.fp-form-group .form-control { width: 100%; border: 1.5px solid #e5e7eb; border-radius: 8px;
+    padding: 0.55rem 0.8rem; font-size: 0.88rem; outline: none; transition: border-color 0.2s; }
+.fp-form-group .form-control:focus { border-color: #667eea; }
+.fp-radio-group { display: flex; gap: 0.7rem; flex-wrap: wrap; }
+.fp-radio-btn {
+    flex: 1; border: 2px solid #e5e7eb; border-radius: 10px;
+    padding: 0.65rem 0.8rem; cursor: pointer; transition: all 0.2s;
+    text-align: center; font-size: 0.85rem; color: #374151;
+}
+.fp-radio-btn input { display: none; }
+.fp-radio-btn.selected { border-color: #667eea; background: rgba(102,126,234,.08); color: #667eea; font-weight: 600; }
+.fp-address-wrap { display: none; }
+.fp-address-wrap.show { display: block; }
+.fp-submit-btn {
+    width: 100%; background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white; border: none; border-radius: 10px;
+    padding: 0.8rem; font-size: 0.95rem; font-weight: 700; cursor: pointer; margin-top: 0.5rem;
+}
+.fp-submit-btn:hover { opacity: 0.9; }
+
+.fp-physio-mini { background: white; border-radius: 14px; padding: 1.2rem; box-shadow: 0 4px 15px rgba(0,0,0,.07); width: 220px; flex-shrink: 0; }
+.fp-physio-mini-avatar {
+    width: 64px; height: 64px; border-radius: 50%; object-fit: cover;
+    background: linear-gradient(135deg,#667eea,#764ba2);
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 1.4rem; font-weight: 700; margin: 0 auto 0.7rem;
+}
+.fp-physio-mini-avatar img { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; }
+.fp-physio-mini-name { font-weight: 700; font-size: 0.9rem; text-align: center; color: #1f2937; }
+.fp-physio-mini-loc { font-size: 0.78rem; color: #9ca3af; text-align: center; margin-bottom: 0.8rem; }
+.fp-fee-summary { background: #f8f9fa; border-radius: 8px; padding: 0.7rem 0.9rem; font-size: 0.82rem; }
+.fp-fee-summary-row { display: flex; justify-content: space-between; padding: 2px 0; color: #374151; }
+.fp-fee-summary-total { border-top: 1px solid #dee2e6; margin-top: 4px; padding-top: 4px; font-weight: 700; }
+@media (max-width: 600px) {
+    .fp-physio-mini { width: 100%; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="navbar">
+    <div class="logo">Sa:jhya</div>
+    <a href="{% url 'physio-profile' physio.username %}" class="mkt-back-btn">← Back to Profile</a>
+</div>
+
+<div class="fp-book-layout">
+    <!-- Physio Mini Card -->
+    <div class="fp-physio-mini">
+        <div class="fp-physio-mini-avatar">
+            {% if profile.photo %}
+            <img src="{{ profile.photo.url }}" alt="{{ physio.get_full_name }}">
+            {% else %}
+            {{ physio.first_name|slice:":1"|upper }}{{ physio.last_name|slice:":1"|upper }}
+            {% endif %}
+        </div>
+        <div class="fp-physio-mini-name">{{ physio.get_full_name|default:physio.username }}</div>
+        <div class="fp-physio-mini-loc">📍 {{ profile.location|default:"Nepal" }}</div>
+
+        <div class="fp-fee-summary" id="feeSummary">
+            <div class="fp-fee-summary-row">
+                <span>Therapist Fee</span>
+                <span id="therapistFee">NPR {{ profile.consultation_fee }}</span>
+            </div>
+            <div class="fp-fee-summary-row">
+                <span>Platform Fee</span>
+                <span>NPR {{ profile.platform_fee }}</span>
+            </div>
+            {% if profile.is_home_visit %}
+            <div class="fp-fee-summary-row" id="travelRow" style="display:none;">
+                <span>Travel Cost</span>
+                <span>NPR {{ profile.travel_cost }}</span>
+            </div>
+            {% endif %}
+            <div class="fp-fee-summary-row fp-fee-summary-total">
+                <span>Total</span>
+                <span id="totalFee">NPR {{ profile.clinic_total }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Booking Form -->
+    <div class="fp-book-form-card">
+        <h2>Book an Appointment</h2>
+        <form method="POST">
+            {% csrf_token %}
+
+            <div class="fp-form-group">
+                <label>Your Full Name *</label>
+                {{ form.patient_name }}
+                {% if form.patient_name.errors %}<div style="color:#dc2626;font-size:0.78rem;">{{ form.patient_name.errors.0 }}</div>{% endif %}
+            </div>
+            <div style="display:flex; gap:0.7rem;">
+                <div class="fp-form-group" style="flex:1;">
+                    <label>Phone Number *</label>
+                    {{ form.patient_contact }}
+                    {% if form.patient_contact.errors %}<div style="color:#dc2626;font-size:0.78rem;">{{ form.patient_contact.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="fp-form-group" style="flex:1;">
+                    <label>Email (optional)</label>
+                    {{ form.patient_email }}
+                </div>
+            </div>
+
+            <div class="fp-form-group">
+                <label>Condition / Reason *</label>
+                {{ form.condition }}
+                {% if form.condition.errors %}<div style="color:#dc2626;font-size:0.78rem;">{{ form.condition.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div style="display:flex; gap:0.7rem;">
+                <div class="fp-form-group" style="flex:1;">
+                    <label>Preferred Date *</label>
+                    {{ form.preferred_date }}
+                    {% if form.preferred_date.errors %}<div style="color:#dc2626;font-size:0.78rem;">{{ form.preferred_date.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="fp-form-group" style="flex:1;">
+                    <label>Preferred Time</label>
+                    {{ form.preferred_time }}
+                </div>
+            </div>
+
+            <!-- Visit Type -->
+            <div class="fp-form-group">
+                <label>Visit Type *</label>
+                <div class="fp-radio-group" id="visitTypeGroup">
+                    {% if profile.is_clinic_visit %}
+                    <label class="fp-radio-btn selected" id="clinicBtn">
+                        <input type="radio" name="booking_type" value="clinic" checked>
+                        🏥 Clinic Visit
+                    </label>
+                    {% endif %}
+                    {% if profile.is_home_visit %}
+                    <label class="fp-radio-btn" id="homeBtn">
+                        <input type="radio" name="booking_type" value="home">
+                        🏠 Home Visit
+                    </label>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="fp-address-wrap fp-form-group" id="addressWrap">
+                <label>Home Address *</label>
+                {{ form.address }}
+            </div>
+
+            <button type="submit" class="fp-submit-btn">Confirm Booking</button>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const clinicFee  = {{ profile.consultation_fee }};
+const homeFee    = {{ profile.home_visit_fee }};
+const platformFee = {{ profile.platform_fee }};
+const travelCost = {{ profile.travel_cost }};
+
+function updateFee(type) {
+    const therapistFeeEl = document.getElementById('therapistFee');
+    const totalFeeEl     = document.getElementById('totalFee');
+    const travelRow      = document.getElementById('travelRow');
+    const addrWrap       = document.getElementById('addressWrap');
+    const clinicBtn      = document.getElementById('clinicBtn');
+    const homeBtn        = document.getElementById('homeBtn');
+
+    if (type === 'home') {
+        if (therapistFeeEl) therapistFeeEl.textContent = 'NPR ' + homeFee;
+        if (totalFeeEl) totalFeeEl.textContent = 'NPR ' + (homeFee + platformFee + travelCost);
+        if (travelRow) travelRow.style.display = 'flex';
+        if (addrWrap) addrWrap.classList.add('show');
+        if (homeBtn) homeBtn.classList.add('selected');
+        if (clinicBtn) clinicBtn.classList.remove('selected');
+    } else {
+        if (therapistFeeEl) therapistFeeEl.textContent = 'NPR ' + clinicFee;
+        if (totalFeeEl) totalFeeEl.textContent = 'NPR ' + (clinicFee + platformFee);
+        if (travelRow) travelRow.style.display = 'none';
+        if (addrWrap) addrWrap.classList.remove('show');
+        if (clinicBtn) clinicBtn.classList.add('selected');
+        if (homeBtn) homeBtn.classList.remove('selected');
+    }
+}
+
+document.querySelectorAll('input[name="booking_type"]').forEach(radio => {
+    radio.addEventListener('change', () => updateFee(radio.value));
+    radio.closest('.fp-radio-btn').addEventListener('click', () => {
+        radio.checked = true;
+        updateFee(radio.value);
+    });
+});
+</script>
+{% endblock %}
