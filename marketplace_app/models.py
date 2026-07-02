@@ -163,8 +163,8 @@ class DiagnosisProductMap(models.Model):
 
     class Meta:
         ordering = ['keyword']
-        verbose_name = 'Diagnosis → Product Map'
-        verbose_name_plural = 'Diagnosis → Product Maps'
+        verbose_name = 'Diagnosis-Product Map'
+        verbose_name_plural = 'Diagnosis-Product Maps'
 
     def __str__(self):
         return self.label or self.keyword
