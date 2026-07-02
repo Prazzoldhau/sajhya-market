@@ -25,4 +25,5 @@ urlpatterns = [
     path('api/orders/', views.patient_api_orders, name='patient_api_orders'),
     path('api/physio/', views.patient_api_physio, name='patient_api_physio'),
     path('api/recommended/', views.patient_api_recommended, name='patient_api_recommended'),
+    path('add-recs-to-cart/', views.add_recs_to_cart, name='add-recs-to-cart'),
 ]

@@ -345,3 +345,26 @@ def remove_patient_recommendation(request, rec_id):
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse({'success': True})
     return redirect(request.META.get('HTTP_REFERER', 'patient-marketplace'))
+
+
+def add_picks_to_cart(request, patient_id):
+    """Add all physio-picked products for a patient into the current session cart."""
+    from personal_account.models import AddPatient
+    patient = get_object_or_404(AddPatient, id=patient_id)
+    recs = PatientProductRecommendation.objects.filter(patient=patient).select_related('product', 'product__category')
+    cart = _get_cart(request)
+    for rec in recs:
+        p = rec.product
+        if not p.in_stock:
+            continue
+        pid = str(p.id)
+        if pid not in cart:
+            cart[pid] = {
+                'name': p.name,
+                'price': str(p.price),
+                'quantity': 1,
+                'unit': p.unit,
+                'category': p.category.name if p.category else '',
+            }
+    _save_cart(request, cart)
+    return redirect('view-cart')

@@ -135,6 +135,49 @@ def patient_dashboard(request):
     return render(request, 'patient-dashboard-image.html', context)
 
 
+def add_recs_to_cart(request):
+    """Add all recommended products for the logged-in patient into the session cart."""
+    patient_id = request.session.get('patient_id')
+    if not patient_id:
+        return redirect('patient-login')
+    patient = get_object_or_404(AddPatient, id=patient_id)
+
+    from marketplace_app.views import _get_cart, _save_cart
+    cart = _get_cart(request)
+
+    manual_recs = PatientProductRecommendation.objects.filter(patient=patient).select_related('product', 'product__category')
+    manual_ids = []
+    for rec in manual_recs:
+        p = rec.product
+        if not p.in_stock:
+            continue
+        manual_ids.append(p.id)
+        pid = str(p.id)
+        if pid not in cart:
+            cart[pid] = {
+                'name': p.name,
+                'price': str(p.price),
+                'quantity': 1,
+                'unit': p.unit,
+                'category': p.category.name if p.category else '',
+            }
+
+    auto_recs, _ = get_recommended_for_diagnosis(patient.patient_diagnosis)
+    for p in auto_recs.exclude(id__in=manual_ids).select_related('category'):
+        if not p.in_stock:
+            continue
+        pid = str(p.id)
+        if pid not in cart:
+            cart[pid] = {
+                'name': p.name,
+                'price': str(p.price),
+                'quantity': 1,
+                'unit': p.unit,
+                'category': p.category.name if p.category else '',
+            }
+
+    _save_cart(request, cart)
+    return redirect('view-cart')
 
 
 # ==================== MOBILE API LOGIN ====================
