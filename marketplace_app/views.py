@@ -2,8 +2,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.http import JsonResponse
-from django.db.models import Sum
-from .models import Category, Product, Order, OrderItem
+from django.db.models import Sum, Count
+from .models import Category, Product, Order, OrderItem, DiagnosisProductMap, PatientProductRecommendation
 from decimal import Decimal
 from functools import wraps
 
@@ -55,7 +55,9 @@ def _build_cart_lines(cart):
 
 def marketplace(request):
     categories = Category.objects.all()
-    products = Product.objects.filter(in_stock=True).select_related('category')
+    products = Product.objects.filter(in_stock=True).select_related('category')\
+        .annotate(order_count=Count('orderitem'))\
+        .order_by('-is_featured', '-order_count', 'name')
 
     category_id = request.GET.get('category', '').strip()
     if category_id:
@@ -256,3 +258,90 @@ def vendor_order_detail(request, order_number):
         'status_choices': Order.STATUS_CHOICES,
     }
     return render(request, 'marketplace/vendor_order_detail.html', context)
+
+
+def get_recommended_for_diagnosis(diagnosis_text):
+    """Return Product queryset matching the patient's diagnosis keywords."""
+    if not diagnosis_text:
+        return Product.objects.none()
+    diagnosis_lower = diagnosis_text.lower()
+    matched_pks = []
+    matched_label = ''
+    for dmap in DiagnosisProductMap.objects.prefetch_related('products'):
+        if dmap.keyword.lower() in diagnosis_lower:
+            matched_pks.extend(dmap.products.filter(in_stock=True).values_list('id', flat=True))
+            if not matched_label:
+                matched_label = dmap.label or dmap.keyword.title()
+    return Product.objects.filter(id__in=matched_pks, in_stock=True).distinct(), matched_label
+
+
+def patient_marketplace(request, patient_id):
+    from personal_account.models import AddPatient
+    patient = get_object_or_404(AddPatient, id=patient_id)
+
+    # Manual recs from physio (shown first)
+    manual_recs = (
+        PatientProductRecommendation.objects.filter(patient=patient)
+        .select_related('product', 'product__category')
+    )
+    manual_ids = list(manual_recs.values_list('product_id', flat=True))
+
+    # Auto recs from diagnosis (shown second, exclude manually added ones)
+    auto_recommended, matched_label = get_recommended_for_diagnosis(patient.patient_diagnosis)
+    auto_recommended = auto_recommended.exclude(id__in=manual_ids)
+    auto_ids = list(auto_recommended.values_list('id', flat=True))
+
+    excluded_ids = manual_ids + auto_ids
+
+    other_products = (
+        Product.objects.filter(in_stock=True)
+        .exclude(id__in=excluded_ids)
+        .select_related('category')
+        .annotate(order_count=Count('orderitem'))
+        .order_by('-is_featured', '-order_count', 'name')
+    )
+
+    # IDs the physio has already recommended (for toggle state on cards)
+    is_physio = request.user.is_authenticated
+    categories = Category.objects.all()
+    context = {
+        'patient': patient,
+        'manual_recs': manual_recs,
+        'manual_ids': manual_ids,
+        'auto_recommended': auto_recommended.select_related('category'),
+        'matched_label': matched_label,
+        'other_products': other_products,
+        'categories': categories,
+        'cart_count': get_cart_count(request),
+        'is_physio': is_physio,
+    }
+    return render(request, 'marketplace/patient-marketplace.html', context)
+
+
+def add_patient_recommendation(request, patient_id, product_id):
+    if request.method != 'POST':
+        return JsonResponse({'success': False}, status=405)
+    from personal_account.models import AddPatient
+    patient = get_object_or_404(AddPatient, id=patient_id)
+    product = get_object_or_404(Product, id=product_id)
+    note = request.POST.get('note', '')
+    rec, created = PatientProductRecommendation.objects.get_or_create(
+        patient=patient, product=product,
+        defaults={'recommended_by': request.user if request.user.is_authenticated else None, 'note': note}
+    )
+    if not created and note:
+        rec.note = note
+        rec.save(update_fields=['note'])
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': True, 'created': created, 'rec_id': rec.id})
+    return redirect(request.META.get('HTTP_REFERER', 'patient-marketplace'))
+
+
+def remove_patient_recommendation(request, rec_id):
+    if request.method != 'POST':
+        return JsonResponse({'success': False}, status=405)
+    rec = get_object_or_404(PatientProductRecommendation, id=rec_id)
+    rec.delete()
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': True})
+    return redirect(request.META.get('HTTP_REFERER', 'patient-marketplace'))

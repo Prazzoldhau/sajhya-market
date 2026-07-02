@@ -1,7 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from personal_account.models import AddPatient
 from exercise_app.models import Prescription, PrescriptionExercise, ExerciseFeedback
-from marketplace_app.models import Category, Product, Order, OrderItem, Commission, CommissionRate
+from marketplace_app.models import Category, Product, Order, OrderItem, Commission, CommissionRate, PatientProductRecommendation
+from marketplace_app.views import get_recommended_for_diagnosis
 from django.http import JsonResponse
 from django.conf import settings
 import json
@@ -112,12 +113,25 @@ def patient_dashboard(request):
     if latest_prescription:
         exercises = latest_prescription.exercises.all().order_by('order')
     # print (exercises)
+    # Physio hand-picked products
+    manual_recs = (
+        PatientProductRecommendation.objects.filter(patient=patient)
+        .select_related('product', 'product__category')
+    )
+    manual_ids = list(manual_recs.values_list('product_id', flat=True))
+    # Auto-suggested from diagnosis (exclude already-picked)
+    auto_recs, matched_label = get_recommended_for_diagnosis(patient.patient_diagnosis)
+    auto_recs = auto_recs.exclude(id__in=manual_ids).select_related('category')[:4]
+
     context = {
         'patient': patient,
         'latest_prescription': latest_prescription,
-        'exercises': exercises, 
+        'exercises': exercises,
+        'manual_recs': manual_recs,
+        'auto_recs': auto_recs,
+        'matched_label': matched_label,
     }
-    
+
     return render(request, 'patient-dashboard-image.html', context)
 
 
@@ -460,3 +474,44 @@ def patient_api_physio(request):
         'email': physio.email,
         'username': physio.username,
     }})
+
+
+def patient_api_recommended(request):
+    patient, err = _patient_required(request)
+    if err:
+        return err
+
+    # Physio hand-picked products
+    manual_recs = (
+        PatientProductRecommendation.objects.filter(patient=patient)
+        .select_related('product', 'product__category')
+    )
+    manual_ids = list(manual_recs.values_list('product_id', flat=True))
+
+    def _product_dict(p, note='', source='auto'):
+        return {
+            'id': p.id,
+            'name': p.name,
+            'price': str(p.price),
+            'unit': p.unit,
+            'category': p.category.name if p.category else '',
+            'category_icon': p.category.icon if p.category else '📦',
+            'image_url': _image_url(request, p.image),
+            'description': p.description,
+            'note': note,
+            'source': source,   # 'physio_pick' | 'auto'
+        }
+
+    physio_picks = [_product_dict(r.product, note=r.note, source='physio_pick') for r in manual_recs]
+
+    # Auto-suggested from diagnosis
+    auto_qs, matched_label = get_recommended_for_diagnosis(patient.patient_diagnosis)
+    auto_qs = auto_qs.exclude(id__in=manual_ids).select_related('category')[:8]
+    auto_picks = [_product_dict(p, source='auto') for p in auto_qs]
+
+    return JsonResponse({
+        'physio_picks': physio_picks,
+        'auto_suggested': auto_picks,
+        'matched_label': matched_label,
+        'total': len(physio_picks) + len(auto_picks),
+    })

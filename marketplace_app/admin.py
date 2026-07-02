@@ -2,7 +2,7 @@ from django.contrib import admin
 from import_export import resources, fields
 from import_export.admin import ImportExportModelAdmin
 from import_export.widgets import ForeignKeyWidget
-from .models import Category, Product, Order, OrderItem, Commission, CommissionRate
+from .models import Category, Product, Order, OrderItem, Commission, CommissionRate, DiagnosisProductMap, PatientProductRecommendation
 
 
 class CategoryResource(resources.ModelResource):
@@ -63,6 +63,21 @@ class OrderAdmin(admin.ModelAdmin):
 class CommissionRateAdmin(admin.ModelAdmin):
     list_display = ['physio', 'rate']
     list_editable = ['rate']
+
+
+@admin.register(PatientProductRecommendation)
+class PatientProductRecommendationAdmin(admin.ModelAdmin):
+    list_display = ['patient', 'product', 'recommended_by', 'note', 'created_at']
+    list_filter = ['recommended_by']
+    search_fields = ['patient__patient_name', 'product__name']
+    readonly_fields = ['created_at']
+
+
+@admin.register(DiagnosisProductMap)
+class DiagnosisProductMapAdmin(admin.ModelAdmin):
+    list_display = ['keyword', 'label']
+    search_fields = ['keyword', 'label']
+    filter_horizontal = ['products']
 
 
 @admin.register(Commission)

@@ -8,6 +8,8 @@ import json
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 from prescription_app.models import TreatmentSession
+from marketplace_app.views import get_recommended_for_diagnosis
+from marketplace_app.models import PatientProductRecommendation
 
 
 # Create your views here.
@@ -16,12 +18,20 @@ def patient_detail(request, patient_id):
     sessions = TreatmentSession.objects.filter(patient_id=patient_id).only(
         'session_date', 'session_number', 'treatment_response'
     )
-    # Or even simpler, use the related manager:
-    # sessions = patient.sessions.all()  # because related_name='sessions'
-    
+    manual_recs = (
+        PatientProductRecommendation.objects.filter(patient=patient)
+        .select_related('product', 'product__category')
+    )
+    manual_ids = list(manual_recs.values_list('product_id', flat=True))
+    auto_recommended, matched_label = get_recommended_for_diagnosis(patient.patient_diagnosis)
+    auto_recommended = auto_recommended.exclude(id__in=manual_ids).select_related('category')[:4]
+
     context = {
         "sessions": sessions,
-        "patient": patient
+        "patient": patient,
+        "manual_recs": manual_recs,
+        "auto_recommended": auto_recommended,
+        "matched_label": matched_label,
     }
     return render(request, 'patient-detail-dashboard.html', context)
 

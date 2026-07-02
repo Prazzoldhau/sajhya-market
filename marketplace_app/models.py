@@ -133,3 +133,38 @@ class OrderItem(models.Model):
     @property
     def total_price(self):
         return self.quantity * self.unit_price
+
+
+class PatientProductRecommendation(models.Model):
+    patient      = models.ForeignKey(
+        'personal_account.AddPatient', on_delete=models.CASCADE,
+        related_name='product_recommendations'
+    )
+    product      = models.ForeignKey(Product, on_delete=models.CASCADE)
+    recommended_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True
+    )
+    note         = models.CharField(max_length=200, blank=True)
+    created_at   = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ['patient', 'product']
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.product.name} → {self.patient}"
+
+
+class DiagnosisProductMap(models.Model):
+    keyword  = models.CharField(max_length=100, unique=True)
+    label    = models.CharField(max_length=150, blank=True)
+    products = models.ManyToManyField(Product, blank=True, related_name='diagnosis_maps')
+
+    class Meta:
+        ordering = ['keyword']
+        verbose_name = 'Diagnosis → Product Map'
+        verbose_name_plural = 'Diagnosis → Product Maps'
+
+    def __str__(self):
+        return self.label or self.keyword

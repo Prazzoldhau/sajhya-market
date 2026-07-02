@@ -1,0 +1,230 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Products for {{ patient.patient_name }} — Sajhya{% endblock %}
+
+{% block extra_css %}
+<style>
+.rec-btn { display:inline-flex; align-items:center; gap:4px; font-size:0.74rem; font-weight:700;
+    padding:0.28rem 0.7rem; border-radius:6px; border:none; cursor:pointer; transition:all .2s; white-space:nowrap; }
+.rec-btn-add  { background:#e0e7ff; color:#4338ca; }
+.rec-btn-add:hover  { background:#c7d2fe; }
+.rec-btn-remove { background:#fee2e2; color:#dc2626; }
+.rec-btn-remove:hover { background:#fca5a5; }
+.rec-note-input { border:1.5px solid #e5e7eb; border-radius:6px; padding:0.25rem 0.5rem;
+    font-size:0.74rem; width:100%; margin-top:4px; outline:none; }
+.rec-note-input:focus { border-color:#667eea; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mkt-container">
+
+    <!-- Patient Banner -->
+    <div class="mkt-hero" style="background:linear-gradient(135deg,#11998e 0%,#38ef7d 100%);padding:1.4rem 1.8rem;">
+        <div class="mkt-hero-text">
+            <h1 style="font-size:1.3rem;">🛒 Shopping for {{ patient.patient_name }}</h1>
+            {% if patient.patient_diagnosis %}
+            <p style="margin-top:4px;">
+                <span style="background:rgba(255,255,255,.22);color:#fff;padding:3px 12px;
+                             border-radius:20px;font-size:0.82rem;font-weight:600;">
+                    {{ patient.patient_diagnosis }}
+                </span>
+            </p>
+            {% endif %}
+        </div>
+        <div class="mkt-nav-right">
+            <a href="{% url 'view-cart' %}" class="mkt-cart-btn">
+                🛒 Cart
+                {% if cart_count > 0 %}<span class="mkt-cart-badge">{{ cart_count }}</span>{% endif %}
+            </a>
+            <a href="javascript:history.back()" class="mkt-back-btn">← Back</a>
+        </div>
+    </div>
+
+    <!-- ── PHYSIO-PICKED SECTION ── -->
+    {% if manual_recs %}
+    <div class="mkt-section-header" style="margin-top:1.5rem;">
+        <h2 style="color:#4338ca;">👨‍⚕️ Your Picks
+            <span style="font-weight:400;font-size:0.88rem;color:#6b7280;"> — hand-selected for this patient</span>
+        </h2>
+        <span class="mkt-section-sub">{{ manual_recs|length }} product{{ manual_recs|length|pluralize }}</span>
+    </div>
+    <div class="mkt-product-grid" style="border:2px solid rgba(102,126,234,.2);border-radius:16px;
+        padding:1rem;background:rgba(102,126,234,.03);">
+        {% for rec in manual_recs %}
+        <div class="mkt-product-card" style="border:1.5px solid rgba(102,126,234,.3);">
+            <div class="mkt-product-img">
+                {% if rec.product.image %}
+                    <img src="{% static rec.product.image %}" alt="{{ rec.product.name }}">
+                {% else %}
+                    <div class="mkt-img-placeholder">{{ rec.product.category.icon|default:"📦" }}</div>
+                {% endif %}
+                <span class="mkt-featured-tag" style="background:#4338ca;">👨‍⚕️ Your Pick</span>
+            </div>
+            <div class="mkt-product-body">
+                <span class="mkt-cat-badge">{{ rec.product.category.name|default:"General" }}</span>
+                <h3 class="mkt-product-name">{{ rec.product.name }}</h3>
+                {% if rec.note %}
+                <p style="font-size:0.78rem;color:#4338ca;font-style:italic;margin-bottom:4px;">{{ rec.note }}</p>
+                {% endif %}
+                <div class="mkt-product-footer">
+                    <div class="mkt-price">NPR {{ rec.product.price }}<small class="mkt-unit">/ {{ rec.product.unit }}</small></div>
+                    <div class="mkt-card-actions" style="flex-direction:column;gap:4px;">
+                        <a href="{% url 'add-to-cart' rec.product.id %}?next={{ request.get_full_path|urlencode }}" class="mkt-btn-add">🛒 Add</a>
+                        {% if is_physio %}
+                        <form method="POST" action="{% url 'remove-patient-recommendation' rec.id %}" class="ajax-remove-form">
+                            {% csrf_token %}
+                            <button type="submit" class="rec-btn rec-btn-remove" style="width:100%;justify-content:center;">✕ Remove</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- ── AUTO-DIAGNOSIS SECTION ── -->
+    {% if auto_recommended %}
+    <div class="mkt-section-header" style="margin-top:1.8rem;">
+        <h2 style="color:#11998e;">✅ Suggested
+            {% if matched_label %}<span style="font-weight:400;font-size:0.88rem;color:#6b7280;"> — {{ matched_label }}</span>{% endif %}
+        </h2>
+        <span class="mkt-section-sub">{{ auto_recommended|length }} product{{ auto_recommended|length|pluralize }} matched by diagnosis</span>
+    </div>
+    <div class="mkt-product-grid" style="border:2px solid rgba(17,153,142,.15);border-radius:16px;
+        padding:1rem;background:rgba(17,153,142,.03);">
+        {% for product in auto_recommended %}
+        <div class="mkt-product-card" style="border:1.5px solid rgba(17,153,142,.25);">
+            <div class="mkt-product-img">
+                {% if product.image %}
+                    <img src="{% static product.image %}" alt="{{ product.name }}">
+                {% else %}
+                    <div class="mkt-img-placeholder">{{ product.category.icon|default:"📦" }}</div>
+                {% endif %}
+                <span class="mkt-featured-tag" style="background:#11998e;">✅ Suggested</span>
+            </div>
+            <div class="mkt-product-body">
+                <span class="mkt-cat-badge">{{ product.category.name|default:"General" }}</span>
+                <h3 class="mkt-product-name">{{ product.name }}</h3>
+                <p class="mkt-product-desc">{{ product.description|truncatewords:8 }}</p>
+                <div class="mkt-product-footer">
+                    <div class="mkt-price">NPR {{ product.price }}<small class="mkt-unit">/ {{ product.unit }}</small></div>
+                    <div class="mkt-card-actions" style="flex-direction:column;gap:4px;">
+                        <a href="{% url 'add-to-cart' product.id %}?next={{ request.get_full_path|urlencode }}" class="mkt-btn-add">🛒 Add</a>
+                        {% if is_physio %}
+                        <form method="POST" action="{% url 'add-patient-recommendation' patient.id product.id %}" class="ajax-pick-form">
+                            {% csrf_token %}
+                            <input type="text" name="note" class="rec-note-input" placeholder="Add a note (optional)">
+                            <button type="submit" class="rec-btn rec-btn-add" style="width:100%;justify-content:center;margin-top:4px;">+ Add to My Picks</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- ── ALL OTHER PRODUCTS ── -->
+    <div class="mkt-section-header" style="margin-top:2rem;">
+        <h2>📦 All Products</h2>
+        <span class="mkt-section-sub mkt-count">{{ other_products|length }} item{{ other_products|length|pluralize }}</span>
+    </div>
+
+    {% if other_products %}
+    <div class="mkt-product-grid">
+        {% for product in other_products %}
+        <div class="mkt-product-card">
+            <div class="mkt-product-img">
+                {% if product.image %}
+                    <img src="{% static product.image %}" alt="{{ product.name }}">
+                {% else %}
+                    <div class="mkt-img-placeholder">{{ product.category.icon|default:"📦" }}</div>
+                {% endif %}
+            </div>
+            <div class="mkt-product-body">
+                <span class="mkt-cat-badge">{{ product.category.name|default:"General" }}</span>
+                <h3 class="mkt-product-name">{{ product.name }}</h3>
+                <p class="mkt-product-desc">{{ product.description|truncatewords:8 }}</p>
+                <div class="mkt-product-footer">
+                    <div class="mkt-price">NPR {{ product.price }}<small class="mkt-unit">/ {{ product.unit }}</small></div>
+                    <div class="mkt-card-actions" style="flex-direction:column;gap:4px;">
+                        <div style="display:flex;gap:4px;">
+                            <a href="{% url 'product-detail' product.id %}" class="mkt-btn-view">Details</a>
+                            <a href="{% url 'add-to-cart' product.id %}?next={{ request.get_full_path|urlencode }}" class="mkt-btn-add">🛒</a>
+                        </div>
+                        {% if is_physio %}
+                        <form method="POST" action="{% url 'add-patient-recommendation' patient.id product.id %}" class="ajax-pick-form">
+                            {% csrf_token %}
+                            <input type="text" name="note" class="rec-note-input" placeholder="Note (optional)">
+                            <button type="submit" class="rec-btn rec-btn-add" style="width:100%;justify-content:center;margin-top:4px;">+ Pick for Patient</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div style="font-size:3rem;margin-bottom:1rem;">🎉</div>
+        <h3>All products shown above!</h3>
+        <p>Every product has been recommended for this patient.</p>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    // Cart AJAX
+    function updateBadge(count) {
+        var cartBtn = document.querySelector('.mkt-cart-btn');
+        if (!cartBtn) return;
+        var badge = cartBtn.querySelector('.mkt-cart-badge');
+        if (count > 0) {
+            if (!badge) { badge = document.createElement('span'); badge.className = 'mkt-cart-badge'; cartBtn.appendChild(badge); }
+            badge.textContent = count;
+        } else if (badge) { badge.remove(); }
+    }
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest('.mkt-btn-add');
+        if (!btn) return;
+        e.preventDefault();
+        fetch(btn.href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(r => r.json()).then(data => {
+                if (!data.success) return;
+                updateBadge(data.cart_count);
+                var orig = btn.textContent; btn.textContent = '✓';
+                btn.style.background = '#11998e'; btn.style.color = '#fff';
+                setTimeout(() => { btn.textContent = orig; btn.style.background = ''; btn.style.color = ''; }, 1000);
+            });
+    });
+
+    // Pick / Remove AJAX — reload page to refresh sections
+    document.querySelectorAll('.ajax-pick-form, .ajax-remove-form').forEach(function(form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            var btn = form.querySelector('button[type=submit]');
+            var origText = btn.textContent;
+            btn.disabled = true; btn.textContent = '…';
+            fetch(form.action, {
+                method: 'POST',
+                body: new FormData(form),
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            }).then(r => r.json()).then(data => {
+                if (data.success) { location.reload(); }
+                else { btn.disabled = false; btn.textContent = origText; }
+            }).catch(() => { btn.disabled = false; btn.textContent = origText; });
+        });
+    });
+}());
+</script>
+{% endblock %}

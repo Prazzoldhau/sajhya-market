@@ -24,4 +24,5 @@ urlpatterns = [
     path('api/order/', views.patient_api_order, name='patient_api_order'),
     path('api/orders/', views.patient_api_orders, name='patient_api_orders'),
     path('api/physio/', views.patient_api_physio, name='patient_api_physio'),
+    path('api/recommended/', views.patient_api_recommended, name='patient_api_recommended'),
 ]
