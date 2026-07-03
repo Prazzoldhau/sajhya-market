@@ -1,3 +1,6 @@
+import string
+import secrets
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -17,6 +20,37 @@ from .forms import EnterpriseForm, DepartmentForm
 from .decorators import enterprise_role_required
 
 User = get_user_model()
+
+
+def _create_inbuilt_department_clinic(department, user):
+    """Auto-creates and attaches a Clinic for a newly-created Department, so
+    Add Patient works immediately without a manual attach-clinic step.
+
+    Uses an 'ENTER-' code prefix (rather than clinic_account's own 'CLI-'
+    generator) so these auto-created clinics read as distinct from a
+    standalone clinic someone creates directly, and defaults address/phone
+    from the Enterprise itself so no extra clinic-specific fields are asked
+    for. Admin/HOD can still attach additional existing clinics afterwards
+    via department_clinic_attach.
+    """
+    enterprise = department.enterprise
+    clinic = Clinic(
+        clinic_name=department.department_name,
+        address=enterprise.address,
+        phone=enterprise.phone,
+        created_by=user,
+    )
+    alphabet = string.ascii_uppercase + string.digits
+    while True:
+        code = "ENTER-" + ''.join(secrets.choice(alphabet) for _ in range(6))
+        if not Clinic.objects.filter(clinic_code=code).exists():
+            clinic.clinic_code = code
+            break
+    clinic.save()
+    DepartmentClinic.objects.create(
+        department=department, clinic=clinic, attached_by=user, is_active=True
+    )
+    return clinic
 
 MODULE_METADATA = {
     'inpatient-referral': {
@@ -207,7 +241,9 @@ def department_create(request):
             department = form.save(commit=False)
             department.enterprise = membership.enterprise
             department.created_by = request.user
-            department.save()
+            with transaction.atomic():
+                department.save()
+                _create_inbuilt_department_clinic(department, request.user)
             messages.success(request, f'Department {department.department_name} created with code {department.department_code}')
             return redirect('department-list')
         else:
