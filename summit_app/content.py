@@ -23,7 +23,7 @@ Section types used below:
 EVENT_TITLE = "MAPS Physiotherapy Leadership Summit 2083"
 EVENT_SUBTITLE = "Facilitator Table Discussion — Data Collection"
 
-TABLE_NUMBERS = [1, 2, 3, 4]
+TABLE_NUMBERS = [1, 2, 3, 4, 5, 6]
 
 SESSION_ORDER = ["session1", "session2", "session3"]
 

@@ -1,5 +1,6 @@
 from django.contrib.auth.hashers import check_password, make_password
 from django.db import models
+from django.utils import timezone
 
 from .content import SESSION_ORDER, SESSIONS
 
@@ -10,6 +11,8 @@ class Table(models.Model):
     number = models.PositiveSmallIntegerField(unique=True)
     label = models.CharField(max_length=50, blank=True)
     pin_hash = models.CharField(max_length=128)
+    is_claimed = models.BooleanField(default=False)
+    claimed_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -23,6 +26,16 @@ class Table(models.Model):
 
     def check_pin(self, raw_pin):
         return check_password(raw_pin, self.pin_hash)
+
+    def claim(self):
+        self.is_claimed = True
+        self.claimed_at = timezone.now()
+        self.save(update_fields=["is_claimed", "claimed_at"])
+
+    def release(self):
+        self.is_claimed = False
+        self.claimed_at = None
+        self.save(update_fields=["is_claimed", "claimed_at"])
 
 
 class SessionSubmission(models.Model):

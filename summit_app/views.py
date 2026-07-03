@@ -167,6 +167,23 @@ def find_missing_prerequisite(session_key, step, submission):
 # Table-facing views
 # ---------------------------------------------------------------------------
 
+def choose_table(request):
+    if request.method == "POST":
+        table_number = request.POST.get("table_number")
+        table = Table.objects.filter(number=table_number).first()
+        if table is None:
+            messages.error(request, "That table doesn't exist.")
+        elif table.is_claimed:
+            messages.error(request, f"Table {table.number} is already taken. Pick another table.")
+        else:
+            table.claim()
+            return redirect("summit-table-login", table_number=table.number)
+        return redirect("summit-choose-table")
+
+    tables = list(Table.objects.all())
+    return render(request, "summit/choose_table.html", {"tables": tables, "event_title": content.EVENT_TITLE})
+
+
 def table_login(request, table_number):
     table = get_object_or_404(Table, number=table_number)
     if request.method == "POST":
@@ -273,6 +290,15 @@ def session_step(request, table_number, session_key, step_no):
 # ---------------------------------------------------------------------------
 # Admin-facing views (staff only) -- plain numbers/tables, no charts.
 # ---------------------------------------------------------------------------
+
+@summit_staff_required
+def release_table(request, table_number):
+    table = get_object_or_404(Table, number=table_number)
+    if request.method == "POST":
+        table.release()
+        messages.success(request, f"Table {table.number} is now available again.")
+    return redirect("summit-admin-dashboard")
+
 
 @summit_staff_required
 def admin_dashboard(request):

@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}Choose Your Table — {{ event_title }}{% endblock %}
+{% block content %}
+<div class="container py-5" style="max-width: 720px;">
+    <div class="text-center mb-4">
+        <h5 class="mb-1">{{ event_title }}</h5>
+        <p class="mb-0">Select your table to begin. Once a table is chosen, it's locked to that group for the rest of the event.</p>
+    </div>
+
+    <div class="row g-3">
+        {% for table in tables %}
+        <div class="col-6 col-md-4">
+            {% if table.is_claimed %}
+            <div class="card h-100 text-center" style="opacity: .55;">
+                <div class="card-body">
+                    <h5 class="mb-1">Table {{ table.number }}</h5>
+                    {% if table.label %}<p class="small mb-2">{{ table.label }}</p>{% endif %}
+                    <span class="badge bg-secondary">Taken</span>
+                </div>
+            </div>
+            {% else %}
+            <form method="post" class="h-100">
+                {% csrf_token %}
+                <input type="hidden" name="table_number" value="{{ table.number }}">
+                <button type="submit" class="card h-100 text-center w-100 border-0 p-0">
+                    <div class="card-body">
+                        <h5 class="mb-1">Table {{ table.number }}</h5>
+                        {% if table.label %}<p class="small mb-2">{{ table.label }}</p>{% endif %}
+                        <span class="badge bg-success">Available</span>
+                    </div>
+                </button>
+            </form>
+            {% endif %}
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-warning">No tables have been set up yet.</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

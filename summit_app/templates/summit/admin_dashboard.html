@@ -11,6 +11,23 @@
     <div class="alert alert-warning">No tables have been set up yet. Create Table rows (with PINs) via Django admin or the <code>seed_summit_tables</code> management command.</div>
     {% endif %}
 
+    <div class="d-flex flex-wrap gap-2 mb-4">
+        {% for t in tables %}
+        <div class="border rounded px-2 py-1 d-flex align-items-center gap-2">
+            <span>Table {{ t.number }}</span>
+            {% if t.is_claimed %}
+                <span class="badge bg-secondary">Taken</span>
+                <form method="post" action="{% url 'summit-release-table' t.number %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-danger btn-sm">Release</button>
+                </form>
+            {% else %}
+                <span class="badge bg-success">Available</span>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
     <div class="table-responsive">
         <table class="table table-bordered align-middle">
             <thead class="table-light">
