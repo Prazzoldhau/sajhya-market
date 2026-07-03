@@ -3,11 +3,16 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model
 from django.db import transaction, models
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Sum
 from django.http import JsonResponse, Http404
 from django.views.decorators.http import require_GET
 
-from .models import Enterprise, Department, EnterpriseStaff
+from clinic_account.models import Clinic, ClinicPhysio
+from personal_account.models import AddPatient
+from personal_account import patientform
+from marketplace_app.models import Commission
+
+from .models import Enterprise, Department, EnterpriseStaff, DepartmentClinic
 from .forms import EnterpriseForm, DepartmentForm
 from .decorators import enterprise_role_required
 
@@ -158,9 +163,190 @@ def department_detail(request, department_id):
         return redirect('enterprise-dashboard')
 
     staff = EnterpriseStaff.objects.filter(department=department, role='staff').select_related('user')
+
+    attached_clinics = Clinic.objects.filter(
+        enterprise_departments__department=department,
+        enterprise_departments__is_active=True,
+    )
+
+    patients = AddPatient.objects.filter(origin_clinic__in=attached_clinics).order_by('-created_at')
+
+    search_type = request.GET.get('search_type')
+    search_value = request.GET.get('search_value')
+    if search_type and search_value:
+        if search_type == 'name':
+            patients = patients.filter(patient_name__icontains=search_value)
+        elif search_type == 'code':
+            patients = patients.filter(patient_code__icontains=search_value)
+        elif search_type == 'contact':
+            patients = patients.filter(patient_contact__icontains=search_value)
+
+    total_count = patients.count()
+
+    member_user_ids = EnterpriseStaff.objects.filter(
+        department=department, is_active=True
+    ).values_list('user_id', flat=True)
+    commissions = Commission.objects.filter(physio_id__in=member_user_ids).order_by('-created_at')
+    commission_pending = commissions.filter(status='pending').aggregate(t=Sum('commission_amount'))['t'] or 0
+    commission_earned = commissions.filter(status__in=['approved', 'paid']).aggregate(t=Sum('commission_amount'))['t'] or 0
+
     return render(request, 'enterprise_account/departments/department-detail.html', {
         'department': department,
         'staff': staff,
+        'membership': membership,
+        'attached_clinics': attached_clinics,
+        'patients': patients,
+        'total_count': total_count,
+        'commissions': commissions[:10],
+        'commission_pending': commission_pending,
+        'commission_earned': commission_earned,
+    })
+
+
+@login_required
+@enterprise_role_required(roles=['admin', 'hod'])
+def department_clinic_attach(request, department_id):
+    membership = request.enterprise_membership
+    department = get_object_or_404(Department, id=department_id, enterprise=membership.enterprise)
+
+    if membership.role == 'hod' and membership.department_id != department.id:
+        messages.error(request, 'You are not the HOD of this department.')
+        return redirect('enterprise-dashboard')
+
+    if request.method == 'POST':
+        clinic_id = request.POST.get('clinic_id')
+        clinic = get_object_or_404(Clinic, id=clinic_id)
+        with transaction.atomic():
+            dept_clinic, created = DepartmentClinic.objects.get_or_create(
+                department=department,
+                clinic=clinic,
+                defaults={'attached_by': request.user, 'is_active': True},
+            )
+            if not created and not dept_clinic.is_active:
+                dept_clinic.is_active = True
+                dept_clinic.attached_by = request.user
+                dept_clinic.save(update_fields=['is_active', 'attached_by'])
+
+            # Give every current member of this department (HOD + staff)
+            # ClinicPhysio access to the newly attached clinic, so they can
+            # view/manage its patients from their own personal account's
+            # "My Clinics" section rather than needing a separate enterprise
+            # staff view.
+            member_user_ids = EnterpriseStaff.objects.filter(
+                department=department, is_active=True
+            ).exclude(role='admin').values_list('user_id', flat=True)
+            for user_id in member_user_ids:
+                ClinicPhysio.objects.get_or_create(
+                    clinic=clinic, physio_id=user_id, defaults={'is_active': True}
+                )
+        messages.success(request, f'Clinic {clinic.clinic_name} attached to {department.department_name}')
+        return redirect('department-detail', department_id=department.id)
+
+    return render(request, 'enterprise_account/departments/attach-clinic.html', {
+        'department': department,
+        'membership': membership,
+    })
+
+
+@login_required
+@enterprise_role_required(roles=['admin', 'hod'])
+@require_GET
+def search_enterprise_clinics(request):
+    query = request.GET.get('q', '').strip()
+    if len(query) < 2:
+        return JsonResponse([], safe=False)
+
+    clinics = Clinic.objects.filter(
+        models.Q(clinic_name__icontains=query) | models.Q(clinic_code__icontains=query)
+    )[:10]
+    data = [{
+        'id': c.id,
+        'clinic_name': c.clinic_name,
+        'clinic_code': c.clinic_code,
+    } for c in clinics]
+    return JsonResponse(data, safe=False)
+
+
+@login_required
+@enterprise_role_required(roles=['admin', 'hod'])
+def department_add_patient(request, department_id):
+    membership = request.enterprise_membership
+    department = get_object_or_404(Department, id=department_id, enterprise=membership.enterprise)
+
+    if membership.role == 'hod' and membership.department_id != department.id:
+        messages.error(request, 'You are not the HOD of this department.')
+        return redirect('enterprise-dashboard')
+
+    attached_clinics = Clinic.objects.filter(
+        enterprise_departments__department=department,
+        enterprise_departments__is_active=True,
+    )
+    if not attached_clinics.exists():
+        messages.error(request, 'Attach a clinic to this department before adding patients.')
+        return redirect('department-detail', department_id=department.id)
+
+    if request.method == 'POST':
+        form = patientform.PatientForm(request.POST)
+        clinic = get_object_or_404(attached_clinics, id=request.POST.get('clinic_id'))
+        if form.is_valid():
+            patient = form.save(commit=False)
+            patient.created_by = request.user
+            patient.origin_clinic = clinic
+            patient.save()
+            messages.success(request, f'Patient {patient.patient_name} added with code {patient.patient_code}')
+            return redirect('department-detail', department_id=department.id)
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = patientform.PatientForm()
+
+    return render(request, 'enterprise_account/departments/add-department-patient.html', {
+        'patient_form': form,
+        'department': department,
+        'attached_clinics': attached_clinics,
+        'membership': membership,
+    })
+
+
+@login_required
+@enterprise_role_required(roles=['admin', 'hod'])
+def department_patient_handover(request, department_id, patient_id):
+    """Reassigns a patient's created_by to a department staff member.
+
+    created_by is already the ownership/visibility gate every patient list
+    in this codebase filters on (personal_dashboard, clinic_dashboard,
+    assigned_clinic_dashboard) - a "handover" is just moving that pointer,
+    so the target staff member sees the patient under their own personal
+    account's My Clinics without a separate access-grant model.
+    """
+    membership = request.enterprise_membership
+    department = get_object_or_404(Department, id=department_id, enterprise=membership.enterprise)
+
+    if membership.role == 'hod' and membership.department_id != department.id:
+        messages.error(request, 'You are not the HOD of this department.')
+        return redirect('enterprise-dashboard')
+
+    attached_clinics = Clinic.objects.filter(
+        enterprise_departments__department=department,
+        enterprise_departments__is_active=True,
+    )
+    patient = get_object_or_404(AddPatient, id=patient_id, origin_clinic__in=attached_clinics)
+
+    staff_members = EnterpriseStaff.objects.filter(
+        department=department, role='staff', is_active=True
+    ).select_related('user')
+
+    if request.method == 'POST':
+        target_membership = get_object_or_404(staff_members, user_id=request.POST.get('user_id'))
+        patient.created_by = target_membership.user
+        patient.save(update_fields=['created_by'])
+        messages.success(request, f'{patient.patient_name} handed over to {target_membership.user.username}')
+        return redirect('department-detail', department_id=department.id)
+
+    return render(request, 'enterprise_account/departments/handover-patient.html', {
+        'department': department,
+        'patient': patient,
+        'staff_members': staff_members,
         'membership': membership,
     })
 
@@ -242,6 +428,19 @@ def staff_assign(request):
             if role == 'hod' and department is not None:
                 department.hod = target_user
                 department.save(update_fields=['hod'])
+
+            # Grant ClinicPhysio access to this department's already-attached
+            # clinics, so the assignee can view/manage patients from their
+            # own personal account's "My Clinics" section.
+            if department is not None:
+                attached_clinics = Clinic.objects.filter(
+                    enterprise_departments__department=department,
+                    enterprise_departments__is_active=True,
+                )
+                for clinic in attached_clinics:
+                    ClinicPhysio.objects.get_or_create(
+                        clinic=clinic, physio=target_user, defaults={'is_active': True}
+                    )
 
         messages.success(request, f'{target_user.username} assigned as {dict(EnterpriseStaff.ROLE_CHOICES).get(role)}')
         return redirect('staff-list')

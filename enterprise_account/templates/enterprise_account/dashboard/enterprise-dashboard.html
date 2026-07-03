@@ -80,8 +80,13 @@
     {% elif is_hod %}
     <div class="mkt-header-row">
         <div class="header"><h1>{{ department.department_name|default:"Your Department" }}</h1></div>
-        <a href="{% url 'staff-assign' %}" class="btn-marketplace">+ Add Staff</a>
+        {% if department %}
+        <a href="{% url 'department-detail' department_id=department.id %}" class="btn-marketplace">Manage Department &rarr;</a>
+        {% endif %}
     </div>
+    {% if department %}
+    <p><a href="{% url 'department-detail' department_id=department.id %}">View clinics, patients &amp; commissions for this department</a></p>
+    {% endif %}
     {% if department_staff %}
     <table class="patient-table">
         <thead>
@@ -110,6 +115,12 @@
     {% else %}
     <div class="mkt-header-row">
         <div class="header"><h1>{{ department.department_name|default:"Your Department" }}</h1></div>
+    </div>
+    <div class="empty-state">
+        <p>To view and manage this department's patients, log in to your
+        <a href="{% url 'login-personal' %}">personal account</a> and open
+        <strong>My Clinics</strong> — your department's clinic will be
+        listed there.</p>
     </div>
     {% endif %}
 

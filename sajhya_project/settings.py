@@ -66,6 +66,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -134,6 +135,22 @@ STATIC_URL = 'static/'
 STATICFILES_DIRS = [
     BASE_DIR / "static",   # <-- This must point to your static folder
 ]
+
+# WhiteNoise serves everything under STATIC_ROOT directly from the Django/WSGI
+# process itself (via WhiteNoiseMiddleware above). This is needed because the
+# Passenger/LiteSpeed hosting here only serves a URL straight from disk when a
+# literal file exists at that exact path relative to the app root -- it has no
+# separate "/static/ -> staticfiles/" alias configured, so anything only
+# present after `collectstatic` (Django admin's own CSS/JS, django-import-export's,
+# etc.) was 404ing. WhiteNoise removes the need for that web-server-level mapping.
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 # Media files (User uploaded files)
 MEDIA_URL = '/media/'

@@ -5,6 +5,8 @@ import secrets
 import pytz
 from datetime import datetime
 
+from clinic_account.models import Clinic
+
 
 def get_nepal_time():
     tz = pytz.timezone('Asia/Kathmandu')
@@ -139,3 +141,31 @@ class EnterpriseStaff(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.get_role_display()} @ {self.enterprise.enterprise_name}"
+
+
+class DepartmentClinic(models.Model):
+    """Attaches an existing Clinic to a Department.
+
+    A many-to-many join (mirrors ClinicPhysio/EnterpriseStaff) rather than a
+    single FK on Department, since one department can have several attached
+    clinics and a clinic owner can independently also be enterprise staff.
+    Clinic ownership (Clinic.created_by) and org membership (EnterpriseStaff)
+    stay decoupled; this table only records "this clinic's patients/features
+    are visible from this department".
+    """
+    department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name='attached_clinics')
+    clinic = models.ForeignKey(Clinic, on_delete=models.CASCADE, related_name='enterprise_departments')
+    attached_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='clinic_attachments',
+    )
+    is_active = models.BooleanField(default=True)
+    attached_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ['department', 'clinic']
+
+    def __str__(self):
+        return f"{self.clinic.clinic_name} -> {self.department.department_name}"
