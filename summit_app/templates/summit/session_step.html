@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block title %}{{ session.short_title }} — Step {{ step_no }} — {{ event_title }}{% endblock %}
+{% block content %}
+<div class="container py-4" style="max-width: 720px;">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <div>
+            <p class="text-muted mb-0">Table {{ table.number }}{% if table.label %} — {{ table.label }}{% endif %}</p>
+            <h5 class="mb-0">{{ session.short_title }}</h5>
+        </div>
+        <a href="{% url 'summit-table-dashboard' table.number %}" class="btn btn-outline-secondary btn-sm">Back to sessions</a>
+    </div>
+
+    <div class="progress mb-3" style="height: 6px;">
+        <div class="progress-bar" role="progressbar" style="width: {{ progress_pct }}%;"></div>
+    </div>
+    <p class="text-muted small mb-4">Step {{ step_no }} of {{ total_steps }}</p>
+
+    <h6 class="mb-2">{{ step.title }}</h6>
+    {% if step.intro %}<p class="text-muted">{{ step.intro }}</p>{% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        {% for section in sections %}
+            <div class="mb-4">
+                {% if section.label %}<label class="form-label fw-semibold">{{ section.label }}</label>{% endif %}
+
+                {% if section.type == 'checklist_other' %}
+                    {% include 'summit/_section_checklist.html' %}
+                {% elif section.type == 'score_for_prior' %}
+                    {% include 'summit/_section_score_for_prior.html' %}
+                {% elif section.type == 'top_n_select' %}
+                    {% include 'summit/_section_top_n_select.html' %}
+                {% elif section.type == 'free_text' %}
+                    {% include 'summit/_section_free_text.html' %}
+                {% elif section.type == 'text_fields' %}
+                    {% include 'summit/_section_text_fields.html' %}
+                {% elif section.type == 'number_fields' %}
+                    {% include 'summit/_section_number_fields.html' %}
+                {% elif section.type == 'radio' %}
+                    {% include 'summit/_section_radio.html' %}
+                {% elif section.type == 'text' %}
+                    {% include 'summit/_section_text.html' %}
+                {% endif %}
+            </div>
+        {% endfor %}
+
+        <div class="d-flex justify-content-between">
+            {% if step_no > 1 %}
+                <a href="{% url 'summit-session-step' table.number session_key step_no|add:'-1' %}" class="btn btn-outline-secondary">Previous</a>
+            {% else %}
+                <span></span>
+            {% endif %}
+            <button type="submit" class="btn btn-primary">
+                {% if is_last_step %}Submit{% else %}Next{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+document.querySelectorAll('.other-toggle').forEach(function (checkbox) {
+    checkbox.addEventListener('change', function () {
+        var target = document.getElementById(checkbox.dataset.target);
+        if (target) { target.style.display = checkbox.checked ? '' : 'none'; }
+    });
+});
+</script>
+{% endblock %}

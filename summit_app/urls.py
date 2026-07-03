@@ -1,0 +1,16 @@
+from django.urls import path
+
+from . import views
+
+urlpatterns = [
+    path("table/<int:table_number>/login/", views.table_login, name="summit-table-login"),
+    path("table/<int:table_number>/logout/", views.table_logout, name="summit-table-logout"),
+    path("table/<int:table_number>/", views.table_dashboard, name="summit-table-dashboard"),
+    path(
+        "table/<int:table_number>/session/<str:session_key>/step/<int:step_no>/",
+        views.session_step,
+        name="summit-session-step",
+    ),
+    path("admin/", views.admin_dashboard, name="summit-admin-dashboard"),
+    path("admin/session/<str:session_key>/", views.admin_session_summary, name="summit-admin-session-summary"),
+]

@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Assign Staff{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <i class="fas fa-user-plus fa-2x mb-2"></i>
+                <h3>Assign Staff</h3>
+                <p>Search for an existing Sajhya user and assign them a role.</p>
+            </div>
+            <div class="auth-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+
+                    <div class="form-group">
+                        <label class="form-label">Search user <span class="text-danger">*</span></label>
+                        <input type="text" id="userSearch" class="form-control" placeholder="Search by name or username" autocomplete="off">
+                        <div id="userResults" style="border:1px solid #eee; border-radius:8px; margin-top:4px; display:none;"></div>
+                        <input type="hidden" name="user_id" id="userId" required>
+                        <small class="form-text text-muted" id="selectedUserLabel"></small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_role" class="form-label">Role <span class="text-danger">*</span></label>
+                        <select name="role" id="id_role" class="form-control" required>
+                            {% for value, label in assignable_roles %}
+                            <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_department" class="form-label">Department</label>
+                        <select name="department_id" id="id_department" class="form-control">
+                            <option value="">-- Not applicable (Admin only) --</option>
+                            {% for department in departments %}
+                            <option value="{{ department.id }}">{{ department.department_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn-gradient">
+                            Assign <i class="fas fa-check-circle"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const searchInput = document.getElementById('userSearch');
+const resultsBox = document.getElementById('userResults');
+const userIdField = document.getElementById('userId');
+const selectedLabel = document.getElementById('selectedUserLabel');
+
+let debounceTimer;
+searchInput.addEventListener('input', function () {
+    clearTimeout(debounceTimer);
+    const query = this.value.trim();
+    userIdField.value = '';
+    if (query.length < 2) {
+        resultsBox.style.display = 'none';
+        resultsBox.innerHTML = '';
+        return;
+    }
+    debounceTimer = setTimeout(function () {
+        fetch(`{% url 'search-enterprise-users' %}?q=${encodeURIComponent(query)}`)
+            .then(res => res.json())
+            .then(data => {
+                resultsBox.innerHTML = '';
+                if (data.length === 0) {
+                    resultsBox.style.display = 'none';
+                    return;
+                }
+                data.forEach(user => {
+                    const item = document.createElement('div');
+                    item.style.padding = '8px';
+                    item.style.cursor = 'pointer';
+                    item.textContent = `${user.name || user.username} (${user.username})`;
+                    item.addEventListener('click', function () {
+                        userIdField.value = user.id;
+                        searchInput.value = `${user.name || user.username} (${user.username})`;
+                        selectedLabel.textContent = `Selected: ${user.username}`;
+                        resultsBox.style.display = 'none';
+                    });
+                    resultsBox.appendChild(item);
+                });
+                resultsBox.style.display = 'block';
+            });
+    }, 250);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,17 @@
+{% if section.empty %}
+<p class="text-muted fst-italic">No causes were selected in the previous step yet.</p>
+{% else %}
+{% for item in section.items %}
+<div class="row align-items-center mb-2">
+    <div class="col-8">{{ item.label }}</div>
+    <div class="col-4">
+        <select class="form-select form-select-sm" name="{{ item.field_name }}">
+            <option value="">--</option>
+            {% for n in "12345" %}
+            <option value="{{ n }}" {% if item.value|stringformat:"s" == n %}selected{% endif %}>{{ n }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+{% endfor %}
+{% endif %}

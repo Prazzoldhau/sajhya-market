@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'account_app',
     'personal_account',
     'clinic_account',
+    'enterprise_account',
     'exercise_app',
     'import_export',
     'detail_app',
@@ -59,6 +60,7 @@ INSTALLED_APPS = [
     'referral_app',
     'marketplace_app',
     'find_physio_app',
+    'summit_app',
 
 ]
 

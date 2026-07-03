@@ -1,0 +1,9 @@
+{% for opt in section.options %}
+<div class="form-check">
+    <input class="form-check-input{% if section.has_other %} other-toggle{% endif %}" type="radio" name="{{ section.field_name }}" value="{{ opt.key }}" id="{{ section.field_name }}_{{ opt.key }}" data-target="other_text_{{ section.field_name }}" {% if opt.checked %}checked{% endif %}>
+    <label class="form-check-label" for="{{ section.field_name }}_{{ opt.key }}">{{ opt.label }}</label>
+</div>
+{% endfor %}
+{% if section.has_other %}
+<input type="text" class="form-control form-control-sm mt-1" id="other_text_{{ section.field_name }}" name="{{ section.other_field_name }}" value="{{ section.other_text }}" placeholder="Please specify" {% if not section.other_checked %}style="display:none"{% endif %}>
+{% endif %}

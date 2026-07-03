@@ -11,6 +11,7 @@ urlpatterns = [
     path ('acc/', include ('account_app.urls')),
     path ('personal-acc/', include ('personal_account.urls')),
     path ('clinic-acc/', include('clinic_account.urls')),
+    path ('enterprise-acc/', include('enterprise_account.urls')),
     path ('exercise-app/', include('exercise_app.urls')),
     path ('detail-app/', include('detail_app.urls')),
     path ('video-app/', include('video_app.urls')),
@@ -20,6 +21,7 @@ urlpatterns = [
     path ('referral/', include('referral_app.urls')),
     path ('marketplace/', include('marketplace_app.urls')),
     path ('find-physio/', include('find_physio_app.urls')),
+    path ('summit/', include('summit_app.urls')),
 
 ]
 

@@ -1,0 +1,11 @@
+{% if section.empty %}
+<p class="text-muted fst-italic">No causes were selected in the previous step yet.</p>
+{% else %}
+<p class="text-muted small">Pick up to {{ section.n }}.</p>
+{% for item in section.items %}
+<div class="form-check">
+    <input class="form-check-input" type="checkbox" name="{{ item.field_name }}" {% if item.checked %}checked{% endif %}>
+    <label class="form-check-label">{{ item.label }}</label>
+</div>
+{% endfor %}
+{% endif %}

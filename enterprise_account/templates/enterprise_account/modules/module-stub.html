@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ module_label }} - Sajhya Enterprise{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="mkt-header-row">
+        <div class="header">
+            <a href="{% url 'enterprise-dashboard' %}"><h1>{{ module_label }}</h1></a>
+        </div>
+    </div>
+
+    <div class="empty-state">
+        <h3>Coming Soon</h3>
+        <p>{{ module_description }}</p>
+        <a href="{% url 'enterprise-dashboard' %}" class="btn btn-primary" style="margin-top: 15px;">
+            &larr; Back to Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}

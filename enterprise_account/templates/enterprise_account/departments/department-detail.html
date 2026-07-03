@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ department.department_name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="mkt-header-row">
+        <div class="header">
+            <a href="{% url 'department-list' %}"><h1>{{ department.department_name }}</h1></a>
+        </div>
+        <a href="{% url 'staff-assign' %}" class="btn-marketplace">+ Assign Staff</a>
+    </div>
+
+    <p><strong>Code:</strong> {{ department.department_code }}</p>
+    <p><strong>HOD:</strong> {% if department.hod %}{{ department.hod.get_full_name|default:department.hod.username }}{% else %}Not assigned{% endif %}</p>
+
+    {% if staff %}
+    <table class="patient-table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Username</th>
+                <th>Active</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for member in staff %}
+            <tr>
+                <td>{{ member.user.get_full_name|default:member.user.username }}</td>
+                <td>{{ member.user.username }}</td>
+                <td>{{ member.is_active|yesno:"Yes,No" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <h3>No Staff Yet</h3>
+        <p>Assign staff members to this department.</p>
+        <a href="{% url 'staff-assign' %}" class="btn btn-primary" style="margin-top: 15px;">+ Assign Staff</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
