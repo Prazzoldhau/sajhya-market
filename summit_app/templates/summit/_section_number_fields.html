@@ -1,6 +1,6 @@
 {% for f in section.fields %}
 <div class="mb-2">
-    <label class="form-label small text-muted">{{ f.label }}{% if f.suffix %} ({{ f.suffix }}){% endif %}</label>
+    <label class="form-label small">{{ f.label }}{% if f.suffix %} ({{ f.suffix }}){% endif %}</label>
     <input type="text" inputmode="numeric" class="form-control" name="{{ f.field_name }}" value="{{ f.value }}">
 </div>
 {% endfor %}

@@ -1,6 +1,6 @@
 {% for f in section.fields %}
 <div class="mb-2">
-    <label class="form-label small text-muted">{{ f.label }}</label>
+    <label class="form-label small">{{ f.label }}</label>
     <textarea class="form-control" name="{{ f.field_name }}" rows="2">{{ f.value }}</textarea>
 </div>
 {% endfor %}
