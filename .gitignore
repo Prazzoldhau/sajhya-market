@@ -5,6 +5,7 @@ __pycache__/
 media/
 static/admin/
 static/import_export/
+staticfiles/
 stderr.log
 tmp/
 venv/

@@ -104,6 +104,37 @@ def enterprise_dashboard(request):
         context['total_staff'] = EnterpriseStaff.objects.filter(
             enterprise=enterprise, is_active=True
         ).exclude(role='admin').count()
+
+        # Enterprise-wide patients + marketplace, same shape as clinic_dashboard,
+        # scoped across every clinic attached to any department of this enterprise.
+        enterprise_clinics = Clinic.objects.filter(
+            enterprise_departments__department__enterprise=enterprise,
+            enterprise_departments__is_active=True,
+        ).distinct()
+
+        patients = AddPatient.objects.filter(origin_clinic__in=enterprise_clinics).order_by('-created_at')
+
+        search_type = request.GET.get('search_type')
+        search_value = request.GET.get('search_value')
+        if search_type and search_value:
+            if search_type == 'name':
+                patients = patients.filter(patient_name__icontains=search_value)
+            elif search_type == 'code':
+                patients = patients.filter(patient_code__icontains=search_value)
+            elif search_type == 'contact':
+                patients = patients.filter(patient_contact__icontains=search_value)
+
+        context['patients'] = patients
+        context['total_patients'] = patients.count()
+        context['has_clinics'] = enterprise_clinics.exists()
+
+        member_user_ids = EnterpriseStaff.objects.filter(
+            enterprise=enterprise, is_active=True
+        ).values_list('user_id', flat=True)
+        commissions = Commission.objects.filter(physio_id__in=member_user_ids).order_by('-created_at')
+        context['commissions'] = commissions[:10]
+        context['commission_pending'] = commissions.filter(status='pending').aggregate(t=Sum('commission_amount'))['t'] or 0
+        context['commission_earned'] = commissions.filter(status__in=['approved', 'paid']).aggregate(t=Sum('commission_amount'))['t'] or 0
     elif membership.role == 'hod':
         department = membership.department
         context['department'] = department
@@ -114,6 +145,43 @@ def enterprise_dashboard(request):
         context['department'] = membership.department
 
     return render(request, 'enterprise_account/dashboard/enterprise-dashboard.html', context)
+
+
+@login_required
+@enterprise_role_required(roles=['admin'])
+def enterprise_add_patient(request):
+    membership = request.enterprise_membership
+    enterprise = membership.enterprise
+
+    enterprise_clinics = Clinic.objects.filter(
+        enterprise_departments__department__enterprise=enterprise,
+        enterprise_departments__is_active=True,
+    ).distinct()
+    if not enterprise_clinics.exists():
+        messages.error(request, 'Attach a clinic to a department before adding patients.')
+        return redirect('enterprise-dashboard')
+
+    if request.method == 'POST':
+        form = patientform.PatientForm(request.POST)
+        clinic = get_object_or_404(enterprise_clinics, id=request.POST.get('clinic_id'))
+        if form.is_valid():
+            patient = form.save(commit=False)
+            patient.created_by = request.user
+            patient.origin_clinic = clinic
+            patient.save()
+            messages.success(request, f'Patient {patient.patient_name} added with code {patient.patient_code}')
+            return redirect('enterprise-dashboard')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = patientform.PatientForm()
+
+    return render(request, 'enterprise_account/enterprises/add-enterprise-patient.html', {
+        'patient_form': form,
+        'enterprise': enterprise,
+        'clinics': enterprise_clinics,
+        'membership': membership,
+    })
 
 
 @login_required

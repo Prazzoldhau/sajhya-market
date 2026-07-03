@@ -11,9 +11,9 @@ function togglePasswordVisibility(icon) {
 
 // Auto-dismiss alerts after 5 seconds
 document.addEventListener('DOMContentLoaded', function() {
-    // Auto dismiss alerts
+    // Auto dismiss alerts (only actual flash messages, not static alert-styled content boxes)
     setTimeout(function() {
-        const alerts = document.querySelectorAll('.alert');
+        const alerts = document.querySelectorAll('.alert.alert-dismissible');
         alerts.forEach(function(alert) {
             if (alert && bootstrap && bootstrap.Alert) {
                 const bsAlert = new bootstrap.Alert(alert);
