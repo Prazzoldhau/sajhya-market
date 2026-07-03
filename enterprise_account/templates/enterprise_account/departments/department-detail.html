@@ -15,31 +15,183 @@
     <p><strong>Code:</strong> {{ department.department_code }}</p>
     <p><strong>HOD:</strong> {% if department.hod %}{{ department.hod.get_full_name|default:department.hod.username }}{% else %}Not assigned{% endif %}</p>
 
-    {% if staff %}
+    <!-- Attached Clinics -->
+    <div class="mkt-header-row" style="margin-top:1.5rem;">
+        <div class="header"><h1>Clinics</h1></div>
+        <a href="{% url 'department-clinic-attach' department_id=department.id %}" class="btn-marketplace">+ Attach Clinic</a>
+    </div>
+    {% if attached_clinics %}
+    <div style="display:flex; gap:0.75rem; flex-wrap:wrap; margin-bottom:1.5rem;">
+        {% for clinic in attached_clinics %}
+        <div style="background:white; border-radius:12px; padding:0.75rem 1.25rem; box-shadow:0 4px 15px rgba(0,0,0,.08);">
+            <strong>{{ clinic.clinic_name }}</strong>
+            <div style="font-size:0.8rem; color:#666;">{{ clinic.clinic_code }}</div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <h3>No Clinics Attached</h3>
+        <p>Attach an existing clinic to manage its patients from here.</p>
+        <a href="{% url 'department-clinic-attach' department_id=department.id %}" class="btn btn-primary" style="margin-top: 15px;">+ Attach Clinic</a>
+    </div>
+    {% endif %}
+
+    <!-- Patients -->
+    <div class="mkt-header-row" style="margin-top:1.5rem;">
+        <div class="header"><h1>Patients</h1></div>
+        {% if attached_clinics %}
+        <a href="{% url 'department-add-patient' department_id=department.id %}" class="btn-marketplace">+ Add Patient</a>
+        {% endif %}
+    </div>
+
+    {% if attached_clinics %}
+    <div class="search-container">
+        <span class="total-patients">📊 Total Patients: <span>{{ total_count }}</span></span>
+        🔍 Search by:
+        <select id="searchType">
+            <option value="name">Name</option>
+            <option value="code">Patient Code</option>
+            <option value="contact">Contact Number</option>
+        </select>
+        <input type="text" id="searchValue" placeholder="Enter value...">
+        <button onclick="searchPatients()">Search</button>
+        <button onclick="clearSearch()">Clear</button>
+    </div>
+
+    {% if patients %}
     <table class="patient-table">
         <thead>
             <tr>
-                <th>Name</th>
-                <th>Username</th>
-                <th>Active</th>
+                <th>Full Name</th>
+                <th>Diagnosis</th>
+                <th>Clinic</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
-            {% for member in staff %}
+            {% for patient in patients %}
             <tr>
-                <td>{{ member.user.get_full_name|default:member.user.username }}</td>
-                <td>{{ member.user.username }}</td>
-                <td>{{ member.is_active|yesno:"Yes,No" }}</td>
+                <td><strong>{{ patient.patient_name }}</strong></td>
+                <td>{{ patient.patient_diagnosis|default:"-" }}</td>
+                <td>{{ patient.origin_clinic.clinic_name|default:"-" }}</td>
+                <td>
+                    <a href="{% url 'patient-exercise-status' patient_id=patient.id %}" class="btn btn-success">Track</a>
+                    <a href="{% url 'prescription-page' patient_id=patient.id %}" class="btn btn-info">Rx</a>
+                    <a href="{% url 'exercise-selectable' patient_id=patient.id %}" class="btn btn-success">Exe</a>
+                    <a href="{% url 'department-patient-handover' department_id=department.id patient_id=patient.id %}" class="btn btn-warning">Handover</a>
+                </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
     {% else %}
     <div class="empty-state">
-        <h3>No Staff Yet</h3>
-        <p>Assign staff members to this department.</p>
-        <a href="{% url 'staff-assign' %}" class="btn btn-primary" style="margin-top: 15px;">+ Assign Staff</a>
+        <h3>No Patients Found</h3>
+        <p>Add a patient to one of this department's clinics.</p>
     </div>
     {% endif %}
+    {% endif %}
+
+    <!-- Commissions -->
+    <div style="margin-top:2rem;">
+        <div class="mkt-header-row">
+            <div class="header"><h1>Department Commissions</h1></div>
+        </div>
+        <div style="display:flex; gap:1rem; margin-bottom:1.5rem; flex-wrap:wrap;">
+            <div style="flex:1; min-width:150px; background:white; border-radius:12px; padding:1.25rem 1.5rem; box-shadow:0 4px 15px rgba(0,0,0,.08); text-align:center;">
+                <div style="font-size:1.6rem; font-weight:700; color:#11998e;">NPR {{ commission_earned }}</div>
+                <div style="font-size:0.82rem; color:#666; margin-top:4px;">Total Earned</div>
+            </div>
+            <div style="flex:1; min-width:150px; background:white; border-radius:12px; padding:1.25rem 1.5rem; box-shadow:0 4px 15px rgba(0,0,0,.08); text-align:center;">
+                <div style="font-size:1.6rem; font-weight:700; color:#f59e0b;">NPR {{ commission_pending }}</div>
+                <div style="font-size:0.82rem; color:#666; margin-top:4px;">Pending</div>
+            </div>
+        </div>
+        {% if commissions %}
+        <div class="table-responsive">
+            <table class="patient-table">
+                <thead>
+                    <tr>
+                        <th>Order #</th>
+                        <th>Patient</th>
+                        <th>Physio</th>
+                        <th>Commission</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in commissions %}
+                    <tr>
+                        <td><strong>{{ c.order.order_number }}</strong></td>
+                        <td>{{ c.patient_code }}</td>
+                        <td>{{ c.physio.get_full_name|default:c.physio.username|default:"-" }}</td>
+                        <td><strong>NPR {{ c.commission_amount }}</strong></td>
+                        <td>
+                            <span class="mkt-status-badge mkt-status-{% if c.status == 'paid' %}delivered{% elif c.status == 'approved' %}confirmed{% else %}pending{% endif %}">
+                                {{ c.get_status_display }}
+                            </span>
+                        </td>
+                        <td>{{ c.created_at|date:"d M Y" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <h3>No Commissions Yet</h3>
+            <p>Commissions appear here when this department's members' patients place marketplace orders.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Staff Roster -->
+    <div style="margin-top:2rem;">
+        <div class="mkt-header-row">
+            <div class="header"><h1>Staff</h1></div>
+        </div>
+        {% if staff %}
+        <table class="patient-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Username</th>
+                    <th>Active</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for member in staff %}
+                <tr>
+                    <td>{{ member.user.get_full_name|default:member.user.username }}</td>
+                    <td>{{ member.user.username }}</td>
+                    <td>{{ member.is_active|yesno:"Yes,No" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <h3>No Staff Yet</h3>
+            <p>Assign staff members to this department.</p>
+            <a href="{% url 'staff-assign' %}" class="btn btn-primary" style="margin-top: 15px;">+ Assign Staff</a>
+        </div>
+        {% endif %}
+    </div>
 </div>
+
+<script>
+function searchPatients() {
+    let searchType = document.getElementById('searchType').value;
+    let searchValue = document.getElementById('searchValue').value;
+    let url = `?search_type=${searchType}&search_value=${searchValue}`;
+    window.location.href = url;
+}
+
+function clearSearch() {
+    document.getElementById('searchValue').value = '';
+    window.location.href = window.location.pathname;
+}
+</script>
 {% endblock %}
