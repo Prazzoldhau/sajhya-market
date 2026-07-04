@@ -7,7 +7,14 @@
             <h4 class="mb-0">{{ event_title }}</h4>
             <p class="mb-0">Table {{ table.number }}{% if table.label %} — {{ table.label }}{% endif %}</p>
         </div>
-        <a href="{% url 'summit-table-logout' table.number %}" class="btn btn-outline-secondary btn-sm">Logout</a>
+        <div class="d-flex gap-2">
+            <a href="{% url 'summit-table-logout' table.number %}" class="btn btn-outline-secondary btn-sm">Logout</a>
+            <form method="post" action="{% url 'summit-leave-table' table.number %}"
+                  onsubmit="return confirm('Leave Table {{ table.number }}? It will become available for another group to pick.');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-danger btn-sm">Leave Table</button>
+            </form>
+        </div>
     </div>
 
     {% for s in sessions %}

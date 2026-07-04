@@ -1,0 +1,224 @@
+{% extends 'base.html' %}
+{% block title %}{{ session.short_title }} — Live Results — {{ event_title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .live-root {
+        --surface-1: #fcfcfb;
+        --text-primary: #0b0b0b;
+        --text-secondary: #52514e;
+        --text-muted: #898781;
+        --gridline: #e1e0d9;
+        --series-1: #2a78d6;
+    }
+    @media (prefers-color-scheme: dark) {
+        .live-root {
+            --surface-1: #1a1a19;
+            --text-primary: #ffffff;
+            --text-secondary: #c3c2b7;
+            --text-muted: #898781;
+            --gridline: #2c2c2a;
+            --series-1: #3987e5;
+        }
+    }
+    .live-question-card { break-inside: avoid; }
+    .live-chart-wrap { position: relative; width: 100%; }
+    .live-table-rows { max-height: 220px; overflow-y: auto; font-size: 0.85rem; }
+    .live-table-rows .row-item { display: flex; justify-content: space-between; gap: 0.75rem; padding: 0.25rem 0; border-bottom: 1px solid rgba(0,0,0,0.06); }
+    .live-table-rows .row-item .t-name { font-weight: 600; white-space: nowrap; color: var(--text-secondary); }
+    .live-table-rows .row-item .t-value { text-align: right; }
+    .live-status-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; background: #0ca30c; }
+    .live-status-dot.stale { background: #d03b3b; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 live-root" style="max-width: 1400px;">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+        <div>
+            <a href="{% url 'summit-admin-dashboard' %}" class="d-block small mb-1">&larr; All sessions</a>
+            <h4 class="mb-0">{{ session.short_title }} — Live Results</h4>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <select id="session-switch" class="form-select form-select-sm" style="width: auto;">
+                {% for key, sess in sessions.items %}
+                <option value="{{ key }}" {% if key == session_key %}selected{% endif %}>{{ sess.short_title }}</option>
+                {% endfor %}
+            </select>
+            <span class="small text-muted"><span id="status-dot" class="live-status-dot"></span> live</span>
+        </div>
+    </div>
+
+    <div class="d-flex flex-wrap align-items-center gap-3 mb-4">
+        <span class="badge bg-primary fs-6" id="submitted-badge">— / —</span>
+        <span class="text-muted small">tables submitted</span>
+        <span class="text-muted small ms-auto">Updated <span id="updated-at">—</span></span>
+    </div>
+
+    <div class="row" id="questions-grid">
+        {% for step in session.steps %}
+            {% for section in step.sections %}
+            <div class="col-lg-6 mb-4">
+                <div class="card h-100 live-question-card"
+                     data-step-key="{{ step.key }}" data-name="{{ section.name }}">
+                    <div class="card-header py-2">
+                        <div class="small text-muted">{{ step.title }}</div>
+                        <div class="fw-semibold">{{ section.label|default:section.name }}</div>
+                    </div>
+                    <div class="card-body">
+                        <div class="live-chart-wrap chart-target" style="display: none;">
+                            <canvas></canvas>
+                        </div>
+                        <p class="fst-italic text-muted small mb-2 no-data-msg">No responses yet.</p>
+                        <details class="mt-2">
+                            <summary class="small text-muted" style="cursor: pointer;">Table-wise breakdown</summary>
+                            <div class="live-table-rows mt-2"></div>
+                        </details>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+    const dataUrl = "{% url 'summit-admin-live-results-data' session_key %}";
+    const liveUrlTemplate = "{% url 'summit-admin-live-results' 'SESSION_KEY' %}";
+    const POLL_MS = 4000;
+
+    const isDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const colors = {
+        bar: isDark ? "#3987e5" : "#2a78d6",
+        grid: isDark ? "#2c2c2a" : "#e1e0d9",
+        text: isDark ? "#c3c2b7" : "#52514e",
+    };
+
+    const charts = {};
+
+    function cardFor(stepKey, name) {
+        return document.querySelector(
+            '.live-question-card[data-step-key="' + stepKey + '"][data-name="' + name + '"]'
+        );
+    }
+
+    function renderQuestion(q) {
+        const card = cardFor(q.step_key, q.name);
+        if (!card) return;
+        const chartWrap = card.querySelector(".chart-target");
+        const noDataMsg = card.querySelector(".no-data-msg");
+        const rowsBox = card.querySelector(".live-table-rows");
+        const key = q.step_key + ":" + q.name;
+
+        const hasChartData = q.chartable && q.chart_labels.length > 0 && q.chart_values.some((v) => v > 0);
+
+        if (q.chartable && hasChartData) {
+            chartWrap.style.display = "block";
+            noDataMsg.style.display = "none";
+            const canvas = chartWrap.querySelector("canvas");
+            chartWrap.style.height = Math.max(140, q.chart_labels.length * 34) + "px";
+
+            if (charts[key]) {
+                const c = charts[key];
+                c.data.labels = q.chart_labels;
+                c.data.datasets[0].data = q.chart_values;
+                c.update();
+            } else {
+                charts[key] = new Chart(canvas.getContext("2d"), {
+                    type: "bar",
+                    data: {
+                        labels: q.chart_labels,
+                        datasets: [
+                            {
+                                data: q.chart_values,
+                                backgroundColor: colors.bar,
+                                borderRadius: 4,
+                                maxBarThickness: 22,
+                            },
+                        ],
+                    },
+                    options: {
+                        indexAxis: "y",
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: { duration: 300 },
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                ticks: { precision: 0, color: colors.text },
+                                grid: { color: colors.grid },
+                            },
+                            y: {
+                                ticks: { color: colors.text, autoSkip: false },
+                                grid: { display: false },
+                            },
+                        },
+                    },
+                });
+            }
+        } else {
+            chartWrap.style.display = "none";
+            if (!q.table_rows.length) {
+                noDataMsg.style.display = "block";
+            } else {
+                noDataMsg.style.display = "none";
+            }
+        }
+
+        if (q.table_rows.length) {
+            rowsBox.innerHTML = q.table_rows
+                .map(
+                    (r) =>
+                        '<div class="row-item"><span class="t-name">' +
+                        escapeHtml(r.table) +
+                        '</span><span class="t-value">' +
+                        escapeHtml(r.value) +
+                        "</span></div>"
+                )
+                .join("");
+        } else {
+            rowsBox.innerHTML = '<p class="fst-italic text-muted small mb-0">No responses yet.</p>';
+        }
+    }
+
+    function escapeHtml(s) {
+        const div = document.createElement("div");
+        div.textContent = s == null ? "" : String(s);
+        return div.innerHTML;
+    }
+
+    function setStale(isStale) {
+        const dot = document.getElementById("status-dot");
+        dot.classList.toggle("stale", isStale);
+    }
+
+    function poll() {
+        fetch(dataUrl, { credentials: "same-origin" })
+            .then((res) => {
+                if (!res.ok) throw new Error("bad status");
+                return res.json();
+            })
+            .then((payload) => {
+                setStale(false);
+                document.getElementById("submitted-badge").textContent =
+                    payload.submitted_count + " / " + payload.total_tables;
+                document.getElementById("updated-at").textContent = payload.generated_at;
+                payload.questions.forEach(renderQuestion);
+            })
+            .catch(() => setStale(true));
+    }
+
+    poll();
+    setInterval(poll, POLL_MS);
+
+    document.getElementById("session-switch").addEventListener("change", function (e) {
+        window.location.href = liveUrlTemplate.replace("SESSION_KEY", e.target.value);
+    });
+})();
+</script>
+{% endblock %}

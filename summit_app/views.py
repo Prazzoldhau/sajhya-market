@@ -2,7 +2,7 @@ import json
 from collections import Counter
 
 from django.contrib import messages
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
@@ -228,6 +228,21 @@ def table_logout(request, table_number):
 
 
 @table_required
+def leave_table(request, table_number):
+    """Self-service opposite of Logout: also frees the table's claim so
+    another group can pick it from the chooser, e.g. if this group chose
+    the wrong table by mistake. Worksheet answers already entered are kept
+    (same as the staff-only release_table action) -- only the claim is reset."""
+    table = request.summit_table
+    if request.method == "POST":
+        table.release()
+        request.session.pop("summit_table_id", None)
+        messages.success(request, f"You've left Table {table.number}. It's now available for another group.")
+        return redirect("summit-choose-table")
+    return redirect("summit-table-dashboard", table_number=table_number)
+
+
+@table_required
 def table_dashboard(request, table_number):
     table = request.summit_table
     sessions = []
@@ -323,6 +338,15 @@ def release_table(request, table_number):
     if request.method == "POST":
         table.release()
         messages.success(request, f"Table {table.number} is now available again.")
+    return redirect("summit-admin-dashboard")
+
+
+@summit_staff_required
+def reset_table_sessions(request, table_number):
+    table = get_object_or_404(Table, number=table_number)
+    if request.method == "POST":
+        deleted, _ = SessionSubmission.objects.filter(table=table).delete()
+        messages.success(request, f"Cleared {deleted} worksheet submission(s) for Table {table.number}.")
     return redirect("summit-admin-dashboard")
 
 
@@ -438,3 +462,164 @@ def admin_session_summary(request, session_key):
         "event_title": content.EVENT_TITLE,
     }
     return render(request, "summit/admin_session_summary.html", context)
+
+
+# ---------------------------------------------------------------------------
+# Admin-facing live results (staff only) -- polling-based charts + table-wise
+# breakdowns, refreshed while facilitators are still filling in their tables.
+# ---------------------------------------------------------------------------
+
+def _live_question(session_key, step, section, tables, submissions):
+    """Build one question's worth of live-results data: an overall tally
+    (for the chart) plus a per-table breakdown row, for any section type."""
+    name = section["name"]
+    section_type = section["type"]
+    step_key = step["key"]
+    base = {
+        "step_key": step_key,
+        "name": name,
+        "label": section.get("label") or name,
+        "type": section_type,
+    }
+
+    if section_type in ("checklist_other", "radio"):
+        options = section["options"]
+        tally = Counter({lbl: 0 for _, lbl in options})
+        option_labels = dict(options)
+        table_rows = []
+        for table in tables:
+            sub = submissions.get(table.id)
+            step_data = (sub.data.get(step_key, {}) or {}) if sub else {}
+            if section_type == "checklist_other":
+                selected = step_data.get(name, [])
+            else:
+                val = step_data.get(name, "")
+                selected = [val] if val else []
+            if not selected:
+                continue
+            other_text = step_data.get(f"{name}_other_text", "")
+            labels = [other_text if k == "other" and other_text else option_labels.get(k, k) for k in selected]
+            for lbl in labels:
+                tally[lbl] += 1
+            table_rows.append({"table": str(table), "value": ", ".join(labels)})
+        base.update(
+            chartable=True,
+            chart_labels=list(tally.keys()),
+            chart_values=list(tally.values()),
+            table_rows=table_rows,
+        )
+        return base
+
+    if section_type in ("score_for_prior", "top_n_select"):
+        source_step, source_field = section["source_step"], section["source_field"]
+        label_map = dict(content.get_section_options(session_key, source_step, source_field))
+        table_rows = []
+        if section_type == "score_for_prior":
+            score_sum, score_count = Counter(), Counter()
+            for table in tables:
+                sub = submissions.get(table.id)
+                if sub is None:
+                    continue
+                scores = (sub.data.get(step_key, {}) or {}).get(name, {})
+                if not scores:
+                    continue
+                source_data = sub.data.get(source_step, {}) or {}
+                other_text = source_data.get(f"{source_field}_other_text", "")
+                parts = []
+                for key, val in scores.items():
+                    lbl = other_text if key == "other" and other_text else label_map.get(key, key)
+                    score_sum[lbl] += val
+                    score_count[lbl] += 1
+                    parts.append(f"{lbl}: {val}")
+                table_rows.append({"table": str(table), "value": ", ".join(parts)})
+            chart_labels = list(score_sum.keys())
+            chart_values = [round(score_sum[k] / score_count[k], 1) for k in chart_labels]
+        else:
+            tally = Counter()
+            for table in tables:
+                sub = submissions.get(table.id)
+                if sub is None:
+                    continue
+                chosen = (sub.data.get(step_key, {}) or {}).get(name, [])
+                if not chosen:
+                    continue
+                source_data = sub.data.get(source_step, {}) or {}
+                other_text = source_data.get(f"{source_field}_other_text", "")
+                labels = [other_text if k == "other" and other_text else label_map.get(k, k) for k in chosen]
+                for lbl in labels:
+                    tally[lbl] += 1
+                table_rows.append({"table": str(table), "value": ", ".join(labels)})
+            chart_labels = list(tally.keys())
+            chart_values = list(tally.values())
+        base.update(chartable=True, chart_labels=chart_labels, chart_values=chart_values, table_rows=table_rows)
+        return base
+
+    # free_text, text_fields, number_fields, text -- not chartable as votes,
+    # shown as a live-updating per-table response list instead.
+    table_rows = []
+    for table in tables:
+        sub = submissions.get(table.id)
+        if sub is None:
+            continue
+        if section_type == "text" and name == "facilitator_name":
+            value = sub.facilitator_name
+        else:
+            step_data = sub.data.get(step_key, {}) or {}
+            raw = step_data.get(name)
+            if section_type in ("free_text", "text"):
+                value = raw or ""
+            elif section_type == "text_fields":
+                value = "; ".join(f"{lbl}: {raw.get(key, '')}" for key, lbl in section["fields"] if raw and raw.get(key))
+            else:  # number_fields
+                value = "; ".join(f"{lbl}: {raw.get(key, '')}" for key, lbl, _ in section["fields"] if raw and raw.get(key))
+        if value:
+            table_rows.append({"table": str(table), "value": value})
+    base.update(chartable=False, chart_labels=[], chart_values=[], table_rows=table_rows)
+    return base
+
+
+@summit_staff_required
+def admin_live_results(request, session_key):
+    session = content.get_session(session_key)
+    if session is None:
+        raise Http404("Unknown session")
+    return render(
+        request,
+        "summit/admin_live_results.html",
+        {
+            "session": session,
+            "session_key": session_key,
+            "session_order": content.SESSION_ORDER,
+            "sessions": content.SESSIONS,
+            "event_title": content.EVENT_TITLE,
+        },
+    )
+
+
+@summit_staff_required
+def admin_live_results_data(request, session_key):
+    session = content.get_session(session_key)
+    if session is None:
+        raise Http404("Unknown session")
+
+    tables = list(Table.objects.all())
+    submissions = {
+        s.table_id: s
+        for s in SessionSubmission.objects.filter(session_key=session_key).select_related("table")
+    }
+    submitted_count = sum(1 for s in submissions.values() if s.is_complete)
+
+    questions = [
+        _live_question(session_key, step, section, tables, submissions)
+        for step in session["steps"]
+        for section in step["sections"]
+    ]
+
+    return JsonResponse(
+        {
+            "submitted_count": submitted_count,
+            "total_tables": len(tables),
+            "generated_at": timezone.now().strftime("%H:%M:%S"),
+            "questions": questions,
+        }
+    )

@@ -24,6 +24,11 @@
             {% else %}
                 <span class="badge bg-success">Available</span>
             {% endif %}
+            <form method="post" action="{% url 'summit-reset-table-sessions' t.number %}" class="d-inline"
+                  onsubmit="return confirm('Clear all worksheet answers for Table {{ t.number }}? This cannot be undone.');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-warning btn-sm">Reset Session</button>
+            </form>
         </div>
         {% endfor %}
     </div>
@@ -54,7 +59,10 @@
                     </td>
                     {% endfor %}
                     <td class="text-center">{{ row.submitted_count }} / {{ row.total_tables }}</td>
-                    <td><a href="{% url 'summit-admin-session-summary' row.key %}" class="btn btn-primary btn-sm">Summary</a></td>
+                    <td class="d-flex gap-1">
+                        <a href="{% url 'summit-admin-session-summary' row.key %}" class="btn btn-primary btn-sm">Summary</a>
+                        <a href="{% url 'summit-admin-live-results' row.key %}" class="btn btn-outline-primary btn-sm"><i class="fas fa-chart-simple"></i> Live</a>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>

@@ -7,7 +7,10 @@
             <a href="{% url 'summit-admin-dashboard' %}" class="d-block small mb-1">&larr; All sessions</a>
             <h4 class="mb-0">{{ session.short_title }}</h4>
         </div>
-        <a href="{{ request.path }}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-rotate"></i> Refresh</a>
+        <div class="d-flex gap-2">
+            <a href="{% url 'summit-admin-live-results' session_key %}" class="btn btn-outline-primary btn-sm"><i class="fas fa-chart-simple"></i> Live Results</a>
+            <a href="{{ request.path }}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-rotate"></i> Refresh</a>
+        </div>
     </div>
 
     <p class="mb-4"><strong>{{ submitted_count }}</strong> of <strong>{{ total_tables }}</strong> tables have submitted this session.</p>
