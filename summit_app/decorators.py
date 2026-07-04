@@ -7,10 +7,9 @@ from .models import Table
 
 
 def table_required(view_func):
-    """Gates a table's pages behind its PIN. Mirrors the lightweight,
-    ad-hoc access-check style used elsewhere in this project
-    (enterprise_account/decorators.py) rather than full Django auth --
-    there's no per-person identity to model here, just 4 shared laptops."""
+    """Gates a table's pages behind its PIN. A lightweight, ad-hoc
+    access-check rather than full Django auth -- there's no per-person
+    identity to model here, just 4 shared laptops."""
 
     @wraps(view_func)
     def wrapper(request, table_number, *args, **kwargs):

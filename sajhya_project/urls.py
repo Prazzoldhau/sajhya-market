@@ -11,7 +11,6 @@ urlpatterns = [
     path ('acc/', include ('account_app.urls')),
     path ('personal-acc/', include ('personal_account.urls')),
     path ('clinic-acc/', include('clinic_account.urls')),
-    path ('enterprise-acc/', include('enterprise_account.urls')),
     path ('exercise-app/', include('exercise_app.urls')),
     path ('detail-app/', include('detail_app.urls')),
     path ('video-app/', include('video_app.urls')),
