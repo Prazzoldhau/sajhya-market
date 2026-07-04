@@ -215,6 +215,8 @@ def table_login(request, table_number):
     if request.method == "POST":
         pin = request.POST.get("pin", "").strip()
         if table.check_pin(pin):
+            if not table.is_claimed:
+                table.claim()
             request.session["summit_table_id"] = table.id
             return redirect("summit-table-dashboard", table_number=table_number)
         messages.error(request, "Incorrect PIN. Please try again.")
