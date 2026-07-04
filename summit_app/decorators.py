@@ -20,9 +20,9 @@ def table_required(view_func):
             table = Table.objects.filter(id=table_id, number=table_number).first()
         if table is None:
             # Not logged in, or logged into a *different* table than this URL's.
-            # Don't touch the session here -- a facilitator who is legitimately
-            # logged into Table 1 and merely visits Table 2's URL should just be
-            # bounced to Table 2's login, not silently logged out of Table 1.
+            # Don't touch the session here -- table_login() itself checks for an
+            # existing session table and bounces back to it instead of letting
+            # the device switch, so this just needs to route through there.
             return redirect("summit-table-login", table_number=table_number)
         request.summit_table = table
         return view_func(request, table_number, *args, **kwargs)

@@ -167,7 +167,23 @@ def find_missing_prerequisite(session_key, step, submission):
 # Table-facing views
 # ---------------------------------------------------------------------------
 
+def _session_table(request):
+    """The table this device/browser is already checked into this session, if any.
+    Clears a stale id (e.g. table was deleted) instead of leaving it dangling."""
+    table_id = request.session.get("summit_table_id")
+    if not table_id:
+        return None
+    table = Table.objects.filter(id=table_id).first()
+    if table is None:
+        request.session.pop("summit_table_id", None)
+    return table
+
+
 def choose_table(request):
+    bound_table = _session_table(request)
+    if bound_table:
+        return redirect("summit-table-dashboard", table_number=bound_table.number)
+
     if request.method == "POST":
         table_number = request.POST.get("table_number")
         table = Table.objects.filter(number=table_number).first()
@@ -186,6 +202,16 @@ def choose_table(request):
 
 def table_login(request, table_number):
     table = get_object_or_404(Table, number=table_number)
+
+    bound_table = _session_table(request)
+    if bound_table:
+        if bound_table.id != table.id:
+            messages.info(
+                request,
+                f"This device is already checked in to Table {bound_table.number}. Log out there first to switch tables.",
+            )
+        return redirect("summit-table-dashboard", table_number=bound_table.number)
+
     if request.method == "POST":
         pin = request.POST.get("pin", "").strip()
         if table.check_pin(pin):
