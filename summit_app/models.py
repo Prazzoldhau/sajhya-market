@@ -11,6 +11,11 @@ class Table(models.Model):
     number = models.PositiveSmallIntegerField(unique=True)
     label = models.CharField(max_length=50, blank=True)
     pin_hash = models.CharField(max_length=128)
+    pin = models.CharField(
+        max_length=10,
+        blank=True,
+        help_text="Plaintext copy shown to staff on the admin dashboard. Login still checks pin_hash.",
+    )
     is_claimed = models.BooleanField(default=False)
     claimed_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -22,6 +27,7 @@ class Table(models.Model):
         return self.label or f"Table {self.number}"
 
     def set_pin(self, raw_pin):
+        self.pin = raw_pin
         self.pin_hash = make_password(raw_pin)
 
     def check_pin(self, raw_pin):

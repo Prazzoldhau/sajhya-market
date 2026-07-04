@@ -15,6 +15,7 @@
         {% for t in tables %}
         <div class="border rounded px-2 py-1 d-flex align-items-center gap-2">
             <span>Table {{ t.number }}</span>
+            <span class="badge bg-light text-dark border">PIN: {% if t.pin %}{{ t.pin }}{% else %}unknown — reset to view{% endif %}</span>
             {% if t.is_claimed %}
                 <span class="badge bg-secondary">Taken</span>
                 <form method="post" action="{% url 'summit-release-table' t.number %}" class="d-inline">

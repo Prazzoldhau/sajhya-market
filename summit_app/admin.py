@@ -7,7 +7,7 @@ from .models import SessionSubmission, Table
 
 @admin.register(Table)
 class TableAdmin(admin.ModelAdmin):
-    list_display = ["number", "label", "is_claimed", "claimed_at", "created_at"]
+    list_display = ["number", "label", "pin", "is_claimed", "claimed_at", "created_at"]
     actions = ["release_tables"]
 
     @admin.action(description="Release selected tables (mark unclaimed)")
