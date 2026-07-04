@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}{{ session.short_title }} — Live Results — {{ event_title }}{% endblock %}
+{% block title %}Live Results — {{ event_title }}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -29,6 +29,12 @@
     .live-table-rows .row-item .t-value { text-align: right; }
     .live-status-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; background: #0ca30c; }
     .live-status-dot.stale { background: #d03b3b; }
+    .live-session-heading { position: sticky; top: 0; background: var(--surface-1); z-index: 5; padding: 0.5rem 0; }
+    .table-view-session h6 { margin-top: 1rem; }
+    .table-view-item { display: flex; justify-content: space-between; gap: 1rem; padding: 0.35rem 0; border-bottom: 1px solid rgba(0,0,0,0.06); }
+    .table-view-item .q-label { color: var(--text-secondary); max-width: 55%; }
+    .table-view-item .q-value { text-align: right; font-weight: 500; }
+    .table-view-item .q-value.empty { font-style: italic; color: var(--text-muted); font-weight: 400; }
 </style>
 {% endblock %}
 
@@ -36,31 +42,39 @@
 <div class="container-fluid py-4 live-root" style="max-width: 1400px;">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
         <div>
-            <a href="{% url 'summit-admin-dashboard' %}" class="d-block small mb-1">&larr; All sessions</a>
-            <h4 class="mb-0">{{ session.short_title }} — Live Results</h4>
+            <a href="{% url 'summit-admin-dashboard' %}" class="d-block small mb-1">&larr; Admin dashboard</a>
+            <h4 class="mb-0">{{ event_title }} — Live Results (All Sessions)</h4>
         </div>
-        <div class="d-flex align-items-center gap-2">
-            <select id="session-switch" class="form-select form-select-sm" style="width: auto;">
-                {% for key, sess in sessions.items %}
-                <option value="{{ key }}" {% if key == session_key %}selected{% endif %}>{{ sess.short_title }}</option>
-                {% endfor %}
-            </select>
-            <span class="small text-muted"><span id="status-dot" class="live-status-dot"></span> live</span>
-        </div>
+        <span class="small text-muted"><span id="status-dot" class="live-status-dot"></span> live &middot; updated <span id="updated-at">—</span></span>
     </div>
 
-    <div class="d-flex flex-wrap align-items-center gap-3 mb-4">
-        <span class="badge bg-primary fs-6" id="submitted-badge">— / —</span>
-        <span class="text-muted small">tables submitted</span>
-        <span class="text-muted small ms-auto">Updated <span id="updated-at">—</span></span>
+    <div class="d-flex flex-wrap gap-2 mb-3" id="session-summary">
+        {% for key, sess in sessions.items %}
+        <span class="badge bg-primary fs-6" id="badge-{{ key }}">{{ sess.short_title }}: — / —</span>
+        {% endfor %}
     </div>
 
-    <div class="row" id="questions-grid">
-        {% for step in session.steps %}
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-4 border-bottom pb-3">
+        <div class="btn-group btn-group-sm" role="group">
+            <button type="button" class="btn btn-primary" id="mode-all">All tables (charts)</button>
+            <button type="button" class="btn btn-outline-primary" id="mode-table">By table</button>
+        </div>
+        <select id="table-select" class="form-select form-select-sm" style="width: auto; display: none;">
+            {% for t in tables %}
+            <option value="{{ t }}">{{ t }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div id="view-all">
+    {% for key, sess in sessions.items %}
+    <h5 class="live-session-heading border-bottom pb-2 mb-3">{{ sess.short_title }}</h5>
+    <div class="row mb-2">
+        {% for step in sess.steps %}
             {% for section in step.sections %}
             <div class="col-lg-6 mb-4">
                 <div class="card h-100 live-question-card"
-                     data-step-key="{{ step.key }}" data-name="{{ section.name }}">
+                     data-session-key="{{ key }}" data-step-key="{{ step.key }}" data-name="{{ section.name }}">
                     <div class="card-header py-2">
                         <div class="small text-muted">{{ step.title }}</div>
                         <div class="fw-semibold">{{ section.label|default:section.name }}</div>
@@ -80,6 +94,13 @@
             {% endfor %}
         {% endfor %}
     </div>
+    {% endfor %}
+    </div>
+
+    <div id="view-table" style="display: none;">
+        <p class="text-muted small" id="table-view-empty">Pick a table above to see everything it has submitted so far, across all sessions.</p>
+        <div id="table-view-content"></div>
+    </div>
 </div>
 {% endblock %}
 
@@ -87,8 +108,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script>
 (function () {
-    const dataUrl = "{% url 'summit-admin-live-results-data' session_key %}";
-    const liveUrlTemplate = "{% url 'summit-admin-live-results' 'SESSION_KEY' %}";
+    const dataUrl = "{% url 'summit-admin-live-results-data' %}";
     const POLL_MS = 4000;
 
     const isDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -100,19 +120,19 @@
 
     const charts = {};
 
-    function cardFor(stepKey, name) {
+    function cardFor(sessionKey, stepKey, name) {
         return document.querySelector(
-            '.live-question-card[data-step-key="' + stepKey + '"][data-name="' + name + '"]'
+            '.live-question-card[data-session-key="' + sessionKey + '"][data-step-key="' + stepKey + '"][data-name="' + name + '"]'
         );
     }
 
-    function renderQuestion(q) {
-        const card = cardFor(q.step_key, q.name);
+    function renderQuestion(sessionKey, q) {
+        const card = cardFor(sessionKey, q.step_key, q.name);
         if (!card) return;
         const chartWrap = card.querySelector(".chart-target");
         const noDataMsg = card.querySelector(".no-data-msg");
         const rowsBox = card.querySelector(".live-table-rows");
-        const key = q.step_key + ":" + q.name;
+        const key = sessionKey + ":" + q.step_key + ":" + q.name;
 
         const hasChartData = q.chartable && q.chart_labels.length > 0 && q.chart_values.some((v) => v > 0);
 
@@ -197,6 +217,65 @@
         dot.classList.toggle("stale", isStale);
     }
 
+    let latestPayload = null;
+    let currentMode = "all";
+
+    function renderTableView(tableName) {
+        const content = document.getElementById("table-view-content");
+        const emptyMsg = document.getElementById("table-view-empty");
+        if (!tableName || !latestPayload) {
+            content.innerHTML = "";
+            emptyMsg.style.display = "block";
+            return;
+        }
+        emptyMsg.style.display = "none";
+
+        content.innerHTML = latestPayload.sessions
+            .map((sess) => {
+                const items = sess.questions
+                    .map((q) => {
+                        const row = q.table_rows.find((r) => r.table === tableName);
+                        const value = row ? escapeHtml(row.value) : "";
+                        return (
+                            '<div class="table-view-item"><span class="q-label">' +
+                            escapeHtml(q.label) +
+                            '</span><span class="q-value' +
+                            (value ? "" : " empty") +
+                            '">' +
+                            (value || "Not answered yet") +
+                            "</span></div>"
+                        );
+                    })
+                    .join("");
+                return (
+                    '<div class="table-view-session"><h6 class="fw-semibold">' +
+                    escapeHtml(sess.title) +
+                    "</h6>" +
+                    items +
+                    "</div>"
+                );
+            })
+            .join("");
+    }
+
+    function setMode(mode) {
+        currentMode = mode;
+        document.getElementById("view-all").style.display = mode === "all" ? "" : "none";
+        document.getElementById("view-table").style.display = mode === "table" ? "" : "none";
+        document.getElementById("table-select").style.display = mode === "table" ? "" : "none";
+        document.getElementById("mode-all").classList.toggle("btn-primary", mode === "all");
+        document.getElementById("mode-all").classList.toggle("btn-outline-primary", mode !== "all");
+        document.getElementById("mode-table").classList.toggle("btn-primary", mode === "table");
+        document.getElementById("mode-table").classList.toggle("btn-outline-primary", mode !== "table");
+        if (mode === "table") {
+            renderTableView(document.getElementById("table-select").value);
+        }
+    }
+
+    document.getElementById("mode-all").addEventListener("click", () => setMode("all"));
+    document.getElementById("mode-table").addEventListener("click", () => setMode("table"));
+    document.getElementById("table-select").addEventListener("change", (e) => renderTableView(e.target.value));
+
     function poll() {
         fetch(dataUrl, { credentials: "same-origin" })
             .then((res) => {
@@ -205,20 +284,24 @@
             })
             .then((payload) => {
                 setStale(false);
-                document.getElementById("submitted-badge").textContent =
-                    payload.submitted_count + " / " + payload.total_tables;
+                latestPayload = payload;
                 document.getElementById("updated-at").textContent = payload.generated_at;
-                payload.questions.forEach(renderQuestion);
+                payload.sessions.forEach((sess) => {
+                    const badge = document.getElementById("badge-" + sess.session_key);
+                    if (badge) {
+                        badge.textContent = sess.title + ": " + sess.submitted_count + " / " + sess.total_tables;
+                    }
+                    sess.questions.forEach((q) => renderQuestion(sess.session_key, q));
+                });
+                if (currentMode === "table") {
+                    renderTableView(document.getElementById("table-select").value);
+                }
             })
             .catch(() => setStale(true));
     }
 
     poll();
     setInterval(poll, POLL_MS);
-
-    document.getElementById("session-switch").addEventListener("change", function (e) {
-        window.location.href = liveUrlTemplate.replace("SESSION_KEY", e.target.value);
-    });
 })();
 </script>
 {% endblock %}

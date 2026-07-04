@@ -4,7 +4,10 @@
 <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="mb-0">{{ event_title }} — Admin Dashboard</h4>
-        <a href="{{ request.path }}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-rotate"></i> Refresh</a>
+        <div class="d-flex gap-2">
+            <a href="{% url 'summit-admin-live-results' %}" class="btn btn-outline-primary btn-sm"><i class="fas fa-chart-simple"></i> Live Results</a>
+            <a href="{{ request.path }}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-rotate"></i> Refresh</a>
+        </div>
     </div>
 
     {% if not tables %}
@@ -60,10 +63,7 @@
                     </td>
                     {% endfor %}
                     <td class="text-center">{{ row.submitted_count }} / {{ row.total_tables }}</td>
-                    <td class="d-flex gap-1">
-                        <a href="{% url 'summit-admin-session-summary' row.key %}" class="btn btn-primary btn-sm">Summary</a>
-                        <a href="{% url 'summit-admin-live-results' row.key %}" class="btn btn-outline-primary btn-sm"><i class="fas fa-chart-simple"></i> Live</a>
-                    </td>
+                    <td><a href="{% url 'summit-admin-session-summary' row.key %}" class="btn btn-primary btn-sm">Summary</a></td>
                 </tr>
                 {% endfor %}
             </tbody>

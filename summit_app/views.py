@@ -579,47 +579,51 @@ def _live_question(session_key, step, section, tables, submissions):
 
 
 @summit_staff_required
-def admin_live_results(request, session_key):
-    session = content.get_session(session_key)
-    if session is None:
-        raise Http404("Unknown session")
+def admin_live_results(request):
     return render(
         request,
         "summit/admin_live_results.html",
         {
-            "session": session,
-            "session_key": session_key,
             "session_order": content.SESSION_ORDER,
             "sessions": content.SESSIONS,
+            "tables": list(Table.objects.all()),
             "event_title": content.EVENT_TITLE,
         },
     )
 
 
 @summit_staff_required
-def admin_live_results_data(request, session_key):
-    session = content.get_session(session_key)
-    if session is None:
-        raise Http404("Unknown session")
-
+def admin_live_results_data(request):
     tables = list(Table.objects.all())
-    submissions = {
-        s.table_id: s
-        for s in SessionSubmission.objects.filter(session_key=session_key).select_related("table")
-    }
-    submitted_count = sum(1 for s in submissions.values() if s.is_complete)
+    total_tables = len(tables)
 
-    questions = [
-        _live_question(session_key, step, section, tables, submissions)
-        for step in session["steps"]
-        for section in step["sections"]
-    ]
+    sessions_payload = []
+    for session_key in content.SESSION_ORDER:
+        session = content.SESSIONS[session_key]
+        submissions = {
+            s.table_id: s
+            for s in SessionSubmission.objects.filter(session_key=session_key).select_related("table")
+        }
+        submitted_count = sum(1 for s in submissions.values() if s.is_complete)
+        questions = [
+            _live_question(session_key, step, section, tables, submissions)
+            for step in session["steps"]
+            for section in step["sections"]
+        ]
+        sessions_payload.append(
+            {
+                "session_key": session_key,
+                "title": session["short_title"],
+                "submitted_count": submitted_count,
+                "total_tables": total_tables,
+                "questions": questions,
+            }
+        )
 
     return JsonResponse(
         {
-            "submitted_count": submitted_count,
-            "total_tables": len(tables),
+            "total_tables": total_tables,
             "generated_at": timezone.now().strftime("%H:%M:%S"),
-            "questions": questions,
+            "sessions": sessions_payload,
         }
     )

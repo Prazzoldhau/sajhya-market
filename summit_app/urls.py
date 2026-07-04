@@ -17,10 +17,6 @@ urlpatterns = [
     path("admin/table/<int:table_number>/release/", views.release_table, name="summit-release-table"),
     path("admin/table/<int:table_number>/reset/", views.reset_table_sessions, name="summit-reset-table-sessions"),
     path("admin/session/<str:session_key>/", views.admin_session_summary, name="summit-admin-session-summary"),
-    path("admin/session/<str:session_key>/live/", views.admin_live_results, name="summit-admin-live-results"),
-    path(
-        "admin/session/<str:session_key>/live/data/",
-        views.admin_live_results_data,
-        name="summit-admin-live-results-data",
-    ),
+    path("admin/live/", views.admin_live_results, name="summit-admin-live-results"),
+    path("admin/live/data/", views.admin_live_results_data, name="summit-admin-live-results-data"),
 ]
