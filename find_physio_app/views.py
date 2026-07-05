@@ -20,7 +20,7 @@ def find_physio(request):
 
     profiles = (
         PhysioProfile.objects
-        .filter(is_public=True)
+        .filter(is_public=True, physio__is_superuser=False)
         .select_related('physio')
         .prefetch_related('specializations')
     )
@@ -64,7 +64,7 @@ def find_physio(request):
 
 
 def physio_profile(request, username):
-    physio_user = get_object_or_404(User, username=username)
+    physio_user = get_object_or_404(User, username=username, is_superuser=False)
     profile = get_object_or_404(PhysioProfile, physio=physio_user, is_public=True)
     reviews = PhysioReview.objects.filter(physio=physio_user, is_approved=True)
     availability = PhysioAvailability.objects.filter(physio=physio_user)
@@ -84,7 +84,7 @@ def physio_profile(request, username):
 
 
 def book_physio(request, username):
-    physio_user = get_object_or_404(User, username=username)
+    physio_user = get_object_or_404(User, username=username, is_superuser=False)
     profile = get_object_or_404(PhysioProfile, physio=physio_user, is_public=True)
 
     if request.method == 'POST':
