@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     'marketplace_app',
     'find_physio_app',
     'summit_app',
+    'visit_notes_app',
 
 ]
 

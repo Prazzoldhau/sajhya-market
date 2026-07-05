@@ -22,6 +22,7 @@ urlpatterns = [
     path ('marketplace/', include('marketplace_app.urls')),
     path ('find-physio/', include('find_physio_app.urls')),
     path ('summit/', include('summit_app.urls')),
+    path ('visit-notes/', include('visit_notes_app.urls')),
 
 ]
 

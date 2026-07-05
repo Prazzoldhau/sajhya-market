@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Visit Note - {{ note.patient.patient_name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="header">
+        <br>
+        <h2>{{ note.patient.patient_name }}</h2>
+        <p class="text-muted">{{ note.created_at|date:"d M Y, H:i" }} &middot; {{ note.get_case_type_display }} &middot; Recorded by {{ note.created_by.username|default:"-" }}</p>
+        <a href="{% url 'visit-notes-list' patient_id=note.patient.id %}">&larr; Back to Notes History</a>
+    </div>
+
+    <div class="auth-card" style="margin-bottom:1.5rem;">
+        <div class="auth-header"><h3>Subjective</h3></div>
+        <div class="auth-body">
+            <p><strong>Chief Complaint:</strong> {{ note.chief_complaint_today|default:"-" }}</p>
+            <p><strong>Pain Score:</strong> {{ note.pain_score|default:"-" }}/10
+                {% if note.pain_at_rest %}&middot; At rest{% endif %}
+                {% if note.pain_with_activity %}&middot; With activity{% endif %}
+                {% if note.pain_worst_24hr %}&middot; Worst in last 24hrs{% endif %}
+            </p>
+            <p><strong>Pain Quality/Location:</strong> {{ note.pain_quality_location|default:"-" }}</p>
+            <p><strong>HEP Adherence:</strong> {{ note.get_hep_adherence_display|default:"-" }} {% if note.hep_adherence_reason %}({{ note.hep_adherence_reason }}){% endif %}</p>
+            <p><strong>Changes Since Last Visit:</strong> {{ note.get_changes_since_last_visit_display|default:"-" }} - {{ note.changes_description|default:"" }}</p>
+            <p><strong>Current Function/ADLs:</strong> {{ note.current_function_adls|default:"-" }}</p>
+            <p><strong>Medication Changes:</strong> {{ note.medication_changes|default:"-" }}</p>
+            <p><strong>New Concerns/Alerts:</strong> {{ note.new_concerns_alerts|default:"-" }}</p>
+        </div>
+    </div>
+
+    {% if note.case_type == 'ortho' %}
+    <div class="table-responsive" style="margin-bottom:1.5rem;">
+        <table class="patient-table">
+            <thead>
+                <tr>
+                    <th>Objective - Orthopedic</th>
+                    <th>Pre-Treatment (Baseline)</th>
+                    <th>Post-Treatment</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Pain Score</td><td>{{ note.pain_score|default:"-" }}</td><td>{{ note.post_pain_score|default:"-" }}</td></tr>
+                <tr><td>Range of Motion</td><td>Active: {{ note.rom_active|default:"-" }}<br>Passive: {{ note.rom_passive|default:"-" }}</td><td>{{ note.post_rom|default:"-" }}</td></tr>
+                <tr><td>Strength (MMT)</td><td>{{ note.strength_mmt|default:"-" }}</td><td>{{ note.post_strength|default:"-" }}</td></tr>
+                <tr><td>Functional Test</td><td>{{ note.functional_test_baseline|default:"-" }}</td><td>{{ note.post_functional_test|default:"-" }}</td></tr>
+                <tr><td>Vitals</td><td>HR: {{ note.vitals_hr|default:"-" }} / BP: {{ note.vitals_bp|default:"-" }} / RR: {{ note.vitals_rr|default:"-" }}</td><td>-</td></tr>
+                <tr><td>Palpation/Swelling</td><td>{{ note.palpation_swelling|default:"-" }}</td><td>-</td></tr>
+                <tr><td>Special Tests</td><td>{{ note.special_tests|default:"-" }}</td><td>-</td></tr>
+                <tr><td>Outcome Measure</td><td>{{ note.outcome_measure|default:"-" }}</td><td>-</td></tr>
+            </tbody>
+        </table>
+    </div>
+    {% elif note.case_type == 'neuro' %}
+    <div class="table-responsive" style="margin-bottom:1.5rem;">
+        <table class="patient-table">
+            <thead>
+                <tr>
+                    <th>Objective - Neurological</th>
+                    <th>Pre-Treatment (Baseline)</th>
+                    <th>Post-Treatment</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Fatigue Level</td><td>{{ note.neuro_fatigue_level|default:"-" }}</td><td>{{ note.neuro_fatigue_post|default:"-" }}</td></tr>
+                <tr><td>Tone</td><td>{{ note.neuro_tone_pre|default:"-" }}</td><td>{{ note.neuro_tone_post|default:"-" }}</td></tr>
+                <tr><td>Gait</td><td>{{ note.neuro_gait_pre|default:"-" }}</td><td>{{ note.neuro_gait_post|default:"-" }}</td></tr>
+                <tr><td>Skin Check</td><td>{{ note.neuro_skin_check_pre|default:"-" }}</td><td>{{ note.neuro_skin_check_post|default:"-" }}</td></tr>
+                <tr><td>Spasm Frequency</td><td>{{ note.neuro_spasm_frequency|default:"-" }}</td><td>-</td></tr>
+                <tr><td>Bladder/Bowel Status</td><td>{{ note.neuro_bladder_bowel_status|default:"-" }}</td><td>-</td></tr>
+                <tr><td>Motor Control</td><td>{{ note.neuro_motor_control|default:"-" }}</td><td>-</td></tr>
+                <tr><td>Sensation</td><td>{{ note.neuro_sensation|default:"-" }}</td><td>-</td></tr>
+                <tr><td>Balance (Sitting / Standing)</td><td>{{ note.neuro_balance_sitting|default:"-" }} / {{ note.neuro_balance_standing|default:"-" }}</td><td>-</td></tr>
+            </tbody>
+        </table>
+    </div>
+    {% elif note.case_type == 'geriatric' %}
+    <div class="table-responsive" style="margin-bottom:1.5rem;">
+        <table class="patient-table">
+            <thead>
+                <tr>
+                    <th>Objective - Geriatric</th>
+                    <th>Pre-Treatment (Baseline)</th>
+                    <th>Post-Treatment</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>BP Standing (Orthostatic)</td><td>{{ note.geri_bp_standing_pre|default:"-" }}</td><td>{{ note.geri_bp_standing_post|default:"-" }}</td></tr>
+                <tr><td>Dizziness on Standing</td><td>{% if note.geri_orthostatic_dizziness_pre %}Yes{% else %}No{% endif %}</td><td>{% if note.geri_orthostatic_dizziness_post %}Yes{% else %}No{% endif %}</td></tr>
+                <tr><td>SpO2</td><td>{{ note.geri_spo2_pre|default:"-" }}</td><td>{{ note.geri_spo2_post|default:"-" }}</td></tr>
+                <tr><td>Dyspnea (Borg)</td><td>{{ note.geri_dyspnea_borg_pre|default:"-" }}</td><td>{{ note.geri_dyspnea_borg_post|default:"-" }}</td></tr>
+                <tr><td>Fall Risk (TUG)</td><td>{{ note.geri_tug_pre|default:"-" }}</td><td>{{ note.geri_tug_post|default:"-" }}</td></tr>
+                <tr><td>BP Seated</td><td>{{ note.geri_bp_seated|default:"-" }}</td><td>-</td></tr>
+                <tr><td>Appetite</td><td>{{ note.geri_appetite|default:"-" }}</td><td>-</td></tr>
+                <tr><td>New Medications</td><td>{{ note.geri_new_medications|default:"-" }}</td><td>-</td></tr>
+                <tr><td>Cognition</td><td>{{ note.geri_cognition|default:"-" }}</td><td>-</td></tr>
+                <tr><td>Skin Check</td><td>{{ note.geri_skin_check_pre|default:"-" }}</td><td>-</td></tr>
+                <tr><td>Patient Report (Post)</td><td>-</td><td>{{ note.geri_patient_report_post|default:"-" }}</td></tr>
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <div class="auth-card" style="margin-bottom:1.5rem;">
+        <div class="auth-header"><h3>Treatment Provided</h3></div>
+        <div class="auth-body">
+            <p>{{ note.treatment_provided|default:"-" }}</p>
+        </div>
+    </div>
+
+    <div class="auth-card" style="margin-bottom:1.5rem;">
+        <div class="auth-header"><h3>Clinical Decision</h3></div>
+        <div class="auth-body">
+            <p><strong>Primary Impairment Treated Today:</strong> {{ note.primary_impairment_today|default:"-" }}</p>
+            <p><strong>Contraindications/Precautions:</strong> {{ note.contraindications_precautions|default:"-" }}</p>
+            <p><strong>Patient Goals for Session:</strong> {{ note.patient_goals_session|default:"-" }}</p>
+        </div>
+    </div>
+
+    <div class="auth-card" style="margin-bottom:1.5rem;">
+        <div class="auth-header"><h3>Assessment &amp; Plan</h3></div>
+        <div class="auth-body">
+            <p><strong>Assessment (Pre vs Post):</strong> {{ note.assessment|default:"-" }}</p>
+            <p><strong>Plan:</strong> {{ note.plan|default:"-" }}</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Visit Notes - {{ patient.patient_name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="mkt-header-row">
+        <div class="header"><h2>{{ patient.patient_name }} - Visit Notes</h2></div>
+        <a href="{% url 'create-visit-note' patient_id=patient.id %}" class="btn btn-primary">+ Add Visit Note</a>
+    </div>
+
+    {% if notes %}
+    <div class="table-responsive">
+        <table class="patient-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Case Type</th>
+                    <th>Chief Complaint</th>
+                    <th>Pain (Pre &rarr; Post)</th>
+                    <th>Recorded By</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for note in notes %}
+                <tr>
+                    <td>{{ note.created_at|date:"d M Y, H:i" }}</td>
+                    <td>{{ note.get_case_type_display }}</td>
+                    <td>{{ note.chief_complaint_today|truncatewords:10|default:"-" }}</td>
+                    <td>{{ note.pain_score|default:"-" }} &rarr; {{ note.post_pain_score|default:"-" }}</td>
+                    <td>{{ note.created_by.username|default:"-" }}</td>
+                    <td><a href="{% url 'visit-note-detail' note_id=note.id %}" class="btn btn-info">View</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <h3>No Visit Notes Yet</h3>
+        <p>Record a pre-treatment status and post-treatment re-assessment for this patient's visits here.</p>
+        <a href="{% url 'create-visit-note' patient_id=patient.id %}" class="btn btn-primary" style="margin-top: 15px;">+ Add Visit Note</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

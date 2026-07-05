@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Visit Note - {{ patient.patient_name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="header">
+        <br>
+        <h2>Visit Note</h2>
+        <p class="text-muted">{{ patient.patient_name }} ({{ patient.patient_code }}) &middot; Visit #{{ patient.visit_notes.count|add:1 }}</p>
+        <a href="{% url 'visit-notes-list' patient_id=patient.id %}">&larr; Back to Notes History</a>
+    </div>
+
+    <form method="post" novalidate>
+        {% csrf_token %}
+
+        <div class="auth-card" style="margin-bottom:1.5rem;">
+            <div class="auth-header"><h3>Case Type</h3></div>
+            <div class="auth-body">
+                <div class="form-group">{{ form.case_type }}</div>
+            </div>
+        </div>
+
+        <div class="auth-card" style="margin-bottom:1.5rem;">
+            <div class="auth-header"><h3>1. Subjective</h3></div>
+            <div class="auth-body">
+                <div class="form-group"><label class="form-label">Chief Complaint Today</label>{{ form.chief_complaint_today }}</div>
+                <div class="form-group"><label class="form-label">Current Pain Score (0-10)</label>{{ form.pain_score }}</div>
+                <div class="form-group">
+                    <label class="form-label">Pain Context</label><br>
+                    <label>{{ form.pain_at_rest }} At rest</label>
+                    <label style="margin-left:1rem;">{{ form.pain_with_activity }} With activity</label>
+                    <label style="margin-left:1rem;">{{ form.pain_worst_24hr }} Worst in last 24hrs</label>
+                </div>
+                <div class="form-group"><label class="form-label">Pain Quality/Location</label>{{ form.pain_quality_location }}</div>
+                <div class="form-group"><label class="form-label">HEP Adherence (Home Exercise)</label>{{ form.hep_adherence }}</div>
+                <div class="form-group"><label class="form-label">Reason if not adhered</label>{{ form.hep_adherence_reason }}</div>
+                <div class="form-group"><label class="form-label">Changes Since Last Visit</label>{{ form.changes_since_last_visit }}</div>
+                <div class="form-group"><label class="form-label">Describe Changes</label>{{ form.changes_description }}</div>
+                <div class="form-group"><label class="form-label">Current Function/ADLs</label>{{ form.current_function_adls }}</div>
+                <div class="form-group"><label class="form-label">Medication Changes</label>{{ form.medication_changes }}</div>
+                <div class="form-group"><label class="form-label">New Concerns/Alerts</label>{{ form.new_concerns_alerts }}</div>
+            </div>
+        </div>
+
+        <div class="auth-card case-section" data-case="ortho" style="margin-bottom:1.5rem;">
+            <div class="auth-header"><h3>2. Objective - Orthopedic Baseline</h3></div>
+            <div class="auth-body">
+                <div class="form-group">
+                    <label class="form-label">Vital Signs</label><br>
+                    {{ form.vitals_hr }} {{ form.vitals_bp }} {{ form.vitals_rr }}
+                </div>
+                <div class="form-group"><label class="form-label">Range of Motion - Active</label>{{ form.rom_active }}</div>
+                <div class="form-group"><label class="form-label">Range of Motion - Passive</label>{{ form.rom_passive }}</div>
+                <div class="form-group"><label class="form-label">Strength (MMT 0-5)</label>{{ form.strength_mmt }}</div>
+                <div class="form-group"><label class="form-label">Palpation / Swelling</label>{{ form.palpation_swelling }}</div>
+                <div class="form-group"><label class="form-label">Special/Orthopedic Tests</label>{{ form.special_tests }}</div>
+                <div class="form-group"><label class="form-label">Functional Test (Baseline)</label>{{ form.functional_test_baseline }}</div>
+                <div class="form-group"><label class="form-label">Standardized Outcome Measure</label>{{ form.outcome_measure }}</div>
+            </div>
+        </div>
+
+        <div class="auth-card case-section" data-case="neuro" style="margin-bottom:1.5rem;">
+            <div class="auth-header"><h3>2. Objective - Neurological Baseline</h3></div>
+            <div class="auth-body">
+                <div class="form-group"><label class="form-label">Fatigue Level (0-10)</label>{{ form.neuro_fatigue_level }}</div>
+                <div class="form-group"><label class="form-label">Spasm Frequency</label>{{ form.neuro_spasm_frequency }}</div>
+                <div class="form-group"><label class="form-label">Bladder/Bowel Status</label>{{ form.neuro_bladder_bowel_status }}</div>
+                <div class="form-group"><label class="form-label">Tone (Baseline)</label>{{ form.neuro_tone_pre }}</div>
+                <div class="form-group"><label class="form-label">Motor Control</label>{{ form.neuro_motor_control }}</div>
+                <div class="form-group"><label class="form-label">Sensation</label>{{ form.neuro_sensation }}</div>
+                <div class="form-group"><label class="form-label">Sitting Balance</label>{{ form.neuro_balance_sitting }}</div>
+                <div class="form-group"><label class="form-label">Standing Balance</label>{{ form.neuro_balance_standing }}</div>
+                <div class="form-group"><label class="form-label">Gait (Baseline)</label>{{ form.neuro_gait_pre }}</div>
+                <div class="form-group"><label class="form-label">Skin Check (Baseline)</label>{{ form.neuro_skin_check_pre }}</div>
+            </div>
+        </div>
+
+        <div class="auth-card case-section" data-case="geriatric" style="margin-bottom:1.5rem;">
+            <div class="auth-header"><h3>2. Objective - Geriatric Baseline (Safety Check)</h3></div>
+            <div class="auth-body">
+                <div class="form-group"><label class="form-label">Appetite</label>{{ form.geri_appetite }}</div>
+                <div class="form-group"><label class="form-label">New Medications</label>{{ form.geri_new_medications }}</div>
+                <div class="form-group"><label class="form-label">BP (Seated)</label>{{ form.geri_bp_seated }}</div>
+                <div class="form-group"><label class="form-label">BP (Standing, Orthostatic Check)</label>{{ form.geri_bp_standing_pre }}</div>
+                <div class="form-group"><label>{{ form.geri_orthostatic_dizziness_pre }} Dizziness on standing (red flag)</label></div>
+                <div class="form-group"><label class="form-label">SpO2 (Rest)</label>{{ form.geri_spo2_pre }}</div>
+                <div class="form-group"><label class="form-label">Dyspnea (Borg)</label>{{ form.geri_dyspnea_borg_pre }}</div>
+                <div class="form-group"><label class="form-label">Cognition</label>{{ form.geri_cognition }}</div>
+                <div class="form-group"><label class="form-label">Fall Risk - Timed Up and Go (TUG)</label>{{ form.geri_tug_pre }}</div>
+                <div class="form-group"><label class="form-label">Skin Check</label>{{ form.geri_skin_check_pre }}</div>
+            </div>
+        </div>
+
+        <div class="auth-card" style="margin-bottom:1.5rem;">
+            <div class="auth-header"><h3>3. Treatment Provided</h3></div>
+            <div class="auth-body">
+                <div class="form-group">{{ form.treatment_provided }}</div>
+            </div>
+        </div>
+
+        <div class="auth-card" style="margin-bottom:1.5rem;">
+            <div class="auth-header"><h3>4. Clinical Decision</h3></div>
+            <div class="auth-body">
+                <div class="form-group"><label class="form-label">Primary Impairment to Treat Today</label>{{ form.primary_impairment_today }}</div>
+                <div class="form-group"><label class="form-label">Contraindications/Precautions</label>{{ form.contraindications_precautions }}</div>
+                <div class="form-group"><label class="form-label">Patient Goals for This Session</label>{{ form.patient_goals_session }}</div>
+            </div>
+        </div>
+
+        <div class="auth-card case-section" data-case="ortho" style="margin-bottom:1.5rem;">
+            <div class="auth-header"><h3>5. Post-Treatment Re-assessment - Orthopedic</h3></div>
+            <div class="auth-body">
+                <div class="form-group"><label class="form-label">Pain Score After Treatment (0-10)</label>{{ form.post_pain_score }}</div>
+                <div class="form-group"><label class="form-label">ROM After Treatment</label>{{ form.post_rom }}</div>
+                <div class="form-group"><label class="form-label">Strength After Treatment</label>{{ form.post_strength }}</div>
+                <div class="form-group"><label class="form-label">Functional Test After Treatment</label>{{ form.post_functional_test }}</div>
+            </div>
+        </div>
+
+        <div class="auth-card case-section" data-case="neuro" style="margin-bottom:1.5rem;">
+            <div class="auth-header"><h3>5. Post-Treatment Re-assessment - Neurological</h3></div>
+            <div class="auth-body">
+                <div class="form-group"><label class="form-label">Tone After Treatment</label>{{ form.neuro_tone_post }}</div>
+                <div class="form-group"><label class="form-label">Gait After Treatment</label>{{ form.neuro_gait_post }}</div>
+                <div class="form-group"><label class="form-label">Fatigue After Treatment (0-10)</label>{{ form.neuro_fatigue_post }}</div>
+                <div class="form-group"><label class="form-label">Skin Check After Treatment</label>{{ form.neuro_skin_check_post }}</div>
+            </div>
+        </div>
+
+        <div class="auth-card case-section" data-case="geriatric" style="margin-bottom:1.5rem;">
+            <div class="auth-header"><h3>5. Post-Treatment Re-assessment - Geriatric</h3></div>
+            <div class="auth-body">
+                <div class="form-group"><label class="form-label">Recovery Vitals</label>{{ form.geri_recovery_vitals }}</div>
+                <div class="form-group"><label class="form-label">BP (Standing, Re-check)</label>{{ form.geri_bp_standing_post }}</div>
+                <div class="form-group"><label>{{ form.geri_orthostatic_dizziness_post }} Dizziness on standing (re-check)</label></div>
+                <div class="form-group"><label class="form-label">SpO2 (After Treatment)</label>{{ form.geri_spo2_post }}</div>
+                <div class="form-group"><label class="form-label">Dyspnea After Treatment (Borg)</label>{{ form.geri_dyspnea_borg_post }}</div>
+                <div class="form-group"><label class="form-label">Fall Risk Re-test (TUG)</label>{{ form.geri_tug_post }}</div>
+                <div class="form-group"><label class="form-label">Patient Report (Post)</label>{{ form.geri_patient_report_post }}</div>
+            </div>
+        </div>
+
+        <div class="auth-card" style="margin-bottom:1.5rem;">
+            <div class="auth-header"><h3>6. Assessment &amp; Plan</h3></div>
+            <div class="auth-body">
+                <div class="form-group"><label class="form-label">Assessment (Pre vs Post)</label>{{ form.assessment }}</div>
+                <div class="form-group"><label class="form-label">Plan</label>{{ form.plan }}</div>
+            </div>
+        </div>
+
+        {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+
+        <div class="d-grid gap-2 mt-4">
+            <button type="submit" class="btn-gradient">Save Visit Note</button>
+        </div>
+    </form>
+</div>
+
+<script>
+function updateCaseSections() {
+    const selected = document.getElementById('id_case_type').value;
+    document.querySelectorAll('.case-section').forEach(function (section) {
+        section.style.display = (section.dataset.case === selected) ? '' : 'none';
+    });
+}
+document.getElementById('id_case_type').addEventListener('change', updateCaseSections);
+document.addEventListener('DOMContentLoaded', updateCaseSections);
+</script>
+{% endblock %}
