@@ -3,6 +3,7 @@ from django.contrib.auth import login, authenticate,logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .forms import CustomUserCreationForm
+from find_physio_app.models import PhysioProfile
 
 
 # Create your views here.
@@ -18,8 +19,9 @@ def signup_personal(request):
             user = form.save(commit=False)
             user.user_type = 'personal'
             # Log the user in immediately after signup
-            
+
             user.save()
+            PhysioProfile.objects.get_or_create(physio=user)
             login(request, user)
             messages.success(request, f'Welcome {user.username}! Registration successful.')
             return redirect('login-personal')  # Change to your home URL name
@@ -39,6 +41,7 @@ def signup_clinic(request):
             user = form.save(commit=False)
             user.user_type='clinic'
             user.save()  # <-- ADD THIS LINE
+            PhysioProfile.objects.get_or_create(physio=user)
             # Log the user in immediately after signup
             login(request, user)
             messages.success(request, f'Welcome {user.username}! Registration successful.')
@@ -60,6 +63,7 @@ def signup_enterprise(request):
             user = form.save(commit=False)
             user.user_type = 'enterprise'
             user.save()
+            PhysioProfile.objects.get_or_create(physio=user)
             login(request, user)
             messages.success(request, f'Welcome {user.username}! Registration successful.')
             return redirect('enterprise-dashboard')
