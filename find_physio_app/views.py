@@ -69,8 +69,8 @@ def physio_profile(request, username):
     reviews = PhysioReview.objects.filter(physio=physio_user, is_approved=True)
     availability = PhysioAvailability.objects.filter(physio=physio_user)
     clinics = Clinic.objects.filter(
-        clinicphysio__physio=physio_user,
-        clinicphysio__is_active=True
+        registered_clinic__physio=physio_user,
+        registered_clinic__is_active=True
     )
     context = {
         'profile': profile,
