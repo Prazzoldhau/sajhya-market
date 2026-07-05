@@ -3,6 +3,7 @@ from django.conf import settings
 import secrets, string,pytz
 from datetime import datetime
 from clinic_account.models import Clinic
+from enterprise_account.models import Enterprise
 from django.db import models
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
@@ -37,6 +38,15 @@ class AddPatient(models.Model):
         null=True,
         blank=True,
         related_name='clinic_assigned'
+    )
+
+        # Foreign key points to the enterprise (hospital) where patient is created
+    origin_enterprise = models.ForeignKey(
+        Enterprise,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='enterprise_assigned'
     )
 
     created_at = models.DateTimeField(default=get_nepal_time)

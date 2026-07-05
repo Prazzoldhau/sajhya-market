@@ -62,7 +62,7 @@ def signup_enterprise(request):
             user.save()
             login(request, user)
             messages.success(request, f'Welcome {user.username}! Registration successful.')
-            return redirect('enterprise-onboarding')
+            return redirect('enterprise-dashboard')
         else:
             messages.error(request, 'Please correct the errors below.')
     else:

@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Enterprise{% endblock %}
+
+{% block content %}
+<div class="navbar">
+        <div class="logo">Sa:jhya </div>
+
+        <!-- Settings Dropdown -->
+        <div class="dropdown">
+            <button class="btn-gradient dropdown-toggle">⚙️ Settings</button>
+            <div class="dropdown-menu">
+                <a href="{% url 'add-patient-by-enterpriseuser' enterprise_id=enterprise.id%}" class="dropdown-item">
+                    🏥 Add Patient
+                </a>
+                <a href="{% url 'search-staff' enterprise.id %}" class="dropdown-item">
+                    👥 Add Staff
+                </a>
+                <a href="{% url 'add-ward' enterprise_id=enterprise.id %}" class="dropdown-item">
+                    🛏️ Add Ward
+                </a>
+                <a href="#" class="dropdown-item">
+                    📋 Manage Enterprises
+                </a>
+                <a href="#" class="dropdown-item">
+                    📋 Manage Staff
+                </a>
+                <a href="#" class="dropdown-item">
+                    ⚙️ Enterprise Settings
+                </a>
+                <a href="#" class="dropdown-item">
+                    👤 Profile Settings
+                </a>
+            </div>
+        </div>
+</div>  <!-- ✅ Closing navbar properly -->
+<div class="container">
+        <!-- Header -->
+    <div class="header">
+        <br>
+        <h2>{{enterprise.enterprise_name }}</h2>
+    </div>
+
+    <!-- Wards -->
+    <div class="mkt-header-row">
+        <div class="header"><h3>Wards</h3></div>
+        <a href="{% url 'add-ward' enterprise_id=enterprise.id %}" class="btn btn-primary">+ Add Ward</a>
+    </div>
+    {% if wards %}
+    <div class="table-responsive" style="margin-bottom:1.5rem;">
+        <table class="patient-table">
+            <thead>
+                <tr>
+                    <th>Ward Type</th>
+                    <th>Ward Computer PIN</th>
+                    <th>Ward Request URL</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ward in wards %}
+                <tr>
+                    <td><strong>{{ ward.get_ward_type_display }}</strong></td>
+                    <td><code>{{ ward.pin }}</code></td>
+                    <td>
+                        <small class="text-muted">Bookmark this on the {{ ward.get_ward_type_display }} computer:</small><br>
+                        <code>{% url 'ward-login' token=ward.access_token %}</code>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state" style="margin-bottom:1.5rem;">
+        <p>No wards added yet.</p>
+        <a href="{% url 'add-ward' enterprise_id=enterprise.id %}" class="btn btn-primary">+ Add Ward</a>
+    </div>
+    {% endif %}
+
+    <!-- Search Box -->
+    <div class="search-container">
+        <span class="total-patients">📊 Total Patients: <span>{{ total_count }}</span></span>
+        🔍 Search by:
+        <select id="searchType">
+            <option value="name">Name</option>
+            <option value="code">Patient Code</option>
+            <option value="contact">Contact Number</option>
+        </select>
+        <input type="text" id="searchValue" placeholder="Enter value...">
+        <button onclick="searchPatients()">Search</button>
+        <button onclick="clearSearch()">Clear</button>
+    </div>
+
+    <!-- Patients Table -->
+    {% if patients %}
+    <div class="table-responsive">
+        <table class="patient-table">
+            <thead>
+                <tr>
+                    <th>Full Name</th>
+                    <th>Diagnosis</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for patient in patients %}
+                <tr>
+                    <td><strong>{{ patient.patient_name }}</strong></td>
+                    <td>{{ patient.patient_diagnosis|default:"-" }}</td>
+                    <td>
+                        <a href="{% url 'patient-detail' patient_id=patient.id %}" class="btn btn-info">Stat</a>
+                        <a href="{% url 'patient-exercise-status' patient_id=patient.id %}" class="btn btn-success">Track</a>
+                        <a href="{% url 'prescription-page' patient_id=patient.id %}" class="btn btn-info">Rx</a>
+                        <a href="{% url 'exercise-selectable' patient_id=patient.id %}" class="btn btn-success">Exe</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <h3>No Patients Found</h3>
+        <p>You haven't created any patients yet.</p>
+        <a href="#" class="btn btn-primary" style="margin-top: 15px;">+ Add New Patient</a>
+    </div>
+    {% endif %}
+</div>  <!-- ✅ Closing container -->
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dropdown = document.querySelector('.dropdown');
+    const dropdownToggle = document.querySelector('.dropdown-toggle');
+
+    if (dropdown && dropdownToggle) {
+        dropdownToggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            dropdown.classList.toggle('open');
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!dropdown.contains(e.target)) {
+                dropdown.classList.remove('open');
+            }
+        });
+
+        const dropdownItems = document.querySelectorAll('.dropdown-item');
+        dropdownItems.forEach(item => {
+            item.addEventListener('click', function() {
+                dropdown.classList.remove('open');
+            });
+        });
+    }
+});
+function searchPatients() {
+    let searchType = document.getElementById('searchType').value;
+    let searchValue = document.getElementById('searchValue').value;
+    let url = `?search_type=${searchType}&search_value=${searchValue}`;
+    window.location.href = url;
+}
+
+function clearSearch() {
+    document.getElementById('searchValue').value = '';
+    window.location.href = window.location.pathname;
+}
+
+document.getElementById('searchType').addEventListener('change', function() {
+    let input = document.getElementById('searchValue');
+    switch(this.value) {
+        case 'name': input.placeholder = 'Enter full name...'; break;
+        case 'code': input.placeholder = 'Enter patient code...'; break;
+        case 'contact': input.placeholder = 'Enter 10-digit number...'; break;
+    }
+});
+</script>
+{% endblock %}

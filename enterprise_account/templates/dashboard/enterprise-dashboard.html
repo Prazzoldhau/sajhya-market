@@ -1,0 +1,226 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Enterprise List{% endblock %}
+
+{% block content %}
+<div class="navbar">
+        <div class="logo">Sa:jhya </div>
+
+        <!-- Settings Dropdown -->
+        <div class="dropdown">
+            <button class="btn-gradient dropdown-toggle">⚙️ Settings</button>
+            <div class="dropdown-menu">
+                <a href="{% url 'enterprise-user-create-patient'%}" class="dropdown-item">
+                    🏥 Add Patient
+                </a>
+
+                <a href="{% url 'enterprise-sub-dash' %}" class="dropdown-item">
+                    📋 Manage Enterprises
+                </a>
+                <a href="{% url 'physio-requests-queue' %}" class="dropdown-item">
+                    📥 Physio Requests
+                </a>
+                <a href="{% url 'create-referral' %}" class="dropdown-item">
+                    📤 Send Referral
+                </a>
+                <a href="{% url 'search-referral' %}" class="dropdown-item">
+                    🔍 Find Referral
+                </a>
+                <a href="{% url 'my-referrals' %}" class="dropdown-item">
+                    📋 My Referrals
+                </a>
+                <a href="{% url 'enterprise-staff-dashboard'%}" class="dropdown-item">
+                    📋 Manage Staff
+                </a>
+                <a href="{% url 'manage-physio-profile' %}" class="dropdown-item">
+                    🔍 My Public Profile
+                </a>
+                <a href="{% url 'manage-bookings' %}" class="dropdown-item">
+                    📅 My Bookings
+                </a>
+                <a href="#" class="dropdown-item">
+                    ⚙️ Enterprise Settings
+                </a>
+                <a href="#" class="dropdown-item">
+                    👤 Profile Settings
+                </a>
+                <div class="dropdown-divider"></div>
+                <form method="POST" action="{% url 'logout-enterprise'%}" class="logout-form-dropdown">
+                    {% csrf_token %}
+                    <button type="submit" class="dropdown-item logout-item">
+                        🚪 Logout
+                    </button>
+                </form>
+            </div>
+        </div>
+</div>  <!-- ✅ Closing navbar properly -->
+
+<div class="container">
+    <!-- Header -->
+    <div class="mkt-header-row">
+        <div class="header">
+            <a href="{% url 'enterprise-sub-dash' %}">
+                <h1>Enterprise</h1>
+            </a>
+        </div>
+        <a href="{% url 'marketplace' %}" class="btn-marketplace">
+            🛒 Marketplace
+        </a>
+    </div>
+    <br>
+
+
+
+    <!-- Search Box -->
+    <div class="search-container">
+        <span class="total-patients">📊 Total Patients: <span>{{ total_count }}</span></span>
+        🔍 Search by:
+        <select id="searchType">
+            <option value="name">Name</option>
+            <option value="code">Patient Code</option>
+            <option value="contact">Contact Number</option>
+        </select>
+        <input type="text" id="searchValue" placeholder="Enter value...">
+        <button onclick="searchPatients()">Search</button>
+        <button onclick="clearSearch()">Clear</button>
+    </div>
+
+    <!-- Patients Table -->
+    {% if patients %}
+    <table class="patient-table">
+        <thead>
+            <tr>
+                <th>Full Name</th>
+                <th>Diagnosis</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for patient in patients %}
+                <td><strong>{{ patient.patient_name }}</strong></td>
+                <td>{{ patient.patient_diagnosis|default:"-" }}</td>
+                <td>
+                    <a href="{% url 'patient-detail' patient_id=patient.id %}" class="btn btn-info">Stat</a>
+                    <a href="{% url 'patient-exercise-status' patient_id=patient.id %}" class="btn btn-success">Track</a>
+                    <a href="{% url 'prescription-page' patient_id=patient.id %}" class="btn btn-info">Rx</a>
+                    <a href="{% url 'exercise-selectable' patient_id=patient.id %}" class="btn btn-success">Exe</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <h3>No Patients Found</h3>
+        <p>You haven't created any patients yet.</p>
+        <a href="#" class="btn btn-primary" style="margin-top: 15px;">+ Add New Patient</a>
+    </div>
+    {% endif %}
+
+    <!-- Commission Section -->
+    <div style="margin-top:2rem;">
+        <div class="mkt-header-row">
+            <div class="header"><h1>My Commissions</h1></div>
+        </div>
+        <div style="display:flex; gap:1rem; margin-bottom:1.5rem; flex-wrap:wrap;">
+            <div style="flex:1; min-width:150px; background:white; border-radius:12px; padding:1.25rem 1.5rem; box-shadow:0 4px 15px rgba(0,0,0,.08); text-align:center;">
+                <div style="font-size:1.6rem; font-weight:700; color:#11998e;">NPR {{ commission_earned }}</div>
+                <div style="font-size:0.82rem; color:#666; margin-top:4px;">Total Earned</div>
+            </div>
+            <div style="flex:1; min-width:150px; background:white; border-radius:12px; padding:1.25rem 1.5rem; box-shadow:0 4px 15px rgba(0,0,0,.08); text-align:center;">
+                <div style="font-size:1.6rem; font-weight:700; color:#f59e0b;">NPR {{ commission_pending }}</div>
+                <div style="font-size:0.82rem; color:#666; margin-top:4px;">Pending</div>
+            </div>
+        </div>
+        {% if commissions %}
+        <div class="table-responsive">
+            <table class="patient-table">
+                <thead>
+                    <tr>
+                        <th>Order #</th>
+                        <th>Patient</th>
+                        <th>Order Amount</th>
+                        <th>Rate</th>
+                        <th>Commission</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in commissions %}
+                    <tr>
+                        <td><strong>{{ c.order.order_number }}</strong></td>
+                        <td>{{ c.patient_code }}</td>
+                        <td>NPR {{ c.order_amount }}</td>
+                        <td>{{ c.commission_rate }}%</td>
+                        <td><strong>NPR {{ c.commission_amount }}</strong></td>
+                        <td>
+                            <span class="mkt-status-badge mkt-status-{% if c.status == 'paid' %}delivered{% elif c.status == 'approved' %}confirmed{% else %}pending{% endif %}">
+                                {{ c.get_status_display }}
+                            </span>
+                        </td>
+                        <td>{{ c.created_at|date:"d M Y" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <h3>No Commissions Yet</h3>
+            <p>Commissions appear here when your patients place orders on the marketplace.</p>
+        </div>
+        {% endif %}
+    </div>
+
+</div>  <!-- ✅ Closing container -->
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dropdown = document.querySelector('.dropdown');
+    const dropdownToggle = document.querySelector('.dropdown-toggle');
+
+    if (dropdown && dropdownToggle) {
+        dropdownToggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            dropdown.classList.toggle('open');
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!dropdown.contains(e.target)) {
+                dropdown.classList.remove('open');
+            }
+        });
+
+        const dropdownItems = document.querySelectorAll('.dropdown-item');
+        dropdownItems.forEach(item => {
+            item.addEventListener('click', function() {
+                dropdown.classList.remove('open');
+            });
+        });
+    }
+});
+function searchPatients() {
+    let searchType = document.getElementById('searchType').value;
+    let searchValue = document.getElementById('searchValue').value;
+    let url = `?search_type=${searchType}&search_value=${searchValue}`;
+    window.location.href = url;
+}
+
+function clearSearch() {
+    document.getElementById('searchValue').value = '';
+    window.location.href = window.location.pathname;
+}
+
+document.getElementById('searchType').addEventListener('change', function() {
+    let input = document.getElementById('searchValue');
+    switch(this.value) {
+        case 'name': input.placeholder = 'Enter full name...'; break;
+        case 'code': input.placeholder = 'Enter patient code...'; break;
+        case 'contact': input.placeholder = 'Enter 10-digit number...'; break;
+    }
+});
+</script>
+{% endblock %}

@@ -61,7 +61,9 @@ def add_patient_by_clinicuser(request, clinic_id):
 @login_required 
 def clinic_dashboard(request):
     # Base queryset: only patients created by the logged-in user
-    patients = AddPatient.objects.filter(created_by=request.user, origin_clinic__isnull=True).order_by('-created_at')
+    patients = AddPatient.objects.filter(
+        created_by=request.user, origin_clinic__isnull=True, origin_enterprise__isnull=True
+    ).order_by('-created_at')
 
     # --- Search handling ---
     search_type = request.GET.get('search_type')

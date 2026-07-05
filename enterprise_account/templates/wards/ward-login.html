@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}{{ ward.get_ward_type_display }} Login{% endblock %}
+{% block content %}
+<div class="container py-5" style="max-width: 420px;">
+    <div class="card shadow-sm">
+        <div class="card-body p-4 text-center">
+            <h5 class="mb-1">{{ ward.enterprise.enterprise_name }}</h5>
+            <p class="mb-4">{{ ward.get_ward_type_display }} Ward</p>
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3 text-start">
+                    <label for="pin" class="form-label">Ward PIN</label>
+                    <input type="password" inputmode="numeric" maxlength="6" class="form-control form-control-lg text-center" id="pin" name="pin" autofocus required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Enter</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

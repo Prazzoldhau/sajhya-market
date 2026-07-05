@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Physio Requests{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="mkt-header-row">
+        <div class="header"><h1>Physio Requests</h1></div>
+        <div>
+            <a href="?status=pending" class="btn {% if status == 'pending' %}btn-primary{% else %}btn-info{% endif %}">Pending</a>
+            <a href="?status=handled" class="btn {% if status == 'handled' %}btn-primary{% else %}btn-info{% endif %}">Handled</a>
+        </div>
+    </div>
+
+    {% if physio_requests %}
+    <div class="table-responsive">
+        <table class="patient-table">
+            <thead>
+                <tr>
+                    <th>Ward</th>
+                    <th>Enterprise</th>
+                    <th>Patient</th>
+                    <th>Bed</th>
+                    <th>Reason</th>
+                    <th>Urgency</th>
+                    <th>Sent</th>
+                    {% if status == 'pending' %}<th>Actions</th>{% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in physio_requests %}
+                <tr>
+                    <td>{{ r.ward.get_ward_type_display }}</td>
+                    <td>{{ r.ward.enterprise.enterprise_name }}</td>
+                    <td><strong>{{ r.patient_name }}</strong></td>
+                    <td>{{ r.bed_number|default:"-" }}</td>
+                    <td>{{ r.reason }}</td>
+                    <td>
+                        <span class="mkt-status-badge mkt-status-{% if r.urgency == 'urgent' %}pending{% else %}confirmed{% endif %}">
+                            {{ r.get_urgency_display }}
+                        </span>
+                    </td>
+                    <td>{{ r.created_at|date:"d M, H:i" }}</td>
+                    {% if status == 'pending' %}
+                    <td>
+                        <form method="POST" action="{% url 'mark-request-handled' request_id=r.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success">Mark Handled</button>
+                        </form>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <h3>No {{ status }} requests</h3>
+        <p>Physiotherapy requests sent from any ward you're staff on will show up here.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

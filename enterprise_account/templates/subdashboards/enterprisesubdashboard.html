@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Enterprise{% endblock %}
+
+{% block content %}
+<div class="navbar">
+    <div class="logo">Sa:jhya</div>
+
+    <!-- Settings Dropdown -->
+    <div class="dropdown">
+        <button class="btn-gradient dropdown-toggle">⚙️ Function</button>
+        <div class="dropdown-menu">
+            <a href="{% url 'enterprise-create-enterprise' %}" class="dropdown-item">🏥 Add Enterprise</a>
+            <a href="#" class="dropdown-item">📋 Manage Enterprises</a>
+            <a href="#" class="dropdown-item">⚙️ Enterprise Settings</a>
+            <a href="#" class="dropdown-item">👤 Dashboard</a>
+            <div class="dropdown-divider"></div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Enterprise Table -->
+    {% if enterprises %}
+    <div class="table-responsive">
+        <table class="patient-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Contact</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for enterprise in enterprises %}
+                <tr>
+                    <td><strong>{{ enterprise.enterprise_name }}</strong></td>
+                    <td>{{ enterprise.phone|default:"-" }}</td>
+                    <td>
+                        <a href="{% url 'enterprise-detail' enterprise.id %}" class="btn btn-info">View Details</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <h3>No Enterprises Found</h3>
+        <p>You haven't created any enterprises yet.</p>
+        <a href="{% url 'enterprise-create-enterprise' %}" class="btn btn-primary" style="margin-top: 15px;">+ Add New Enterprise</a>
+    </div>
+    {% endif %}
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dropdown = document.querySelector('.dropdown');
+    const dropdownToggle = document.querySelector('.dropdown-toggle');
+
+    if (dropdown && dropdownToggle) {
+        dropdownToggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            dropdown.classList.toggle('open');
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!dropdown.contains(e.target)) {
+                dropdown.classList.remove('open');
+            }
+        });
+
+        const dropdownItems = document.querySelectorAll('.dropdown-item');
+        dropdownItems.forEach(item => {
+            item.addEventListener('click', function() {
+                dropdown.classList.remove('open');
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Enterprise{% endblock %}
+
+{% block content %}
+<div class="navbar">
+    <div class="logo">Sa:jhya</div>
+
+    <!-- Settings Dropdown -->
+    <div class="dropdown">
+        <button class="btn-gradient dropdown-toggle">⚙️ Function</button>
+        <div class="dropdown-menu">
+            <a href="#" class="dropdown-item">👤 Assigned Enterprise</a>
+            <a href="{% url 'physio-requests-queue' %}" class="dropdown-item">📥 Physio Requests</a>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Enterprise Table -->
+    {% if enterprises %}
+    <div class="table-responsive">
+        <table class="patient-table">
+            <thead>
+                <tr>
+                    <th>Enterprise Code</th>
+                    <th>Name</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for enterprise in enterprises %}
+                <tr>
+                    <td>{{ enterprise.enterprise_code }}</td>
+                    <td><strong>{{ enterprise.enterprise_name }}</strong></td>
+                    <td>
+                        <a href="{% url 'assigned-enterprise-dashboard' enterprise_id=enterprise.enterprise_id %}" class="btn btn-info">View Details</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <h3>No Enterprises Found</h3>
+        <p>You haven't been added to any enterprises yet.</p>
+    </div>
+    {% endif %}
+</div>
+<script>
+    fetch('/personal-acc/my-enterprises/')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('My accessible enterprises:', data.enterprises);
+        })
+        .catch(error => {
+            console.error('Failed to load enterprises:', error);
+        });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const dropdown = document.querySelector('.dropdown');
+        const dropdownToggle = document.querySelector('.dropdown-toggle');
+
+        if (dropdown && dropdownToggle) {
+            dropdownToggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                dropdown.classList.toggle('open');
+            });
+
+            document.addEventListener('click', function(e) {
+                if (!dropdown.contains(e.target)) {
+                    dropdown.classList.remove('open');
+                }
+            });
+
+            const dropdownItems = document.querySelectorAll('.dropdown-item');
+            dropdownItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    dropdown.classList.remove('open');
+                });
+            });
+        }
+    });
+</script>
+{% endblock %}
