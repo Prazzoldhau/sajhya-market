@@ -3,6 +3,12 @@
 
 {% block title %}{{ ward.get_ward_type_display }} - Physio Request{% endblock %}
 
+{% block extra_css %}
+<link rel="manifest" href="{% url 'ward-manifest' token=ward.access_token %}">
+<meta name="theme-color" content="#667eea">
+<link rel="apple-touch-icon" href="{% static 'icons/ward-icon-192.png' %}">
+{% endblock %}
+
 {% block content %}
 <div class="navbar">
     <div class="logo">Sa:jhya</div>
@@ -103,5 +109,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register("{% url 'ward-service-worker' token=ward.access_token %}");
+}
 </script>
 {% endblock %}

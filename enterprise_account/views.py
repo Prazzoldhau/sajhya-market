@@ -1,10 +1,12 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
+from django.templatetags.static import static
 from personal_account import patientform
 from django.contrib import messages
 from personal_account.models import AddPatient
 from datetime import datetime
 from .enterpriseform import EnterpriseForm, WardForm, PhysioRequestForm
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.db.models import Sum
 from .models import Enterprise, EnterpriseStaff, Ward, PhysioRequest
 from django.contrib.auth.decorators import login_required
@@ -240,6 +242,41 @@ def claim_staff(request):
         except IntegrityError:
             return JsonResponse({'error': 'Database error, possibly duplicate'}, status=500)
     return JsonResponse({'error': 'Invalid method'}, status=405)
+
+
+def ward_manifest(request, token):
+    """Per-ward PWA manifest -- start_url is ward-specific, so an "Add to
+    Home Screen" icon on that ward's shared computer opens straight to this
+    ward's request form (not a generic app), without locking the browser
+    down to only this page like kiosk mode would."""
+    ward = get_object_or_404(Ward, access_token=token)
+    manifest = {
+        'name': f'Sajhya Physio Request - {ward.get_ward_type_display()}',
+        'short_name': 'Physio Request',
+        'start_url': request.build_absolute_uri(
+            reverse('ward-request-form', kwargs={'token': token})
+        ),
+        'display': 'standalone',
+        'background_color': '#ffffff',
+        'theme_color': '#667eea',
+        'icons': [
+            {'src': static('icons/ward-icon-192.png'), 'sizes': '192x192', 'type': 'image/png'},
+            {'src': static('icons/ward-icon-512.png'), 'sizes': '512x512', 'type': 'image/png'},
+        ],
+    }
+    return JsonResponse(manifest, content_type='application/manifest+json')
+
+
+def ward_service_worker(request, token):
+    """Served under this ward's own URL path so its default scope covers
+    exactly this ward's pages -- no offline caching, it only exists to
+    satisfy the browser's PWA installability requirement."""
+    script = (
+        "self.addEventListener('install', () => self.skipWaiting());"
+        "self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));"
+        "self.addEventListener('fetch', () => {});"
+    )
+    return HttpResponse(script, content_type='application/javascript')
 
 
 def ward_login(request, token):
