@@ -92,12 +92,18 @@ class Prescription(models.Model):
     ]
     
     # Relationship with Patient (from sajhya_app)
-    
+
     patient = models.ForeignKey(
-        AddPatient, 
-        on_delete=models.CASCADE, 
+        AddPatient,
+        on_delete=models.CASCADE,
         related_name='prescriptions'
     )
+
+    # Free-text label for which condition/body part this prescription is
+    # for (e.g. "Cervical Spondylosis", "Post-op Knee") -- a patient can
+    # have several concurrent prescriptions for different conditions, and
+    # this is what distinguishes them on the Track page.
+    condition_label = models.CharField(max_length=100, blank=True)
 
     # Prescription details
     prescription_date = models.DateTimeField(auto_now_add=True)
@@ -194,7 +200,16 @@ class PrescriptionExercise(models.Model):
     
     # Order of exercises in the prescription
     order = models.IntegerField(default=0, help_text="Display order of exercises")
-    
+
+    # Which time(s) of day this exercise should be done -- e.g. a stroke
+    # patient often needs the same exercise repeated morning/day/evening,
+    # not just once. Defaults to all three so existing exercises (created
+    # before this field existed) still show up everywhere rather than
+    # disappearing from the schedule.
+    schedule_morning = models.BooleanField(default=True)
+    schedule_day = models.BooleanField(default=True)
+    schedule_evening = models.BooleanField(default=True)
+
     # Tracking completion
     is_completed = models.BooleanField(default=False)
     completed_at = models.DateTimeField(blank=True, null=True)

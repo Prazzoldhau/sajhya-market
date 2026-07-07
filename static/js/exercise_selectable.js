@@ -77,10 +77,15 @@ document.addEventListener('DOMContentLoaded', function() {
         if (loader) loader.style.display = 'block';
         if (exercisesContainer) exercisesContainer.innerHTML = '';
         if (stats) stats.classList.remove('show');
-        
-        window.selectedExercises = [];
-        updateSelectionSummary();
-        
+
+        // Note: window.selectedExercises is NOT reset here. A patient may
+        // need exercises from more than one region/condition (e.g. cervical
+        // + knee) in the same prescription, since only the latest
+        // prescription is what the app shows -- so switching regions to
+        // browse must not discard exercises already picked from a
+        // previous region. displayExercisesStructure() re-highlights any
+        // still-selected cards once the new region's list renders.
+
         // Reset visible counts
         window.visibleCount = {1: INITIAL_COUNT, 2: INITIAL_COUNT, 3: INITIAL_COUNT, 4: INITIAL_COUNT, 5: INITIAL_COUNT};
         
@@ -334,17 +339,32 @@ document.addEventListener('DOMContentLoaded', function() {
     function toggleExerciseSelection(exerciseId) {
         const exercise = window.currentExercises.find(e => e.id === exerciseId);
         if (!exercise) return;
-        
+
         const index = window.selectedExercises.findIndex(e => e.id === exerciseId);
-        
+
         if (index === -1) {
-            window.selectedExercises.push(exercise);
+            // Default a newly-selected exercise to all three times of day
+            // (e.g. a stroke patient often repeats the same exercise
+            // morning/day/evening) -- can be narrowed down per-exercise
+            // in the selected-exercises summary below.
+            window.selectedExercises.push({
+                ...exercise,
+                schedule_morning: true,
+                schedule_day: true,
+                schedule_evening: true,
+            });
         } else {
             window.selectedExercises.splice(index, 1);
         }
-        
+
         highlightSelectedExercises();
         updateSelectionSummary();
+    }
+
+    function toggleExerciseSchedule(exerciseId, slot) {
+        const exercise = window.selectedExercises.find(e => e.id === exerciseId);
+        if (!exercise) return;
+        exercise[slot] = !exercise[slot];
     }
     
     function highlightSelectedExercises() {
@@ -374,7 +394,19 @@ document.addEventListener('DOMContentLoaded', function() {
             if (selectedListDiv) {
                 selectedListDiv.innerHTML = window.selectedExercises.map(exercise => `
                     <div class="selected-badge">
-                        ${escapeHtml(exercise.exercise_name)}
+                        <span>${escapeHtml(exercise.exercise_name)}</span>
+                        <label style="margin-left:8px; font-size:0.8em;">
+                            <input type="checkbox" ${exercise.schedule_morning ? 'checked' : ''}
+                                onclick="event.stopPropagation(); window.toggleExerciseSchedule(${exercise.id}, 'schedule_morning')"> Morning
+                        </label>
+                        <label style="margin-left:6px; font-size:0.8em;">
+                            <input type="checkbox" ${exercise.schedule_day ? 'checked' : ''}
+                                onclick="event.stopPropagation(); window.toggleExerciseSchedule(${exercise.id}, 'schedule_day')"> Day
+                        </label>
+                        <label style="margin-left:6px; font-size:0.8em;">
+                            <input type="checkbox" ${exercise.schedule_evening ? 'checked' : ''}
+                                onclick="event.stopPropagation(); window.toggleExerciseSchedule(${exercise.id}, 'schedule_evening')"> Evening
+                        </label>
                         <span class="remove-exercise" onclick="event.stopPropagation(); window.toggleExerciseSelection(${exercise.id})">✕</span>
                     </div>
                 `).join('');
@@ -395,15 +427,28 @@ document.addEventListener('DOMContentLoaded', function() {
     
 
     async function submitPrescription() {
+        const conditionLabelInput = document.getElementById('conditionLabelInput');
+        const conditionLabel = conditionLabelInput ? conditionLabelInput.value.trim() : '';
+
+        if (!conditionLabel) {
+            alert('Please enter which condition / body part this prescription is for (e.g. "Cervical Spondylosis") before submitting.');
+            if (conditionLabelInput) conditionLabelInput.focus();
+            return;
+        }
+
         const prescriptionData = {
             patient_id: window.patientId,
+            condition_label: conditionLabel,
             exercises: window.selectedExercises.map(exercise => ({
                 exercise_id: exercise.id,
                 exercise_name: exercise.exercise_name,
                 difficulty_level: exercise.difficulty_level,
+                schedule_morning: exercise.schedule_morning !== false,
+                schedule_day: exercise.schedule_day !== false,
+                schedule_evening: exercise.schedule_evening !== false,
             })),
         };
-        
+
         try {
             const response = await fetch('/exercise-app/api/submit-prescription/', {
                 method: 'POST',
@@ -458,6 +503,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Make functions available globally
     window.toggleExerciseSelection = toggleExerciseSelection;
+    window.toggleExerciseSchedule = toggleExerciseSchedule;
     window.loadMoreExercises = loadMoreExercises;
     window.showLessExercises = showLessExercises;
     window.clearAllSelections = clearAllSelections;

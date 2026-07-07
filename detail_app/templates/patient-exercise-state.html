@@ -372,7 +372,7 @@
                 <div class="prescription-header" onclick="togglePrescription({{ forloop.counter0 }})">
                     <div class="prescription-title">
                         <h3>
-                            Prescription #{{ forloop.revcounter }} – 
+                            Prescription #{{ forloop.revcounter }}{% if prescription_data.prescription.condition_label %} – {{ prescription_data.prescription.condition_label }}{% endif %} –
                             {{ prescription_data.prescription.created_at|date:"F j" }}
                         </h3>
                     </div>
@@ -400,6 +400,7 @@
                                 <th>Reps</th>
                                 <th>Hold (s)</th>
                                 <th>Rest (s)</th>
+                                <th>When</th>
                                 <th>Difficulty</th>
                                 <th>Status</th>
                                 <th style="width: 60px"></th>
@@ -422,6 +423,11 @@
                                 <td class="dose-cell" data-field="hold_time_sec">{{ exercise.hold_time_sec }}</td>
                                 <td class="dose-cell" data-field="rest_time_sec">{{ exercise.rest_time_sec }}</td>
                                 <td>
+                                    {% if exercise.schedule_morning %}<span title="Morning">🌅</span>{% endif %}
+                                    {% if exercise.schedule_day %}<span title="Day">🌤️</span>{% endif %}
+                                    {% if exercise.schedule_evening %}<span title="Evening">🌙</span>{% endif %}
+                                </td>
+                                <td>
                                     <span class="difficulty difficulty-{{ exercise.difficulty_level }}">
                                         Level {{ exercise.difficulty_level }}
                                     </span>
@@ -443,7 +449,7 @@
 
                             {% if item.feedback_logs %}
                             <tr class="feedback-log-row" id="feedback-log-{{ exercise.id }}" style="display:none;">
-                                <td colspan="9" class="feedback-log-cell">
+                                <td colspan="10" class="feedback-log-cell">
                                     <div class="feedback-log-header">Patient Feedback (last {{ item.feedback_logs|length }})</div>
                                     {% for log in item.feedback_logs %}
                                     <div class="feedback-log-entry {% if log.feedback_type == 'painful' or log.feedback_type == 'increased_symptom' %}feedback-alert{% endif %}">
@@ -460,7 +466,7 @@
 
                             {% if exercise.exercise_notes %}
                             <tr>
-                                <td colspan="9" style="background: #fff3cd; padding: 10px 15px;">
+                                <td colspan="10" style="background: #fff3cd; padding: 10px 15px;">
                                     <strong>📝 Note:</strong> {{ exercise.exercise_notes }}
                                 </td>
                             </tr>

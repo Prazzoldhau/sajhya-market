@@ -52,6 +52,7 @@ def submit_prescription(request):
         
         patient_id = data.get('patient_id')
         exercises_data = data.get('exercises', [])
+        condition_label = data.get('condition_label', '').strip()
         # notes = data.get('notes', '')
         # start_date = data.get('start_date')
         # duration_days = data.get('duration_days', 30)
@@ -89,6 +90,7 @@ def submit_prescription(request):
         # Create prescription
         prescription = Prescription.objects.create(
             patient=patient,
+            condition_label=condition_label,
             # prescription_notes=notes,
             # start_date=start_date_obj,
             # end_date=end_date_obj,
@@ -118,6 +120,9 @@ def submit_prescription(request):
                 reps=exercise_obj.default_reps if exercise_obj else 10,
                 hold_time_sec=exercise_obj.hold_time_sec if exercise_obj else 0,
                 rest_time_sec=exercise_obj.default_rest_time_sec if exercise_obj else 60,
+                schedule_morning=ex_data.get('schedule_morning', True),
+                schedule_day=ex_data.get('schedule_day', True),
+                schedule_evening=ex_data.get('schedule_evening', True),
             )
         
         return JsonResponse({
@@ -238,6 +243,7 @@ def reassign_exercise(request, patient_id):
     with transaction.atomic():
         new_prescription = Prescription.objects.create(
             patient=patient,
+            condition_label=latest.condition_label,
             status='active',                     # or copy from latest.status
             created_by=request.user if request.user.is_authenticated else None
         )
@@ -255,6 +261,9 @@ def reassign_exercise(request, patient_id):
                 reps=old_pe.reps,
                 hold_time_sec=old_pe.hold_time_sec,
                 rest_time_sec=old_pe.rest_time_sec,
+                schedule_morning=old_pe.schedule_morning,
+                schedule_day=old_pe.schedule_day,
+                schedule_evening=old_pe.schedule_evening,
             )
 
 

@@ -18,7 +18,12 @@
             </div>
 
             <div class="form-group">
-                
+                <input type="text" id="conditionLabelInput" placeholder="Condition(s) / Body Part(s) - e.g. Cervical, Knee" style="padding:8px; border-radius:6px; border:1px solid #ccc; min-width:260px;">
+                <small style="display:block; color:#666; margin-top:4px;">Pick exercises for every condition this patient needs today (switch the dropdown below as many times as needed), then submit once -- only the latest prescription is shown in the app.</small>
+            </div>
+
+            <div class="form-group">
+
                 <select id="subRegionSelect">
                     <option value="">Exercises</option>
                     {% for sub_region in sub_regions %}
