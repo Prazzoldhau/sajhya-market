@@ -137,6 +137,8 @@ class PhysioRequest(models.Model):
     ]
     STATUS_CHOICES = [
         ('pending', 'Pending'),
+        ('seen', 'Seen'),
+        ('noted', 'Noted'),
         ('handled', 'Handled'),
     ]
 
@@ -147,14 +149,19 @@ class PhysioRequest(models.Model):
     urgency = models.CharField(max_length=10, choices=URGENCY_CHOICES, default='routine')
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
 
+    # Message from the physio department back to the ward -- shown on the
+    # ward's own request table, so staff there know something happened
+    # without having to call anyone.
+    physio_message = models.TextField(blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
-    handled_at = models.DateTimeField(null=True, blank=True)
-    handled_by = models.ForeignKey(
+    status_updated_at = models.DateTimeField(null=True, blank=True)
+    status_updated_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='physio_requests_handled',
+        related_name='physio_requests_updated',
     )
 
     class Meta:

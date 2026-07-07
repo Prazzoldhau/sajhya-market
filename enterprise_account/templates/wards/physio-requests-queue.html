@@ -8,8 +8,9 @@
     <div class="mkt-header-row">
         <div class="header"><h1>Physio Requests</h1></div>
         <div>
-            <a href="?status=pending" class="btn {% if status == 'pending' %}btn-primary{% else %}btn-info{% endif %}">Pending</a>
-            <a href="?status=handled" class="btn {% if status == 'handled' %}btn-primary{% else %}btn-info{% endif %}">Handled</a>
+            {% for value, label in status_choices %}
+            <a href="?status={{ value }}" class="btn {% if status == value %}btn-primary{% else %}btn-info{% endif %}">{{ label }}</a>
+            {% endfor %}
         </div>
     </div>
 
@@ -25,7 +26,7 @@
                     <th>Reason</th>
                     <th>Urgency</th>
                     <th>Sent</th>
-                    {% if status == 'pending' %}<th>Actions</th>{% endif %}
+                    <th>Update Status / Note to Ward</th>
                 </tr>
             </thead>
             <tbody>
@@ -42,14 +43,18 @@
                         </span>
                     </td>
                     <td>{{ r.created_at|date:"d M, H:i" }}</td>
-                    {% if status == 'pending' %}
                     <td>
-                        <form method="POST" action="{% url 'mark-request-handled' request_id=r.id %}">
+                        <form method="POST" action="{% url 'update-request-status' request_id=r.id %}" style="display:flex; gap:0.4rem; flex-wrap:wrap; align-items:center; min-width:260px;">
                             {% csrf_token %}
-                            <button type="submit" class="btn btn-success">Mark Handled</button>
+                            <select name="status" class="form-control form-control-sm" style="width:auto;">
+                                {% for value, label in status_choices %}
+                                <option value="{{ value }}" {% if r.status == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                            <input type="text" name="physio_message" class="form-control form-control-sm" style="flex:1; min-width:140px;" placeholder="Message to ward (optional)" value="{{ r.physio_message }}">
+                            <button type="submit" class="btn btn-success">Update</button>
                         </form>
                     </td>
-                    {% endif %}
                 </tr>
                 {% endfor %}
             </tbody>

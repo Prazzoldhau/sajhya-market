@@ -19,5 +19,5 @@ urlpatterns = [
     path ('ward/<str:token>/logout/', views.ward_logout, name='ward-logout'),
     path ('ward/<str:token>/request/', views.ward_request_form, name='ward-request-form'),
     path ('physio-requests/', views.physio_requests_queue, name='physio-requests-queue'),
-    path ('physio-requests/<int:request_id>/handled/', views.mark_request_handled, name='mark-request-handled'),
+    path ('physio-requests/<int:request_id>/update-status/', views.update_request_status, name='update-request-status'),
 ]

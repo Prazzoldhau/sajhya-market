@@ -7,6 +7,11 @@
 <link rel="manifest" href="{% url 'ward-manifest' token=ward.access_token %}">
 <meta name="theme-color" content="#667eea">
 <link rel="apple-touch-icon" href="{% static 'icons/ward-icon-192.png' %}">
+<style>
+#request-table input, #request-table select { width: 100%; }
+#request-table td { vertical-align: top; padding: 6px; }
+#request-table .invalid-feedback { font-size: 0.75rem; }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -30,32 +35,65 @@
         <p class="text-muted">{{ ward.enterprise.enterprise_name }}</p>
     </div>
 
-    <div class="auth-container">
-        <div class="auth-card">
-            <div class="auth-header">
-                <i class="fas fa-notes-medical fa-2x mb-2"></i>
-                <h3>Send Physiotherapy Request</h3>
-            </div>
-            <div class="auth-body">
-                <form method="post" novalidate>
-                    {% csrf_token %}
-                    {% for field in form %}
-                        <div class="form-group">
-                            <label for="{{ field.id_for_label }}" class="form-label">
-                                {{ field.label }}
-                                {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
-                            </label>
-                            {{ field }}
-                            {% for error in field.errors %}
-                                <div class="invalid-feedback d-block">{{ error }}</div>
+    <div class="auth-card" style="max-width:100%;">
+        <div class="auth-header">
+            <i class="fas fa-notes-medical fa-2x mb-2"></i>
+            <h3>Send Physiotherapy Requests</h3>
+            <p class="text-muted" style="font-size:0.85rem;">Add a row per patient, then send them all at once.</p>
+        </div>
+        <div class="auth-body">
+            <form method="post" novalidate>
+                {% csrf_token %}
+                {{ formset.management_form }}
+                {% if formset.non_form_errors %}
+                <div class="alert alert-danger">{{ formset.non_form_errors }}</div>
+                {% endif %}
+                <div class="table-responsive">
+                    <table class="patient-table" id="request-table">
+                        <thead>
+                            <tr>
+                                <th>Patient Name</th>
+                                <th>Bed / Room</th>
+                                <th>Reason for Physio</th>
+                                <th>Urgency</th>
+                            </tr>
+                        </thead>
+                        <tbody id="request-table-body">
+                            {% for row_form in formset %}
+                            <tr class="request-row">
+                                <td>
+                                    {{ row_form.patient_name }}
+                                    {% for error in row_form.patient_name.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                                </td>
+                                <td>{{ row_form.bed_number }}</td>
+                                <td>
+                                    {{ row_form.reason }}
+                                    {% for error in row_form.reason.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                                </td>
+                                <td>{{ row_form.urgency }}</td>
+                            </tr>
                             {% endfor %}
-                        </div>
-                    {% endfor %}
-                    <div class="d-grid gap-2 mt-4">
-                        <button type="submit" class="btn-gradient">Send Request <i class="fas fa-paper-plane"></i></button>
-                    </div>
-                </form>
-            </div>
+                        </tbody>
+                    </table>
+                </div>
+
+                <table style="display:none;"><tbody id="empty-form-template">
+                    <tr class="request-row">
+                        <td>{{ formset.empty_form.patient_name }}</td>
+                        <td>{{ formset.empty_form.bed_number }}</td>
+                        <td>{{ formset.empty_form.reason }}</td>
+                        <td>{{ formset.empty_form.urgency }}</td>
+                    </tr>
+                </tbody></table>
+
+                <div class="mt-2">
+                    <button type="button" id="add-row-btn" class="btn btn-info">+ Add Row</button>
+                </div>
+
+                <div class="d-grid gap-2 mt-4">
+                    <button type="submit" class="btn-gradient">Send All <i class="fas fa-paper-plane"></i></button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -70,6 +108,7 @@
                         <th>Bed</th>
                         <th>Urgency</th>
                         <th>Status</th>
+                        <th>Message from Physio Dept.</th>
                         <th>Sent</th>
                     </tr>
                 </thead>
@@ -80,6 +119,7 @@
                         <td>{{ r.bed_number|default:"-" }}</td>
                         <td>{{ r.get_urgency_display }}</td>
                         <td>{{ r.get_status_display }}</td>
+                        <td>{{ r.physio_message|default:"-" }}</td>
                         <td>{{ r.created_at|date:"d M, H:i" }}</td>
                     </tr>
                     {% endfor %}
@@ -108,6 +148,15 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+});
+
+document.getElementById('add-row-btn').addEventListener('click', function () {
+    const totalForms = document.getElementById('id_form-TOTAL_FORMS');
+    const formIdx = parseInt(totalForms.value, 10);
+    const template = document.getElementById('empty-form-template').innerHTML;
+    const newRowHtml = template.split('__prefix__').join(formIdx);
+    document.getElementById('request-table-body').insertAdjacentHTML('beforeend', newRowHtml);
+    totalForms.value = formIdx + 1;
 });
 
 if ('serviceWorker' in navigator) {

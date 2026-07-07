@@ -5,7 +5,7 @@ from personal_account import patientform
 from django.contrib import messages
 from personal_account.models import AddPatient
 from datetime import datetime
-from .enterpriseform import EnterpriseForm, WardForm, PhysioRequestForm
+from .enterpriseform import EnterpriseForm, WardForm, PhysioRequestForm, PhysioRequestFormSet, PhysioRequestStatusForm
 from django.http import JsonResponse, HttpResponse
 from django.db.models import Sum
 from .models import Enterprise, EnterpriseStaff, Ward, PhysioRequest
@@ -307,22 +307,30 @@ def ward_request_form(request, token):
     ward = request.ward
 
     if request.method == 'POST':
-        form = PhysioRequestForm(request.POST)
-        if form.is_valid():
-            physio_request = form.save(commit=False)
-            physio_request.ward = ward
-            physio_request.save()
-            messages.success(request, f'Physio request sent for {physio_request.patient_name}.')
+        formset = PhysioRequestFormSet(request.POST, queryset=PhysioRequest.objects.none())
+        if formset.is_valid():
+            created = 0
+            for row_form in formset:
+                if not row_form.cleaned_data or not row_form.cleaned_data.get('patient_name'):
+                    continue
+                physio_request = row_form.save(commit=False)
+                physio_request.ward = ward
+                physio_request.save()
+                created += 1
+            if created:
+                messages.success(request, f'Sent {created} physio request{"s" if created != 1 else ""}.')
+            else:
+                messages.error(request, 'No patient rows were filled in.')
             return redirect('ward-request-form', token=token)
         else:
             messages.error(request, 'Please correct the errors below.')
     else:
-        form = PhysioRequestForm()
+        formset = PhysioRequestFormSet(queryset=PhysioRequest.objects.none())
 
-    recent_requests = ward.physio_requests.all()[:10]
+    recent_requests = ward.physio_requests.all()[:15]
     return render(request, 'wards/ward-request-form.html', {
         'ward': ward,
-        'form': form,
+        'formset': formset,
         'recent_requests': recent_requests,
     })
 
@@ -336,17 +344,19 @@ def physio_requests_queue(request):
     ).select_related('ward', 'ward__enterprise')
 
     status = request.GET.get('status', 'pending')
-    if status in ('pending', 'handled'):
+    valid_statuses = [choice[0] for choice in PhysioRequest.STATUS_CHOICES]
+    if status in valid_statuses:
         requests_qs = requests_qs.filter(status=status)
 
     return render(request, 'wards/physio-requests-queue.html', {
         'physio_requests': requests_qs,
         'status': status,
+        'status_choices': PhysioRequest.STATUS_CHOICES,
     })
 
 
 @login_required
-def mark_request_handled(request, request_id):
+def update_request_status(request, request_id):
     enterprise_ids = _accessible_enterprise_ids(request.user)
 
     physio_request = get_object_or_404(
@@ -354,10 +364,14 @@ def mark_request_handled(request, request_id):
     )
 
     if request.method == 'POST':
-        physio_request.status = 'handled'
-        physio_request.handled_by = request.user
-        physio_request.handled_at = timezone.now()
-        physio_request.save(update_fields=['status', 'handled_by', 'handled_at'])
-        messages.success(request, f'Marked {physio_request.patient_name} as handled.')
+        form = PhysioRequestStatusForm(request.POST, instance=physio_request)
+        if form.is_valid():
+            updated = form.save(commit=False)
+            updated.status_updated_by = request.user
+            updated.status_updated_at = timezone.now()
+            updated.save()
+            messages.success(request, f'Updated {updated.patient_name} to {updated.get_status_display()}.')
+        else:
+            messages.error(request, 'Please correct the errors below.')
 
     return redirect('physio-requests-queue')

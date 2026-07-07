@@ -1,5 +1,6 @@
 # enterpriseform.py
 from django import forms
+from django.forms import modelformset_factory
 from .models import Enterprise, Ward, PhysioRequest
 
 class EnterpriseForm(forms.ModelForm):
@@ -54,24 +55,47 @@ class WardForm(forms.ModelForm):
 
 
 class PhysioRequestForm(forms.ModelForm):
+    """One row of the ward's bulk request table (used inside a formset)."""
+
     class Meta:
         model = PhysioRequest
         fields = ['patient_name', 'bed_number', 'reason', 'urgency']
         widgets = {
-            'patient_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Patient name'}),
-            'bed_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Bed / room number'}),
-            'reason': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Reason for physiotherapy'}),
-            'urgency': forms.RadioSelect(),
+            'patient_name': forms.TextInput(attrs={'class': 'form-control form-control-sm', 'placeholder': 'Patient name'}),
+            'bed_number': forms.TextInput(attrs={'class': 'form-control form-control-sm', 'placeholder': 'Bed / room'}),
+            'reason': forms.TextInput(attrs={'class': 'form-control form-control-sm', 'placeholder': 'Reason for physio'}),
+            'urgency': forms.Select(attrs={'class': 'form-control form-control-sm'}),
         }
 
     def clean_patient_name(self):
         name = self.cleaned_data.get('patient_name')
-        if len(name) < 2:
+        if name and len(name) < 2:
             raise forms.ValidationError('Patient name must be at least 2 characters long.')
         return name
 
     def clean_reason(self):
         reason = self.cleaned_data.get('reason')
-        if len(reason) < 5:
+        if reason and len(reason) < 5:
             raise forms.ValidationError('Reason must be at least 5 characters.')
         return reason
+
+
+PhysioRequestFormSet = modelformset_factory(
+    PhysioRequest,
+    form=PhysioRequestForm,
+    extra=8,
+    can_delete=False,
+)
+
+
+class PhysioRequestStatusForm(forms.ModelForm):
+    """Physio department's response to a single request -- status +
+    an optional message that shows back up on the ward's own table."""
+
+    class Meta:
+        model = PhysioRequest
+        fields = ['status', 'physio_message']
+        widgets = {
+            'status': forms.Select(attrs={'class': 'form-control form-control-sm'}),
+            'physio_message': forms.TextInput(attrs={'class': 'form-control form-control-sm', 'placeholder': 'Message to ward (optional)'}),
+        }
