@@ -106,10 +106,12 @@
                     <tr>
                         <th>Patient</th>
                         <th>Bed</th>
+                        <th>Reason</th>
                         <th>Urgency</th>
                         <th>Status</th>
                         <th>Message from Physio Dept.</th>
                         <th>Sent</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -117,10 +119,14 @@
                     <tr>
                         <td><strong>{{ r.patient_name }}</strong></td>
                         <td>{{ r.bed_number|default:"-" }}</td>
+                        <td>{{ r.get_reason_display }}</td>
                         <td>{{ r.get_urgency_display }}</td>
                         <td>{{ r.get_status_display }}</td>
                         <td>{{ r.physio_message|default:"-" }}</td>
                         <td>{{ r.created_at|date:"d M, H:i" }}</td>
+                        <td>
+                            <a href="{% url 'resend-request' token=ward.access_token request_id=r.id %}" class="btn btn-sm btn-info">Resend</a>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>

@@ -36,7 +36,7 @@
                     <td>{{ r.ward.enterprise.enterprise_name }}</td>
                     <td><strong>{{ r.patient_name }}</strong></td>
                     <td>{{ r.bed_number|default:"-" }}</td>
-                    <td>{{ r.reason }}</td>
+                    <td>{{ r.get_reason_display }}</td>
                     <td>
                         <span class="mkt-status-badge mkt-status-{% if r.urgency == 'urgent' %}pending{% else %}confirmed{% endif %}">
                             {{ r.get_urgency_display }}

@@ -135,6 +135,14 @@ class PhysioRequest(models.Model):
         ('routine', 'Routine'),
         ('urgent', 'Urgent'),
     ]
+    REASON_CHOICES = [
+        ('chest', 'Chest'),
+        ('chest_limb', 'Chest + Limb'),
+        ('limb', 'Limb'),
+        ('ambulation', 'Ambulation'),
+        ('postural_drainage', 'Postural Drainage'),
+        ('other', 'Other'),
+    ]
     STATUS_CHOICES = [
         ('pending', 'Pending'),
         ('seen', 'Seen'),
@@ -145,7 +153,7 @@ class PhysioRequest(models.Model):
     ward = models.ForeignKey(Ward, on_delete=models.CASCADE, related_name='physio_requests')
     patient_name = models.CharField(max_length=100)
     bed_number = models.CharField(max_length=20, blank=True)
-    reason = models.TextField()
+    reason = models.CharField(max_length=20, choices=REASON_CHOICES, default='chest')
     urgency = models.CharField(max_length=10, choices=URGENCY_CHOICES, default='routine')
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
 

@@ -335,6 +335,39 @@ def ward_request_form(request, token):
     })
 
 
+@ward_required
+def resend_request(request, token, request_id):
+    """Pre-fills a new request from a past one (e.g. yesterday's), so ward
+    staff can resend it unchanged with one click or tweak a field first --
+    both cases go through the same edit-then-submit form."""
+    ward = request.ward
+    original = get_object_or_404(PhysioRequest, id=request_id, ward=ward)
+
+    if request.method == 'POST':
+        form = PhysioRequestForm(request.POST)
+        if form.is_valid():
+            new_request = form.save(commit=False)
+            new_request.ward = ward
+            new_request.save()
+            messages.success(request, f'Request resent for {new_request.patient_name}.')
+            return redirect('ward-request-form', token=token)
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = PhysioRequestForm(initial={
+            'patient_name': original.patient_name,
+            'bed_number': original.bed_number,
+            'reason': original.reason,
+            'urgency': original.urgency,
+        })
+
+    return render(request, 'wards/resend-request.html', {
+        'ward': ward,
+        'form': form,
+        'original': original,
+    })
+
+
 @login_required
 def physio_requests_queue(request):
     enterprise_ids = _accessible_enterprise_ids(request.user)

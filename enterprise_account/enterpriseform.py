@@ -63,7 +63,7 @@ class PhysioRequestForm(forms.ModelForm):
         widgets = {
             'patient_name': forms.TextInput(attrs={'class': 'form-control form-control-sm', 'placeholder': 'Patient name'}),
             'bed_number': forms.TextInput(attrs={'class': 'form-control form-control-sm', 'placeholder': 'Bed / room'}),
-            'reason': forms.TextInput(attrs={'class': 'form-control form-control-sm', 'placeholder': 'Reason for physio'}),
+            'reason': forms.Select(attrs={'class': 'form-control form-control-sm'}),
             'urgency': forms.Select(attrs={'class': 'form-control form-control-sm'}),
         }
 
@@ -72,12 +72,6 @@ class PhysioRequestForm(forms.ModelForm):
         if name and len(name) < 2:
             raise forms.ValidationError('Patient name must be at least 2 characters long.')
         return name
-
-    def clean_reason(self):
-        reason = self.cleaned_data.get('reason')
-        if reason and len(reason) < 5:
-            raise forms.ValidationError('Reason must be at least 5 characters.')
-        return reason
 
 
 PhysioRequestFormSet = modelformset_factory(
