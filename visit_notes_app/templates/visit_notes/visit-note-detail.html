@@ -5,11 +5,14 @@
 
 {% block content %}
 <div class="container">
-    <div class="header">
-        <br>
-        <h2>{{ note.patient.patient_name }}</h2>
-        <p class="text-muted">{{ note.created_at|date:"d M Y, H:i" }} &middot; {{ note.get_case_type_display }} &middot; Recorded by {{ note.created_by.username|default:"-" }}</p>
-        <a href="{% url 'visit-notes-list' patient_id=note.patient.id %}">&larr; Back to Notes History</a>
+    <div class="mkt-header-row">
+        <div class="header">
+            <br>
+            <h2>{{ note.patient.patient_name }}</h2>
+            <p class="text-muted">{{ note.created_at|date:"d M Y, H:i" }} &middot; {{ note.get_case_type_display }} &middot; Recorded by {{ note.created_by.username|default:"-" }}</p>
+            <a href="{% url 'visit-notes-list' patient_id=note.patient.id %}">&larr; Back to Notes History</a>
+        </div>
+        <a href="{% url 'edit-visit-note' note_id=note.id %}" class="btn btn-primary">Edit Note</a>
     </div>
 
     <div class="auth-card" style="margin-bottom:1.5rem;">

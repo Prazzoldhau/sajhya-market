@@ -7,9 +7,14 @@
 <div class="container">
     <div class="header">
         <br>
-        <h2>Visit Note</h2>
+        <h2>{% if editing %}Edit Visit Note{% else %}Visit Note{% endif %}</h2>
+        {% if editing %}
+        <p class="text-muted">{{ patient.patient_name }} ({{ patient.patient_code }}) &middot; originally recorded {{ note.created_at|date:"d M Y, H:i" }}</p>
+        <a href="{% url 'visit-note-detail' note_id=note.id %}">&larr; Cancel, back to note</a>
+        {% else %}
         <p class="text-muted">{{ patient.patient_name }} ({{ patient.patient_code }}) &middot; Visit #{{ patient.visit_notes.count|add:1 }}</p>
         <a href="{% url 'visit-notes-list' patient_id=patient.id %}">&larr; Back to Notes History</a>
+        {% endif %}
     </div>
 
     <form method="post" novalidate>
@@ -153,7 +158,7 @@
         {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
 
         <div class="d-grid gap-2 mt-4">
-            <button type="submit" class="btn-gradient">Save Visit Note</button>
+            <button type="submit" class="btn-gradient">{% if editing %}Update Visit Note{% else %}Save Visit Note{% endif %}</button>
         </div>
     </form>
 </div>

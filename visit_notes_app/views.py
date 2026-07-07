@@ -28,6 +28,29 @@ def create_visit_note(request, patient_id):
 
 
 @login_required
+def edit_visit_note(request, note_id):
+    note = get_object_or_404(VisitNote, id=note_id)
+
+    if request.method == 'POST':
+        form = VisitNoteForm(request.POST, instance=note)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Visit note updated for {note.patient.patient_name}.')
+            return redirect('visit-note-detail', note_id=note.id)
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = VisitNoteForm(instance=note)
+
+    return render(request, 'visit_notes/create-visit-note.html', {
+        'form': form,
+        'patient': note.patient,
+        'editing': True,
+        'note': note,
+    })
+
+
+@login_required
 def visit_notes_list(request, patient_id):
     patient = get_object_or_404(AddPatient, id=patient_id)
     notes = patient.visit_notes.all()
