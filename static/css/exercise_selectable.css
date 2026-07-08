@@ -301,7 +301,7 @@ select:focus {
 /* Image container */
 .card-image {
     width: 100%;
-    height: 150px;          /* fixed height, adjust as needed */
+    height: 190px;          /* fixed height, adjust as needed */
     overflow: hidden;
     background: #f0f0f0;    /* fallback background while loading */
     flex-shrink: 0;         /* prevents image from shrinking */
@@ -310,7 +310,7 @@ select:focus {
 .card-image img {
     width: 100%;
     height: 100%;
-    object-fit: cover;      /* ensures the image fills the container nicely */
+    object-fit: contain;    /* shows the whole exercise pose, no cropping */
     display: block;
 }
 
