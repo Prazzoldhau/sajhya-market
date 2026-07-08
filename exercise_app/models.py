@@ -203,12 +203,11 @@ class PrescriptionExercise(models.Model):
 
     # Which time(s) of day this exercise should be done -- e.g. a stroke
     # patient often needs the same exercise repeated morning/day/evening,
-    # not just once. Defaults to all three so existing exercises (created
-    # before this field existed) still show up everywhere rather than
-    # disappearing from the schedule.
+    # not just once. New exercises default to morning-only; the physio
+    # checks Day/Evening explicitly for exercises that need repeating.
     schedule_morning = models.BooleanField(default=True)
-    schedule_day = models.BooleanField(default=True)
-    schedule_evening = models.BooleanField(default=True)
+    schedule_day = models.BooleanField(default=False)
+    schedule_evening = models.BooleanField(default=False)
 
     # Tracking completion
     is_completed = models.BooleanField(default=False)

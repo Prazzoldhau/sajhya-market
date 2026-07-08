@@ -343,15 +343,15 @@ document.addEventListener('DOMContentLoaded', function() {
         const index = window.selectedExercises.findIndex(e => e.id === exerciseId);
 
         if (index === -1) {
-            // Default a newly-selected exercise to all three times of day
-            // (e.g. a stroke patient often repeats the same exercise
-            // morning/day/evening) -- can be narrowed down per-exercise
-            // in the selected-exercises summary below.
+            // Default a newly-selected exercise to morning-only; the
+            // physio checks Day/Evening explicitly below for exercises
+            // that need repeating (e.g. stroke patients needing several
+            // reps a day).
             window.selectedExercises.push({
                 ...exercise,
                 schedule_morning: true,
-                schedule_day: true,
-                schedule_evening: true,
+                schedule_day: false,
+                schedule_evening: false,
             });
         } else {
             window.selectedExercises.splice(index, 1);

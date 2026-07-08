@@ -179,7 +179,13 @@ def update_exercise_params(request, exercise_id):
         exercise.reps = int(data.get('reps', exercise.reps))
         exercise.hold_time_sec = int(data.get('hold_time_sec', exercise.hold_time_sec))
         exercise.rest_time_sec = int(data.get('rest_time_sec', exercise.rest_time_sec))
-        exercise.save(update_fields=['sets', 'reps', 'hold_time_sec', 'rest_time_sec', 'updated_at'])
+        exercise.schedule_morning = bool(data.get('schedule_morning', exercise.schedule_morning))
+        exercise.schedule_day = bool(data.get('schedule_day', exercise.schedule_day))
+        exercise.schedule_evening = bool(data.get('schedule_evening', exercise.schedule_evening))
+        exercise.save(update_fields=[
+            'sets', 'reps', 'hold_time_sec', 'rest_time_sec',
+            'schedule_morning', 'schedule_day', 'schedule_evening', 'updated_at',
+        ])
 
         return JsonResponse({
             'success': True,
@@ -187,6 +193,9 @@ def update_exercise_params(request, exercise_id):
             'reps': exercise.reps,
             'hold_time_sec': exercise.hold_time_sec,
             'rest_time_sec': exercise.rest_time_sec,
+            'schedule_morning': exercise.schedule_morning,
+            'schedule_day': exercise.schedule_day,
+            'schedule_evening': exercise.schedule_evening,
         })
     except PrescriptionExercise.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Exercise not found'}, status=404)

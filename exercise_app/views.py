@@ -121,8 +121,8 @@ def submit_prescription(request):
                 hold_time_sec=exercise_obj.hold_time_sec if exercise_obj else 0,
                 rest_time_sec=exercise_obj.default_rest_time_sec if exercise_obj else 60,
                 schedule_morning=ex_data.get('schedule_morning', True),
-                schedule_day=ex_data.get('schedule_day', True),
-                schedule_evening=ex_data.get('schedule_evening', True),
+                schedule_day=ex_data.get('schedule_day', False),
+                schedule_evening=ex_data.get('schedule_evening', False),
             )
         
         return JsonResponse({

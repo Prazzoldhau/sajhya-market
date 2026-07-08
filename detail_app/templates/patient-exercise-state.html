@@ -422,7 +422,10 @@
                                 <td class="dose-cell" data-field="reps">{{ exercise.reps }}</td>
                                 <td class="dose-cell" data-field="hold_time_sec">{{ exercise.hold_time_sec }}</td>
                                 <td class="dose-cell" data-field="rest_time_sec">{{ exercise.rest_time_sec }}</td>
-                                <td>
+                                <td class="when-cell"
+                                    data-morning="{{ exercise.schedule_morning|yesno:'1,0' }}"
+                                    data-day="{{ exercise.schedule_day|yesno:'1,0' }}"
+                                    data-evening="{{ exercise.schedule_evening|yesno:'1,0' }}">
                                     {% if exercise.schedule_morning %}<span title="Morning">🌅</span>{% endif %}
                                     {% if exercise.schedule_day %}<span title="Day">🌤️</span>{% endif %}
                                     {% if exercise.schedule_evening %}<span title="Evening">🌙</span>{% endif %}
@@ -744,6 +747,17 @@
                 cell.innerHTML = `<input class="dose-input" type="number" min="0" data-field="${field}" value="${current}">`;
             });
 
+            // Swap the When (Morning/Day/Evening) badges to checkboxes
+            const whenCell = row.querySelector('.when-cell');
+            if (whenCell) {
+                whenCell.dataset.originalHtml = whenCell.innerHTML;
+                whenCell.innerHTML = `
+                    <label style="white-space:nowrap;"><input type="checkbox" class="when-input" data-field="schedule_morning" ${whenCell.dataset.morning === '1' ? 'checked' : ''}> 🌅</label>
+                    <label style="white-space:nowrap;"><input type="checkbox" class="when-input" data-field="schedule_day" ${whenCell.dataset.day === '1' ? 'checked' : ''}> 🌤️</label>
+                    <label style="white-space:nowrap;"><input type="checkbox" class="when-input" data-field="schedule_evening" ${whenCell.dataset.evening === '1' ? 'checked' : ''}> 🌙</label>
+                `;
+            }
+
             // Swap edit button to save/cancel
             editBtn.style.display = 'none';
             const actionCell = editBtn.parentElement;
@@ -766,6 +780,11 @@
                 if (input) cell.textContent = input.defaultValue;
             });
 
+            const whenCell = row.querySelector('.when-cell');
+            if (whenCell && whenCell.dataset.originalHtml !== undefined) {
+                whenCell.innerHTML = whenCell.dataset.originalHtml;
+            }
+
             const actionsDiv = document.getElementById(`inline-actions-${exerciseId}`);
             if (actionsDiv) actionsDiv.remove();
             row.querySelector('.btn-edit').style.display = '';
@@ -776,6 +795,9 @@
             const inputs = row.querySelectorAll('.dose-input');
             const payload = {};
             inputs.forEach(input => { payload[input.dataset.field] = input.value; });
+
+            const whenInputs = row.querySelectorAll('.when-input');
+            whenInputs.forEach(input => { payload[input.dataset.field] = input.checked; });
 
             try {
                 const response = await fetch(`/detail-app/api/exercise/${exerciseId}/update-params/`, {
@@ -798,6 +820,18 @@
                     const field = cell.querySelector('input').dataset.field;
                     cell.textContent = data[field];
                 });
+
+                const whenCell = row.querySelector('.when-cell');
+                if (whenCell) {
+                    whenCell.dataset.morning = data.schedule_morning ? '1' : '0';
+                    whenCell.dataset.day = data.schedule_day ? '1' : '0';
+                    whenCell.dataset.evening = data.schedule_evening ? '1' : '0';
+                    whenCell.innerHTML = `
+                        ${data.schedule_morning ? '<span title="Morning">🌅</span>' : ''}
+                        ${data.schedule_day ? '<span title="Day">🌤️</span>' : ''}
+                        ${data.schedule_evening ? '<span title="Evening">🌙</span>' : ''}
+                    `;
+                }
 
                 const actionsDiv = document.getElementById(`inline-actions-${exerciseId}`);
                 if (actionsDiv) actionsDiv.remove();
