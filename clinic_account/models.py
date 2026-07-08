@@ -50,6 +50,24 @@ class Clinic(models.Model):
     def __str__(self):
         return self.clinic_name
     
+class QueueEntry(models.Model):
+    """One patient's spot in a clinic's on-site queue for today."""
+    STATUS_CHOICES = [
+        ('waiting', 'Waiting'),
+        ('called', 'Called'),
+        ('completed', 'Completed'),
+        ('cancelled', 'Cancelled'),
+    ]
+    clinic = models.ForeignKey(Clinic, on_delete=models.CASCADE, related_name='queue_entries')
+    patient = models.ForeignKey('personal_account.AddPatient', on_delete=models.CASCADE, related_name='queue_entries')
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='waiting')
+    joined_at = models.DateTimeField(auto_now_add=True)
+    called_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.patient.patient_name} @ {self.clinic.clinic_name} ({self.status})"
+
+
 class ClinicPhysio(models.Model):
     """Relationship between a clinic and a physio (who is a personal user)"""
     clinic = models.ForeignKey(Clinic, on_delete=models.CASCADE, related_name='registered_clinic')

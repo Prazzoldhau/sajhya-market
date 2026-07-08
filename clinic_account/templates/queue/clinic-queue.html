@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Today's Queue{% endblock %}
+
+{% block content %}
+<div class="navbar">
+    <div class="logo">Sa:jhya</div>
+    <a href="{% url 'clinic-detail' clinic_id=clinic.id %}" class="btn-gradient">⬅ Back to Clinic</a>
+</div>
+
+<div class="container">
+    <div class="header">
+        <br>
+        <h2>Today's Queue — {{ clinic.clinic_name }}</h2>
+    </div>
+
+    <div class="search-container">
+        <button onclick="location.reload()">🔄 Refresh</button>
+    </div>
+
+    {% if entries %}
+    <div class="table-responsive">
+        <table class="patient-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Patient</th>
+                    <th>Joined At</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="queueBody">
+                {% for entry in entries %}
+                <tr id="entry-row-{{ entry.id }}">
+                    <td>{{ forloop.counter }}</td>
+                    <td><strong>{{ entry.patient.patient_name }}</strong></td>
+                    <td>{{ entry.joined_at|date:"H:i" }}</td>
+                    <td id="entry-status-{{ entry.id }}">
+                        {% if entry.status == 'waiting' %}⏳ Waiting
+                        {% elif entry.status == 'called' %}📢 Called
+                        {% elif entry.status == 'completed' %}✅ Completed
+                        {% endif %}
+                    </td>
+                    <td id="entry-actions-{{ entry.id }}">
+                        {% if entry.status == 'waiting' %}
+                        <button type="button" class="btn btn-info" onclick="callForSession({{ entry.id }})">📣 Call for Session</button>
+                        {% elif entry.status == 'called' %}
+                        <button type="button" class="btn btn-success" onclick="completeEntry({{ entry.id }})">✔ Complete</button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <h3>No One In Queue</h3>
+        <p>Add patients to today's queue from the clinic patient list.</p>
+        <a href="{% url 'clinic-detail' clinic_id=clinic.id %}" class="btn btn-primary" style="margin-top: 15px;">⬅ Back to Clinic</a>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function callForSession(entryId) {
+    fetch(`/clinic-acc/clinic-queue/entry/${entryId}/call/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCookie('csrftoken') },
+        credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById(`entry-status-${entryId}`).innerHTML = '📢 Called';
+            document.getElementById(`entry-actions-${entryId}`).innerHTML =
+                `<button type="button" class="btn btn-success" onclick="completeEntry(${entryId})">✔ Complete</button>`;
+            if (!data.notified) {
+                alert('Patient has no notification device registered — please call them directly.');
+            }
+        } else {
+            alert(data.error || 'Could not call patient.');
+        }
+    })
+    .catch(err => {
+        console.error('Fetch error:', err);
+        alert('Error calling patient.');
+    });
+}
+
+function completeEntry(entryId) {
+    fetch(`/clinic-acc/clinic-queue/entry/${entryId}/complete/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCookie('csrftoken') },
+        credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const row = document.getElementById(`entry-row-${entryId}`);
+            if (row) row.remove();
+        } else {
+            alert(data.error || 'Could not complete entry.');
+        }
+    })
+    .catch(err => {
+        console.error('Fetch error:', err);
+        alert('Error completing entry.');
+    });
+}
+</script>
+{% endblock %}

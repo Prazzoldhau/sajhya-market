@@ -189,3 +189,8 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 CSRF_COOKIE_SAMESITE = 'None'
 CSRF_COOKIE_SECURE = True
+
+# Web Push (patient notifications, e.g. clinic queue "Call for Session")
+VAPID_PUBLIC_KEY = env('VAPID_PUBLIC_KEY')
+VAPID_PRIVATE_KEY = env('VAPID_PRIVATE_KEY')
+VAPID_CLAIM_EMAIL = env('VAPID_CLAIM_EMAIL')

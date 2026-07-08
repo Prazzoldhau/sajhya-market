@@ -12,6 +12,10 @@ urlpatterns = [
     path('api/logout/', views.patient_api_logout, name='patient_api_logout'),
     path('api/me/', views.patient_api_me, name='patient_api_me'),
 
+    # Push notifications
+    path('sw.js', views.patient_service_worker, name='patient-service-worker'),
+    path('api/push/subscribe/', views.patient_api_push_subscribe, name='patient_api_push_subscribe'),
+
     # Exercises
     path('api/exercise/<int:exercise_id>/feedback/', views.submit_exercise_feedback, name='submit_exercise_feedback'),
 

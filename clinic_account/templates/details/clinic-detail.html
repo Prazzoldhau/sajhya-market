@@ -19,6 +19,9 @@
                 <a href="{% url 'search-physio' clinic.id %}" class="dropdown-item">
                     👥 Add Staff
                 </a>
+                <a href="{% url 'clinic-queue' clinic_id=clinic.id %}" class="dropdown-item">
+                    🔔 Today's Queue
+                </a>
                 <a href="#" class="dropdown-item">
                     📋 Manage Clinics
                 </a>
@@ -94,6 +97,7 @@
                         <a href="{% url 'prescription-page' patient_id=patient.id %}" class="btn btn-info">Rx</a>
                         <a href="{% url 'exercise-selectable' patient_id=patient.id %}" class="btn btn-success">Exe</a>
                         <a href="{% url 'visit-notes-list' patient_id=patient.id %}" class="btn btn-warning">Notes</a>
+                        <button type="button" class="btn btn-info" onclick="addToQueue({{ patient.id }}, '{{ patient.patient_name|escapejs }}')">+ Queue</button>
                     </td>
                 </tr>
                 {% endfor %}
@@ -168,5 +172,45 @@ document.getElementById('searchType').addEventListener('change', function() {
         case 'contact': input.placeholder = 'Enter 10-digit number...'; break;
     }
 });
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function addToQueue(patientId, patientName) {
+    const clinicId = "{{ clinic.id|escapejs }}";
+    fetch(`/clinic-acc/clinic-queue/${clinicId}/add/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: `patient_id=${patientId}`,
+        credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`${patientName} added to today's queue.`);
+        } else {
+            alert(data.error || 'Could not add to queue.');
+        }
+    })
+    .catch(err => {
+        console.error('Fetch error:', err);
+        alert('Error adding to queue.');
+    });
+}
 </script>
 {% endblock %}

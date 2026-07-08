@@ -13,4 +13,10 @@ urlpatterns = [
     path ('claim-physio/', views.claim_physio, name = "claim-physio"),
     path ('clinic-detail/<int:clinic_id>/', views.clinic_detail, name='clinic-detail'),
     path ('add-patient-by-clinicuser/<int:clinic_id>,', views.add_patient_by_clinicuser, name="add-patient-by-clinicuser"),
+
+    # Queue management
+    path ('clinic-queue/<int:clinic_id>/', views.queue_list, name='clinic-queue'),
+    path ('clinic-queue/<int:clinic_id>/add/', views.add_to_queue, name='add-to-queue'),
+    path ('clinic-queue/entry/<int:entry_id>/call/', views.call_for_session, name='call-for-session'),
+    path ('clinic-queue/entry/<int:entry_id>/complete/', views.complete_queue_entry, name='complete-queue-entry'),
 ]

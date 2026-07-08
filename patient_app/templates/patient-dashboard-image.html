@@ -16,6 +16,10 @@
                     <p><strong>Diagnosis:</strong> {{ patient.diagnosis|default:"Not specified" }}</p>
                 </div>
             </div>
+            <button id="enableNotificationsBtn" style="display:none; padding:10px 16px; border-radius:8px; border:none; background:#667eea; color:white; cursor:pointer; font-size:0.9rem;">
+                🔔 Enable Notifications
+            </button>
+            <p id="notificationsStatusMsg" style="display:none; font-size:0.85rem; color:#4caf50;">🔔 Notifications enabled</p>
         </div>
 
         {% if latest_prescription %}
@@ -440,6 +444,82 @@
                 if (icon) icon.classList.add('rotated');
             }
         });
+
+        // ==================== PUSH NOTIFICATIONS ====================
+
+        const VAPID_PUBLIC_KEY = "{{ vapid_public_key }}";
+
+        function urlBase64ToUint8Array(base64String) {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+            const rawData = window.atob(base64);
+            const outputArray = new Uint8Array(rawData.length);
+            for (let i = 0; i < rawData.length; i++) {
+                outputArray[i] = rawData.charCodeAt(i);
+            }
+            return outputArray;
+        }
+
+        async function subscribeToPush() {
+            try {
+                const registration = await navigator.serviceWorker.register('/patient-app/sw.js');
+                const permission = await Notification.requestPermission();
+                if (permission !== 'granted') {
+                    alert('Notifications were not allowed. You can enable them again later from this button.');
+                    return;
+                }
+                const subscription = await registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+                });
+                const subJson = subscription.toJSON();
+                const response = await fetch('/patient-app/api/push/subscribe/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken(),
+                    },
+                    body: JSON.stringify({ endpoint: subJson.endpoint, keys: subJson.keys }),
+                });
+                const data = await response.json();
+                if (data.success) {
+                    updateNotificationUI(true);
+                } else {
+                    alert(data.error || 'Failed to enable notifications');
+                }
+            } catch (err) {
+                console.error('Push subscribe error:', err);
+                alert('Could not enable notifications on this device/browser.');
+            }
+        }
+
+        function updateNotificationUI(subscribed) {
+            const btn = document.getElementById('enableNotificationsBtn');
+            const msg = document.getElementById('notificationsStatusMsg');
+            if (subscribed) {
+                if (btn) btn.style.display = 'none';
+                if (msg) msg.style.display = 'block';
+            } else {
+                if (btn) btn.style.display = 'inline-block';
+                if (msg) msg.style.display = 'none';
+            }
+        }
+
+        (async function initNotificationButton() {
+            if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+                return; // browser doesn't support push -- leave the button hidden
+            }
+            const btn = document.getElementById('enableNotificationsBtn');
+            if (btn) btn.addEventListener('click', subscribeToPush);
+
+            try {
+                const registration = await navigator.serviceWorker.register('/patient-app/sw.js');
+                const existing = await registration.pushManager.getSubscription();
+                updateNotificationUI(!!existing);
+            } catch (err) {
+                console.error('Service worker registration error:', err);
+            }
+        })();
     </script>
 </body>
 </html>

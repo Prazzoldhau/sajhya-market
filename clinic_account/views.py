@@ -5,15 +5,19 @@ from personal_account.models import AddPatient
 from datetime import datetime
 from .clinicform import ClinicForm
 from django.http import JsonResponse
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_GET, require_POST
 from account_app.models import User
 from django.db import models
 from django.db.models import Sum
 from django.shortcuts import get_object_or_404
-from .models import Clinic, ClinicPhysio
+from .models import Clinic, ClinicPhysio, QueueEntry
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
+from django.utils import timezone
+from datetime import timedelta
+import json
 from marketplace_app.models import Commission
+from patient_app.push_utils import send_push_to_patient
 
 
 
@@ -264,3 +268,85 @@ def claim_physio(request):
         except IntegrityError:
             return JsonResponse({'error': 'Database error, possibly duplicate'}, status=500)
     return JsonResponse({'error': 'Invalid method'}, status=405)
+
+
+def _today_range():
+    """Start/end of "today" as aware UTC-comparable datetimes.
+
+    Not using `joined_at__date=...` here: that lookup requires MySQL's
+    CONVERT_TZ, which needs the server's timezone tables loaded -- these
+    aren't installed on this DB, so CONVERT_TZ silently returns NULL and
+    the date match never hits. A plain datetime range sidesteps it.
+    """
+    start = timezone.make_aware(datetime.combine(timezone.localdate(), datetime.min.time()))
+    return start, start + timedelta(days=1)
+
+
+@login_required
+def queue_list(request, clinic_id):
+    clinic = get_object_or_404(Clinic, id=clinic_id, created_by=request.user)
+    today_start, today_end = _today_range()
+    entries = QueueEntry.objects.filter(
+        clinic=clinic, joined_at__gte=today_start, joined_at__lt=today_end
+    ).exclude(status='cancelled').select_related('patient').order_by('joined_at')
+
+    return render(request, 'queue/clinic-queue.html', {
+        'clinic': clinic,
+        'entries': entries,
+    })
+
+
+@login_required
+@require_POST
+def add_to_queue(request, clinic_id):
+    clinic = get_object_or_404(Clinic, id=clinic_id, created_by=request.user)
+
+    patient_id = request.POST.get('patient_id')
+    qr_token = request.POST.get('qr_token')
+
+    if patient_id:
+        patient = get_object_or_404(AddPatient, id=patient_id)
+    elif qr_token:
+        patient = get_object_or_404(AddPatient, qr_token=qr_token)
+    else:
+        return JsonResponse({'success': False, 'error': 'patient_id or qr_token required'}, status=400)
+
+    today_start, today_end = _today_range()
+    existing = QueueEntry.objects.filter(
+        clinic=clinic, patient=patient, joined_at__gte=today_start, joined_at__lt=today_end
+    ).exclude(status__in=['completed', 'cancelled']).first()
+    if existing:
+        return JsonResponse({'success': False, 'error': 'Patient is already in today\'s queue'}, status=400)
+
+    entry = QueueEntry.objects.create(clinic=clinic, patient=patient)
+    return JsonResponse({
+        'success': True,
+        'entry_id': entry.id,
+        'patient_name': patient.patient_name,
+        'status': entry.status,
+    })
+
+
+@login_required
+@require_POST
+def call_for_session(request, entry_id):
+    entry = get_object_or_404(QueueEntry, id=entry_id, clinic__created_by=request.user)
+    entry.status = 'called'
+    entry.called_at = timezone.now()
+    entry.save()
+
+    notified_count = send_push_to_patient(
+        entry.patient,
+        "It's your turn",
+        f"Please come in for your session at {entry.clinic.clinic_name}.",
+    )
+    return JsonResponse({'success': True, 'notified': notified_count > 0})
+
+
+@login_required
+@require_POST
+def complete_queue_entry(request, entry_id):
+    entry = get_object_or_404(QueueEntry, id=entry_id, clinic__created_by=request.user)
+    entry.status = 'completed'
+    entry.save()
+    return JsonResponse({'success': True})

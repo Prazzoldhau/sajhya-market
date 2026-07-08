@@ -3,7 +3,7 @@ from personal_account.models import AddPatient
 from exercise_app.models import Prescription, PrescriptionExercise, ExerciseFeedback
 from marketplace_app.models import Category, Product, Order, OrderItem, Commission, CommissionRate, PatientProductRecommendation
 from marketplace_app.views import get_recommended_for_diagnosis
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.conf import settings
 import json
 from decimal import Decimal
@@ -11,6 +11,7 @@ from urllib.parse import quote
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import ensure_csrf_cookie
+from .models import PushSubscription
 
 def patient_api_me(request):
     patient_id = request.session.get('patient_id')
@@ -90,7 +91,7 @@ def patient_login(request):
 def patient_login_required(view_func):
     def wrapper(request, *args, **kwargs):
         if not request.session.get('patient_id'):
-            return redirect('patient_login')
+            return redirect('patient-login')
         return view_func(request, *args, **kwargs)
     return wrapper
 # ==================== WEB DASHBOARD ====================
@@ -130,6 +131,7 @@ def patient_dashboard(request):
         'manual_recs': manual_recs,
         'auto_recs': auto_recs,
         'matched_label': matched_label,
+        'vapid_public_key': settings.VAPID_PUBLIC_KEY,
     }
 
     return render(request, 'patient-dashboard-image.html', context)
@@ -296,6 +298,71 @@ def submit_exercise_feedback(request, exercise_id):
 @require_http_methods(['POST'])
 def patient_api_logout(request):
     request.session.flush()
+    return JsonResponse({'success': True})
+
+
+# ==================== PUSH NOTIFICATIONS ====================
+
+def patient_service_worker(request):
+    """Minimal service worker: no offline caching, just enough to receive
+    and display a Web Push notification and focus/open the dashboard when
+    it's tapped."""
+    script = """
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()));
+
+self.addEventListener('push', (event) => {
+    let payload = { title: 'Sajhya', body: 'You have a new notification.' };
+    if (event.data) {
+        try { payload = event.data.json(); } catch (e) {}
+    }
+    event.waitUntil(
+        self.registration.showNotification(payload.title, {
+            body: payload.body,
+            icon: '/static/icons/ward-icon-192.png',
+        })
+    );
+});
+
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+            for (const client of windowClients) {
+                if (client.url.includes('/patient-app/') && 'focus' in client) {
+                    return client.focus();
+                }
+            }
+            if (clients.openWindow) {
+                return clients.openWindow('/patient-app/patient-dashboard/');
+            }
+        })
+    );
+});
+"""
+    return HttpResponse(script, content_type='application/javascript')
+
+
+@csrf_exempt
+@require_http_methods(['POST'])
+def patient_api_push_subscribe(request):
+    patient, err = _patient_required(request)
+    if err:
+        return err
+
+    try:
+        data = json.loads(request.body)
+        endpoint = data['endpoint']
+        p256dh = data['keys']['p256dh']
+        auth = data['keys']['auth']
+    except (json.JSONDecodeError, KeyError):
+        return JsonResponse({'success': False, 'error': 'Invalid subscription payload'}, status=400)
+
+    PushSubscription.objects.update_or_create(
+        patient=patient,
+        endpoint=endpoint,
+        defaults={'p256dh': p256dh, 'auth': auth},
+    )
     return JsonResponse({'success': True})
 
 
