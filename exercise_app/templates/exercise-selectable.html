@@ -18,8 +18,13 @@
             </div>
 
             <div class="form-group">
-                <input type="text" id="conditionLabelInput" placeholder="Condition(s) / Body Part(s) - e.g. Cervical, Knee" style="padding:8px; border-radius:6px; border:1px solid #ccc; min-width:260px;">
-                <small style="display:block; color:#666; margin-top:4px;">Pick exercises for every condition this patient needs today (switch the dropdown below as many times as needed), then submit once -- only the latest prescription is shown in the app.</small>
+                {% if append_prescription %}
+                    <p style="font-weight:600; color:#333;">Adding exercises to Prescription{% if append_prescription.condition_label %} – {{ append_prescription.condition_label }}{% endif %} ({{ append_prescription.created_at|date:"F j" }})</p>
+                    <small style="display:block; color:#666; margin-top:4px;">Pick more exercises below, then submit -- they'll be added to this same prescription.</small>
+                {% else %}
+                    <input type="text" id="conditionLabelInput" placeholder="Condition(s) / Body Part(s) - e.g. Cervical, Knee" style="padding:8px; border-radius:6px; border:1px solid #ccc; min-width:260px;">
+                    <small style="display:block; color:#666; margin-top:4px;">Pick exercises for every condition this patient needs today (switch the dropdown below as many times as needed), then submit once -- only the latest prescription is shown in the app.</small>
+                {% endif %}
             </div>
 
             <div class="form-group">
@@ -70,6 +75,7 @@
     <script>
         window.patientCode = '{{ patient_code }}';
         window.patientId = {{ patient.id|default:'null' }};
+        window.appendToPrescriptionId = {{ append_prescription.id|default:'null' }};
         window.selectedExercises = [];
         window.currentExercises = [];
 

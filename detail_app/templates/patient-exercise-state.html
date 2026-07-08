@@ -444,6 +444,7 @@
                                 </td>
                                 <td>
                                     <button class="btn-edit" onclick="startEdit({{ exercise.id }})" title="Edit doses">✏️</button>
+                                    <button class="btn-remove" onclick="removeExercise({{ exercise.id }})" title="Remove exercise">🗑️</button>
                                     {% if item.feedback_logs %}
                                     <button class="btn-feedback-toggle" onclick="toggleFeedbackLog({{ exercise.id }})" title="View feedback">💬</button>
                                     {% endif %}
@@ -478,7 +479,11 @@
                             {% endfor %}
                         </tbody>
                     </table>
-                    
+
+                    <div style="padding: 15px 25px;">
+                        <a href="{% url 'exercise-selectable' patient_id=patient.id %}?prescription_id={{ prescription_data.prescription.id }}" class="btn btn-success">+ Add Exercise</a>
+                    </div>
+
                     {% if prescription_data.prescription.prescription_notes %}
                     <div style="padding: 15px 25px; background: #e3f2fd; margin-top: 10px;">
                         <strong>📋 Prescription Notes:</strong><br>
@@ -520,6 +525,17 @@
             transition: background 0.2s;
         }
         .btn-edit:hover { background: #e8eaf6; }
+
+        .btn-remove {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 2px 4px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        .btn-remove:hover { background: #ffebee; }
 
         .dose-input {
             width: 54px;
@@ -728,6 +744,44 @@
                 }
             }
             return cookieValue;
+        }
+
+        async function removeExercise(exerciseId) {
+            if (!confirm('Remove this exercise from the prescription?')) return;
+
+            try {
+                const response = await fetch(`/detail-app/api/exercise/${exerciseId}/remove/`, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': getCsrfToken() }
+                });
+                const data = await response.json();
+
+                if (!data.success) {
+                    alert(data.error || 'Failed to remove exercise');
+                    return;
+                }
+
+                const row = document.getElementById(`exercise-row-${exerciseId}`);
+                const prescriptionCard = row ? row.closest('.prescription-card') : null;
+                if (row) row.remove();
+
+                const feedbackRow = document.getElementById(`feedback-log-${exerciseId}`);
+                if (feedbackRow) feedbackRow.remove();
+
+                if (prescriptionCard) {
+                    const progressTextSpan = prescriptionCard.querySelector('.progress-text');
+                    if (progressTextSpan) {
+                        progressTextSpan.textContent = `${data.completed_exercises}/${data.total_exercises}`;
+                    }
+                    const progressBar = prescriptionCard.querySelector('.progress-bar');
+                    if (progressBar) {
+                        progressBar.style.width = `${data.progress_percentage}%`;
+                    }
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error removing exercise. Please try again.');
+            }
         }
 
         function toggleFeedbackLog(exerciseId) {

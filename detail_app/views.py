@@ -170,6 +170,32 @@ def toggle_exercise_completion(request, exercise_id):
     
 @csrf_exempt
 @require_http_methods(["POST"])
+def remove_prescription_exercise(request, exercise_id):
+    try:
+        exercise = PrescriptionExercise.objects.get(id=exercise_id)
+        prescription = exercise.prescription
+        exercise.delete()
+
+        exercises = prescription.exercises.all()
+        total_exercises = exercises.count()
+        completed_exercises = exercises.filter(is_completed=True).count()
+        progress_percentage = (completed_exercises / total_exercises * 100) if total_exercises > 0 else 0
+
+        return JsonResponse({
+            'success': True,
+            'prescription_id': prescription.id,
+            'completed_exercises': completed_exercises,
+            'total_exercises': total_exercises,
+            'progress_percentage': round(progress_percentage, 1),
+        })
+    except PrescriptionExercise.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Exercise not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
 def update_exercise_params(request, exercise_id):
     try:
         exercise = PrescriptionExercise.objects.get(id=exercise_id)

@@ -5,6 +5,7 @@ urlpatterns = [
    path ('exercise-selectable/<int:patient_id>/', views.load_exercises, name='exercise-selectable'),
    path ('api/get-exercises/', views.get_exercises_by_subregion, name='get_exercises'),
    path ('api/submit-prescription/', views.submit_prescription, name="submit-prescription"),
+   path ('api/prescription/<int:prescription_id>/add-exercises/', views.add_exercises_to_prescription, name="add-exercises-to-prescription"),
    path ('prescription-exercise-details/', views.prescription_exercise_details, name = "prescription-exercise-details"),
    path ('prescriptipn/<int:patient_id>/', views.patient_prescriptions_view, name='patient_prescriptions'),
    path ('session-details/', views.session_detail, name="session-details"),

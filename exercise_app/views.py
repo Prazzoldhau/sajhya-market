@@ -10,6 +10,7 @@ from django.views.decorators.http import require_http_methods
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
+from django.db.models import Max
 
 
 
@@ -18,17 +19,26 @@ from django.db import transaction
 # Create your views here.
 def load_exercises(request,patient_id):
     patient = get_object_or_404(AddPatient, id=patient_id)  # single object
-    
+
             # Get all sub-regions for the exercise dropdown
     sub_regions = SubRegion.objects.all()
-    
+
+    # If ?prescription_id=<id> is present, this page appends picked
+    # exercises to that existing prescription instead of creating a new
+    # one -- used by the "+ Add Exercise" link on the Track page.
+    append_prescription = None
+    prescription_id = request.GET.get('prescription_id')
+    if prescription_id:
+        append_prescription = Prescription.objects.filter(id=prescription_id, patient=patient).first()
+
     # Prepare context with both patient and exercise data
-    context = {           
+    context = {
         # Exercise information
         'patient': patient,
         'sub_regions': sub_regions,
+        'append_prescription': append_prescription,
     }
-    
+
     return render (request, 'exercise-selectable.html', context)
 
 
@@ -146,6 +156,58 @@ def submit_prescription(request):
             'success': False,
             'error': str(e)
         }, status=500)
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def add_exercises_to_prescription(request, prescription_id):
+    try:
+        prescription = Prescription.objects.get(id=prescription_id)
+    except Prescription.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Prescription not found'}, status=404)
+
+    try:
+        data = json.loads(request.body)
+        exercises_data = data.get('exercises', [])
+        if not exercises_data:
+            return JsonResponse({'success': False, 'error': 'At least one exercise is required'}, status=400)
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON data'}, status=400)
+
+    max_order = prescription.exercises.aggregate(m=Max('order'))['m']
+    next_order = 0 if max_order is None else max_order + 1
+
+    for offset, ex_data in enumerate(exercises_data):
+        exercise_id = ex_data.get('id') or ex_data.get('exercise_id')
+
+        exercise_obj = None
+        try:
+            exercise_obj = ExerciseMain.objects.get(id=exercise_id)
+        except ExerciseMain.DoesNotExist:
+            pass
+
+        PrescriptionExercise.objects.create(
+            prescription=prescription,
+            exercise=exercise_obj,
+            exercise_id_in_library=exercise_id,
+            exercise_name=ex_data.get('exercise_name', 'Unknown Exercise'),
+            difficulty_level=ex_data.get('difficulty_level', 1),
+            order=next_order + offset,
+            sets=exercise_obj.default_sets if exercise_obj else 3,
+            reps=exercise_obj.default_reps if exercise_obj else 10,
+            hold_time_sec=exercise_obj.hold_time_sec if exercise_obj else 0,
+            rest_time_sec=exercise_obj.default_rest_time_sec if exercise_obj else 60,
+            schedule_morning=ex_data.get('schedule_morning', True),
+            schedule_day=ex_data.get('schedule_day', False),
+            schedule_evening=ex_data.get('schedule_evening', False),
+        )
+
+    return JsonResponse({
+        'success': True,
+        'redirect_url': f'/detail-app/patient-exericse-status/{prescription.patient_id}/',
+        'prescription_id': prescription.id,
+        'message': f'Added {len(exercises_data)} exercise(s) to the prescription',
+    })
+
 
 def prescription_exercise_details(request):
     return render (request, 'prescription-exercise-details.html')

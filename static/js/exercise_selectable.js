@@ -427,6 +427,44 @@ document.addEventListener('DOMContentLoaded', function() {
     
 
     async function submitPrescription() {
+        const exercises = window.selectedExercises.map(exercise => ({
+            exercise_id: exercise.id,
+            exercise_name: exercise.exercise_name,
+            difficulty_level: exercise.difficulty_level,
+            schedule_morning: exercise.schedule_morning !== false,
+            schedule_day: exercise.schedule_day !== false,
+            schedule_evening: exercise.schedule_evening !== false,
+        }));
+
+        // Appending to an existing prescription (from the Track page's
+        // "+ Add Exercise" link) skips the condition-label prompt -- the
+        // prescription already has one -- and posts to a different
+        // endpoint that adds rows instead of creating a new prescription.
+        if (window.appendToPrescriptionId) {
+            try {
+                const response = await fetch(`/exercise-app/api/prescription/${window.appendToPrescriptionId}/add-exercises/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken()
+                    },
+                    body: JSON.stringify({ exercises })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    alert(`Added ${exercises.length} exercise(s) to the prescription!`);
+                    window.location.href = `/detail-app/patient-exericse-status/${window.patientId}/`;
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error adding exercises:', error);
+                alert('Failed to add exercises. Please try again.');
+            }
+            return;
+        }
+
         const conditionLabelInput = document.getElementById('conditionLabelInput');
         const conditionLabel = conditionLabelInput ? conditionLabelInput.value.trim() : '';
 
@@ -439,14 +477,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const prescriptionData = {
             patient_id: window.patientId,
             condition_label: conditionLabel,
-            exercises: window.selectedExercises.map(exercise => ({
-                exercise_id: exercise.id,
-                exercise_name: exercise.exercise_name,
-                difficulty_level: exercise.difficulty_level,
-                schedule_morning: exercise.schedule_morning !== false,
-                schedule_day: exercise.schedule_day !== false,
-                schedule_evening: exercise.schedule_evening !== false,
-            })),
+            exercises: exercises,
         };
 
         try {
@@ -458,10 +489,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 body: JSON.stringify(prescriptionData)
             });
-            
-            
+
+
             const data = await response.json();
-            
+
             if (data.success) {
                 alert(`Successfully prescribed ${window.selectedExercises.length} exercises!`);
                 window.location.href = `/detail-app/patient-exericse-status/${window.patientId}/`;
