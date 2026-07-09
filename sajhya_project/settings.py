@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     'find_physio_app',
     'summit_app',
     'visit_notes_app',
+    'physio_api_app',
 
 ]
 
