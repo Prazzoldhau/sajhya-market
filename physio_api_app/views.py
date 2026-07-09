@@ -247,6 +247,42 @@ def clinic_list(request):
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 
+def clinic_detail(request, clinic_id):
+    user, err = _require_physio(request)
+    if err:
+        return err
+
+    try:
+        clinic = Clinic.objects.get(id=clinic_id, created_by=user)
+    except Clinic.DoesNotExist:
+        return JsonResponse({'error': 'Clinic not found'}, status=404)
+
+    patients = AddPatient.objects.filter(origin_clinic=clinic, created_by=user).order_by('-created_at')
+
+    return JsonResponse({
+        'clinic': {
+            'id': clinic.id,
+            'clinic_code': clinic.clinic_code,
+            'clinic_name': clinic.clinic_name,
+            'address': clinic.address,
+            'phone': clinic.phone,
+            'created_at': clinic.created_at.isoformat(),
+        },
+        'patients': [
+            {
+                'id': p.id,
+                'patient_code': p.patient_code,
+                'patient_name': p.patient_name,
+                'patient_contact': p.patient_contact,
+                'patient_diagnosis': p.patient_diagnosis,
+                'completed_session': p.completed_session,
+                'created_at': p.created_at.isoformat(),
+            }
+            for p in patients
+        ],
+    })
+
+
 # ─── home visits (bookings made to this physio's find-physio profile) ────────
 
 def home_visit_list(request):

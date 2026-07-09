@@ -14,6 +14,7 @@ urlpatterns = [
 
     # clinics
     path('clinics/',                             views.clinic_list,                  name='physio-clinic-list'),
+    path('clinics/<int:clinic_id>/',             views.clinic_detail,                name='physio-clinic-detail'),
 
     # home visits (find_physio_app bookings)
     path('home-visits/',                         views.home_visit_list,              name='physio-home-visit-list'),
