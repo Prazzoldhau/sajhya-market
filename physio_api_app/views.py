@@ -1,4 +1,5 @@
 import json
+from decimal import Decimal
 from django.contrib.auth import authenticate, login, logout
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
@@ -10,6 +11,8 @@ from clinic_account.models import Clinic
 from exercise_app.models import Region, SubRegion, ExerciseMain, Prescription, PrescriptionExercise
 from prescription_app.models import TreatmentSession
 from referral_app.models import Referral
+from find_physio_app.models import BookingRequest
+from marketplace_app.models import Category, Product, Order, OrderItem
 
 
 # ─── helpers ──────────────────────────────────────────────────────────────────
@@ -191,6 +194,242 @@ def patient_detail(request, patient_code):
             for s in sessions
         ],
     })
+
+
+# ─── clinics ──────────────────────────────────────────────────────────────────
+
+def clinic_list(request):
+    user, err = _require_physio(request)
+    if err:
+        return err
+
+    if request.method == 'GET':
+        clinics = user.clinics.all().order_by('-created_at')
+        data = [
+            {
+                'id': c.id,
+                'clinic_code': c.clinic_code,
+                'clinic_name': c.clinic_name,
+                'address': c.address,
+                'phone': c.phone,
+                'created_at': c.created_at.isoformat(),
+            }
+            for c in clinics
+        ]
+        return JsonResponse({'clinics': data})
+
+    if request.method == 'POST':
+        data = _json_body(request)
+        name = data.get('clinic_name', '').strip()
+        address = data.get('address', '').strip()
+        phone = data.get('phone', '').strip()
+        pan_number = data.get('pan_number', '').strip() or None
+
+        if not name or not address or not phone:
+            return JsonResponse({'error': 'clinic_name, address and phone are required'}, status=400)
+
+        clinic = Clinic.objects.create(
+            clinic_name=name,
+            address=address,
+            phone=phone,
+            pan_number=pan_number,
+            created_by=user,
+        )
+        return JsonResponse({
+            'success': True,
+            'clinic': {
+                'id': clinic.id,
+                'clinic_code': clinic.clinic_code,
+                'clinic_name': clinic.clinic_name,
+            },
+        }, status=201)
+
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+
+# ─── home visits (bookings made to this physio's find-physio profile) ────────
+
+def home_visit_list(request):
+    user, err = _require_physio(request)
+    if err:
+        return err
+
+    bookings = BookingRequest.objects.filter(physio=user, booking_type='home')
+
+    status_filter = request.GET.get('status', '').strip()
+    valid_statuses = [s[0] for s in BookingRequest.STATUS]
+    if status_filter in valid_statuses:
+        bookings = bookings.filter(status=status_filter)
+
+    bookings = bookings.order_by('preferred_date')
+    data = [
+        {
+            'id': b.id,
+            'patient_name': b.patient_name,
+            'patient_contact': b.patient_contact,
+            'patient_email': b.patient_email,
+            'condition': b.condition,
+            'preferred_date': b.preferred_date.isoformat(),
+            'preferred_time': b.preferred_time.isoformat() if b.preferred_time else None,
+            'address': b.address,
+            'status': b.status,
+            'notes': b.notes,
+            'total_fee': str(b.total_fee()),
+            'created_at': b.created_at.isoformat(),
+        }
+        for b in bookings
+    ]
+    return JsonResponse({'home_visits': data})
+
+
+def home_visit_update_status(request, booking_id):
+    user, err = _require_physio(request)
+    if err:
+        return err
+
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    try:
+        booking = BookingRequest.objects.get(id=booking_id, physio=user, booking_type='home')
+    except BookingRequest.DoesNotExist:
+        return JsonResponse({'error': 'Not found'}, status=404)
+
+    data = _json_body(request)
+    new_status = data.get('status', '').strip()
+    valid_statuses = [s[0] for s in BookingRequest.STATUS]
+    if new_status not in valid_statuses:
+        return JsonResponse({'error': 'Invalid status'}, status=400)
+
+    booking.status = new_status
+    notes = data.get('notes', '').strip()
+    if notes:
+        booking.notes = notes
+    booking.save(update_fields=['status', 'notes'])
+
+    return JsonResponse({'success': True, 'status': booking.status})
+
+
+# ─── shop (marketplace_app) ───────────────────────────────────────────────────
+
+def shop_category_list(request):
+    user, err = _require_physio(request)
+    if err:
+        return err
+
+    categories = Category.objects.all()
+    data = [{'id': c.id, 'name': c.name, 'icon': c.icon} for c in categories]
+    return JsonResponse({'categories': data})
+
+
+def shop_product_list(request):
+    user, err = _require_physio(request)
+    if err:
+        return err
+
+    qs = Product.objects.filter(in_stock=True).select_related('category')
+
+    category_id = request.GET.get('category', '').strip()
+    if category_id:
+        qs = qs.filter(category_id=category_id)
+
+    search = request.GET.get('search', '').strip()
+    if search:
+        qs = qs.filter(name__icontains=search)
+
+    qs = qs.order_by('-is_featured', 'name')
+    data = [
+        {
+            'id': p.id,
+            'name': p.name,
+            'category': p.category.name if p.category else None,
+            'category_id': p.category_id,
+            'description': p.description,
+            'price': str(p.price),
+            'unit': p.unit,
+            'image': p.image,
+            'is_featured': p.is_featured,
+        }
+        for p in qs
+    ]
+    return JsonResponse({'products': data})
+
+
+def shop_order_list_create(request):
+    user, err = _require_physio(request)
+    if err:
+        return err
+
+    if request.method == 'GET':
+        orders = Order.objects.filter(user=user).prefetch_related('items').order_by('-created_at')
+        data = [
+            {
+                'order_number': o.order_number,
+                'status': o.status,
+                'total_amount': str(o.total_amount),
+                'created_at': o.created_at.isoformat(),
+                'items': [
+                    {'product_name': i.product_name, 'quantity': i.quantity, 'unit_price': str(i.unit_price)}
+                    for i in o.items.all()
+                ],
+            }
+            for o in orders
+        ]
+        return JsonResponse({'orders': data})
+
+    if request.method == 'POST':
+        data = _json_body(request)
+        items = data.get('items', [])
+        customer_name = data.get('customer_name', '').strip() or (user.get_full_name() or user.username)
+        customer_email = data.get('customer_email', '').strip() or user.email
+        customer_phone = data.get('customer_phone', '').strip()
+        delivery_address = data.get('delivery_address', '').strip()
+        notes = data.get('notes', '').strip()
+
+        if not items:
+            return JsonResponse({'error': 'At least one item is required'}, status=400)
+        if not customer_phone or not delivery_address:
+            return JsonResponse({'error': 'customer_phone and delivery_address are required'}, status=400)
+
+        order_items = []
+        total = Decimal('0.00')
+        for item in items:
+            try:
+                product = Product.objects.get(id=item.get('product_id'), in_stock=True)
+            except Product.DoesNotExist:
+                continue
+            qty = max(1, int(item.get('quantity', 1)))
+            order_items.append((product, qty))
+            total += product.price * qty
+
+        if not order_items:
+            return JsonResponse({'error': 'No valid products in order'}, status=400)
+
+        order = Order.objects.create(
+            user=user,
+            customer_name=customer_name,
+            customer_email=customer_email,
+            customer_phone=customer_phone,
+            delivery_address=delivery_address,
+            notes=notes,
+            total_amount=total,
+        )
+        for product, qty in order_items:
+            OrderItem.objects.create(
+                order=order,
+                product=product,
+                product_name=product.name,
+                quantity=qty,
+                unit_price=product.price,
+            )
+
+        return JsonResponse({
+            'success': True,
+            'order_number': order.order_number,
+            'total_amount': str(total),
+        }, status=201)
+
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 
 # ─── exercises ────────────────────────────────────────────────────────────────

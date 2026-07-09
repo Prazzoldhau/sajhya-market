@@ -12,6 +12,18 @@ urlpatterns = [
     path('patients/',                            views.patient_list,                 name='physio-patient-list'),
     path('patients/<str:patient_code>/',         views.patient_detail,               name='physio-patient-detail'),
 
+    # clinics
+    path('clinics/',                             views.clinic_list,                  name='physio-clinic-list'),
+
+    # home visits (find_physio_app bookings)
+    path('home-visits/',                         views.home_visit_list,              name='physio-home-visit-list'),
+    path('home-visits/<int:booking_id>/status/', views.home_visit_update_status,     name='physio-home-visit-status'),
+
+    # shop (marketplace_app)
+    path('shop/categories/',                     views.shop_category_list,           name='physio-shop-categories'),
+    path('shop/products/',                       views.shop_product_list,            name='physio-shop-products'),
+    path('shop/orders/',                         views.shop_order_list_create,       name='physio-shop-orders'),
+
     # exercises
     path('regions/',                             views.region_list,                  name='physio-region-list'),
     path('exercises/',                           views.exercise_list,                name='physio-exercise-list'),
