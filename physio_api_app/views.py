@@ -1,7 +1,11 @@
 import json
 from decimal import Decimal
+from urllib.parse import quote
 from django.contrib.auth import authenticate, login, logout
+from django.db.models import Max
 from django.http import JsonResponse
+from django.templatetags.static import static as static_url
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
@@ -348,6 +352,16 @@ def home_visit_update_status(request, booking_id):
 
 # ─── shop (marketplace_app) ───────────────────────────────────────────────────
 
+def _product_image_url(request, product):
+    """Product.image stores a static-relative path (e.g. 'categorized_product/9/9 (023).png').
+    Build a full URL clients can load directly, percent-encoding spaces/parens
+    that the raw path may contain."""
+    if not product.image:
+        return ''
+    path = static_url(product.image)
+    return request.build_absolute_uri(quote(path, safe='/'))
+
+
 def shop_category_list(request):
     user, err = _require_physio(request)
     if err:
@@ -383,7 +397,7 @@ def shop_product_list(request):
             'description': p.description,
             'price': str(p.price),
             'unit': p.unit,
-            'image': p.image,
+            'image': _product_image_url(request, p),
             'is_featured': p.is_featured,
         }
         for p in qs
@@ -535,10 +549,15 @@ def prescription_list_create(request, patient_code):
         data = []
         for p in prescriptions:
             exercises = p.exercises.select_related('exercise').all()
+            total = exercises.count()
+            completed = exercises.filter(is_completed=True).count()
             data.append({
                 'id': p.id,
                 'status': p.status,
+                'condition_label': p.condition_label,
                 'created_at': p.created_at.isoformat(),
+                'total_exercises': total,
+                'completed_exercises': completed,
                 'exercises': [
                     {
                         'id': pe.id,
@@ -546,6 +565,13 @@ def prescription_list_create(request, patient_code):
                         'exercise_name': pe.exercise_name,
                         'difficulty_level': pe.difficulty_level,
                         'order': pe.order,
+                        'sets': pe.sets,
+                        'reps': pe.reps,
+                        'hold_time_sec': pe.hold_time_sec,
+                        'rest_time_sec': pe.rest_time_sec,
+                        'schedule_morning': pe.schedule_morning,
+                        'schedule_day': pe.schedule_day,
+                        'schedule_evening': pe.schedule_evening,
                         'is_completed': pe.is_completed,
                         'exercise_url': pe.exercise.exercise_url if pe.exercise else '',
                     }
@@ -557,6 +583,7 @@ def prescription_list_create(request, patient_code):
     if request.method == 'POST':
         data = _json_body(request)
         exercise_ids = data.get('exercise_ids', [])  # list of exercise IDs from library
+        condition_label = data.get('condition_label', '').strip()
 
         if not exercise_ids:
             return JsonResponse({'error': 'At least one exercise required'}, status=400)
@@ -565,6 +592,7 @@ def prescription_list_create(request, patient_code):
             patient=patient,
             created_by=user,
             status='active',
+            condition_label=condition_label,
         )
 
         for order, ex_id in enumerate(exercise_ids):
@@ -584,6 +612,139 @@ def prescription_list_create(request, patient_code):
         return JsonResponse({'success': True, 'prescription_id': prescription.id}, status=201)
 
     return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+
+def prescription_add_exercises(request, prescription_id):
+    user, err = _require_physio(request)
+    if err:
+        return err
+
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    try:
+        prescription = Prescription.objects.get(id=prescription_id)
+    except Prescription.DoesNotExist:
+        return JsonResponse({'error': 'Prescription not found'}, status=404)
+
+    data = _json_body(request)
+    exercise_ids = data.get('exercise_ids', [])
+    if not exercise_ids:
+        return JsonResponse({'error': 'At least one exercise required'}, status=400)
+
+    last_order = prescription.exercises.aggregate(m=Max('order'))['m'] or 0
+    added = 0
+    for offset, ex_id in enumerate(exercise_ids, start=1):
+        try:
+            exercise = ExerciseMain.objects.get(id=ex_id)
+        except ExerciseMain.DoesNotExist:
+            continue
+        PrescriptionExercise.objects.create(
+            prescription=prescription,
+            exercise=exercise,
+            exercise_id_in_library=exercise.id,
+            exercise_name=exercise.exercise_name,
+            difficulty_level=exercise.difficulty_level,
+            order=last_order + offset,
+        )
+        added += 1
+
+    return JsonResponse({'success': True, 'added': added})
+
+
+def prescription_exercise_toggle(request, exercise_id):
+    user, err = _require_physio(request)
+    if err:
+        return err
+
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    try:
+        pe = PrescriptionExercise.objects.select_related('prescription').get(id=exercise_id)
+    except PrescriptionExercise.DoesNotExist:
+        return JsonResponse({'error': 'Exercise not found'}, status=404)
+
+    data = _json_body(request)
+    is_completed = bool(data.get('is_completed', not pe.is_completed))
+    pe.is_completed = is_completed
+    pe.completed_at = timezone.now() if is_completed else None
+    pe.save(update_fields=['is_completed', 'completed_at'])
+
+    prescription = pe.prescription
+    exercises = prescription.exercises.all()
+    total = exercises.count()
+    completed = exercises.filter(is_completed=True).count()
+
+    return JsonResponse({
+        'success': True,
+        'exercise_id': pe.id,
+        'is_completed': pe.is_completed,
+        'prescription_id': prescription.id,
+        'total_exercises': total,
+        'completed_exercises': completed,
+    })
+
+
+def prescription_exercise_remove(request, exercise_id):
+    user, err = _require_physio(request)
+    if err:
+        return err
+
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    try:
+        pe = PrescriptionExercise.objects.select_related('prescription').get(id=exercise_id)
+    except PrescriptionExercise.DoesNotExist:
+        return JsonResponse({'error': 'Exercise not found'}, status=404)
+
+    prescription = pe.prescription
+    pe.delete()
+
+    exercises = prescription.exercises.all()
+    total = exercises.count()
+    completed = exercises.filter(is_completed=True).count()
+
+    return JsonResponse({
+        'success': True,
+        'prescription_id': prescription.id,
+        'total_exercises': total,
+        'completed_exercises': completed,
+    })
+
+
+def patient_stats(request, patient_code):
+    user, err = _require_physio(request)
+    if err:
+        return err
+
+    try:
+        patient = AddPatient.objects.get(patient_code=patient_code)
+    except AddPatient.DoesNotExist:
+        return JsonResponse({'error': 'Patient not found'}, status=404)
+
+    prescriptions = Prescription.objects.filter(patient=patient)
+    total_prescriptions = prescriptions.count()
+    active_prescriptions = prescriptions.filter(status='active').count()
+    completed_prescriptions = prescriptions.filter(status='completed').count()
+
+    exercises = PrescriptionExercise.objects.filter(prescription__patient=patient)
+    total_exercises = exercises.count()
+    completed_exercises = exercises.filter(is_completed=True).count()
+    overall_completion = round((completed_exercises / total_exercises) * 100, 1) if total_exercises else 0
+
+    total_sessions = TreatmentSession.objects.filter(patient=patient).count()
+
+    return JsonResponse({
+        'total_prescriptions': total_prescriptions,
+        'active_prescriptions': active_prescriptions,
+        'completed_prescriptions': completed_prescriptions,
+        'total_exercises': total_exercises,
+        'completed_exercises': completed_exercises,
+        'overall_completion_percentage': overall_completion,
+        'total_sessions': total_sessions,
+    })
 
 
 # ─── sessions ─────────────────────────────────────────────────────────────────

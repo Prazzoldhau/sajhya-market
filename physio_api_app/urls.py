@@ -11,6 +11,7 @@ urlpatterns = [
     # patients
     path('patients/',                            views.patient_list,                 name='physio-patient-list'),
     path('patients/<str:patient_code>/',         views.patient_detail,               name='physio-patient-detail'),
+    path('patients/<str:patient_code>/stats/',   views.patient_stats,                name='physio-patient-stats'),
 
     # clinics
     path('clinics/',                             views.clinic_list,                  name='physio-clinic-list'),
@@ -31,6 +32,9 @@ urlpatterns = [
 
     # prescriptions
     path('prescriptions/<str:patient_code>/',   views.prescription_list_create,     name='physio-prescriptions'),
+    path('prescriptions/exercises/<int:prescription_id>/add/', views.prescription_add_exercises, name='physio-prescription-add-exercises'),
+    path('prescription-exercises/<int:exercise_id>/toggle/',   views.prescription_exercise_toggle, name='physio-pe-toggle'),
+    path('prescription-exercises/<int:exercise_id>/remove/',   views.prescription_exercise_remove, name='physio-pe-remove'),
 
     # sessions
     path('sessions/<str:patient_code>/',        views.session_list_create,          name='physio-sessions'),
