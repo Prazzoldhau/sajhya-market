@@ -21,6 +21,17 @@ from marketplace_app.models import Category, Product, Order, OrderItem
 
 # ─── helpers ──────────────────────────────────────────────────────────────────
 
+def _absolute_static_url(request, path):
+    """exercise_url / Product.image sometimes store a relative static path
+    (e.g. '/static/exercises/lowbackpain/foo.png'), sometimes already a full
+    URL, sometimes blank. Normalize to an absolute URL clients can load."""
+    if not path:
+        return ''
+    if path.startswith('http://') or path.startswith('https://'):
+        return path
+    return request.build_absolute_uri(quote(path, safe='/'))
+
+
 def _json_body(request):
     try:
         return json.loads(request.body)
@@ -524,7 +535,7 @@ def exercise_list(request):
             'default_reps': e.default_reps,
             'hold_time_sec': e.hold_time_sec,
             'exercise_description': e.exercise_description,
-            'exercise_url': e.exercise_url or '',
+            'exercise_url': _absolute_static_url(request, e.exercise_url),
             'subregion': e.sub_region_fk.sub_region_name,
         }
         for e in qs
@@ -573,7 +584,7 @@ def prescription_list_create(request, patient_code):
                         'schedule_day': pe.schedule_day,
                         'schedule_evening': pe.schedule_evening,
                         'is_completed': pe.is_completed,
-                        'exercise_url': pe.exercise.exercise_url if pe.exercise else '',
+                        'exercise_url': _absolute_static_url(request, pe.exercise.exercise_url if pe.exercise else ''),
                     }
                     for pe in exercises
                 ],
