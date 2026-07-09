@@ -188,6 +188,7 @@ def patient_detail(request, patient_code):
             'patient_diagnosis': patient.patient_diagnosis,
             'completed_session': patient.completed_session,
             'created_at': patient.created_at.isoformat(),
+            'qr_token': patient.qr_token or '',
         },
         'prescriptions': [
             {
