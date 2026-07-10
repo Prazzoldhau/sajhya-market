@@ -9,6 +9,7 @@ urlpatterns = [
     # Auth
     path('api/csrf/', views.csrf_token_view, name='csrf_token'),
     path('api/login/', views.patient_api_login, name='patient_api_login'),
+    path('api/qr-login/', views.patient_api_qr_login, name='patient_api_qr_login'),
     path('api/logout/', views.patient_api_logout, name='patient_api_logout'),
     path('api/me/', views.patient_api_me, name='patient_api_me'),
 

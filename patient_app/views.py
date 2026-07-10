@@ -257,6 +257,61 @@ def patient_api_login(request):
 
 @csrf_exempt
 @require_http_methods(["POST"])
+def patient_api_qr_login(request):
+    try:
+        data = json.loads(request.body)
+        qr_token = data.get('qr_token', '').strip()
+
+        if not qr_token:
+            return JsonResponse({'success': False, 'error': 'QR token is required'}, status=400)
+
+        patient = AddPatient.objects.get(qr_token=qr_token)
+        request.session['patient_id'] = patient.id
+
+        latest_prescription = Prescription.objects.filter(patient=patient).order_by('-created_at').first()
+        prescription_data = None
+        if latest_prescription:
+            through_instances = latest_prescription.exercises.all().order_by('order')
+            status = getattr(latest_prescription, 'status', 'active')
+            notes = getattr(latest_prescription, 'prescription_notes', None) or getattr(latest_prescription, 'notes', None)
+            prescription_data = {
+                'id': latest_prescription.id,
+                'created_at': latest_prescription.created_at.isoformat() if latest_prescription.created_at else '',
+                'status': status,
+                'prescription_notes': notes,
+                'exercises': [
+                    {
+                        'id': ti.id,
+                        'exercise_name': ti.exercise.exercise_name,
+                        'exercise_url': request.build_absolute_uri(ti.exercise.exercise_url) if ti.exercise.exercise_url else None,
+                        'sets': ti.sets,
+                        'reps': ti.reps,
+                        'hold_time_sec': ti.hold_time_sec,
+                        'rest_time_sec': ti.rest_time_sec,
+                    } for ti in through_instances
+                ]
+            }
+
+        return JsonResponse({
+            'success': True,
+            'patient_id': patient.id,
+            'patient_name': getattr(patient, 'patient_name', 'Patient'),
+            'patient_code': patient.patient_code,
+            'diagnosis': getattr(patient, 'diagnosis', 'Not specified'),
+            'latest_prescription': prescription_data,
+            'message': 'QR login successful',
+        })
+
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON'}, status=400)
+    except AddPatient.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Invalid QR code'}, status=401)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': f'Server error: {str(e)}'}, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
 def submit_exercise_feedback(request, exercise_id):
     patient_id = request.session.get('patient_id')
     if not patient_id:
