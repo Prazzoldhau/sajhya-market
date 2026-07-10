@@ -40,6 +40,10 @@ def patient_api_me(request):
                         'reps': ti.reps,
                         'hold_time_sec': ti.hold_time_sec,
                         'rest_time_sec': ti.rest_time_sec,
+                        'schedule_morning': ti.schedule_morning,
+                        'schedule_day': ti.schedule_day,
+                        'schedule_evening': ti.schedule_evening,
+                        'is_completed': ti.is_completed,
                     } for ti in through_instances
                 ]
             }
@@ -224,6 +228,10 @@ def patient_api_login(request):
                         'reps': ti.reps,
                         'hold_time_sec': ti.hold_time_sec,
                         'rest_time_sec': ti.rest_time_sec,
+                        'schedule_morning': ti.schedule_morning,
+                        'schedule_day': ti.schedule_day,
+                        'schedule_evening': ti.schedule_evening,
+                        'is_completed': ti.is_completed,
                     } for ti in through_instances
                 ]
             }
@@ -288,6 +296,10 @@ def patient_api_qr_login(request):
                         'reps': ti.reps,
                         'hold_time_sec': ti.hold_time_sec,
                         'rest_time_sec': ti.rest_time_sec,
+                        'schedule_morning': ti.schedule_morning,
+                        'schedule_day': ti.schedule_day,
+                        'schedule_evening': ti.schedule_evening,
+                        'is_completed': ti.is_completed,
                     } for ti in through_instances
                 ]
             }

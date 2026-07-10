@@ -35,6 +35,7 @@ urlpatterns = [
     path('prescriptions/exercises/<int:prescription_id>/add/', views.prescription_add_exercises, name='physio-prescription-add-exercises'),
     path('prescription-exercises/<int:exercise_id>/toggle/',   views.prescription_exercise_toggle, name='physio-pe-toggle'),
     path('prescription-exercises/<int:exercise_id>/remove/',   views.prescription_exercise_remove, name='physio-pe-remove'),
+    path('prescription-exercises/<int:exercise_id>/params/',   views.prescription_exercise_update_params, name='physio-pe-update-params'),
 
     # sessions
     path('sessions/<str:patient_code>/',        views.session_list_create,          name='physio-sessions'),

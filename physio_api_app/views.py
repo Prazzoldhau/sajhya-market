@@ -726,6 +726,60 @@ def prescription_exercise_remove(request, exercise_id):
     })
 
 
+def prescription_exercise_update_params(request, exercise_id):
+    """Edit dose (sets/reps/hold/rest) and schedule (morning/day/evening) for
+    one exercise in a prescription -- mirrors the web Track page's inline
+    edit (detail_app.update_exercise_params)."""
+    user, err = _require_physio(request)
+    if err:
+        return err
+
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    try:
+        pe = PrescriptionExercise.objects.get(id=exercise_id)
+    except PrescriptionExercise.DoesNotExist:
+        return JsonResponse({'error': 'Exercise not found'}, status=404)
+
+    data = _json_body(request)
+    try:
+        if 'sets' in data:
+            pe.sets = int(data['sets'])
+        if 'reps' in data:
+            pe.reps = int(data['reps'])
+        if 'hold_time_sec' in data:
+            pe.hold_time_sec = int(data['hold_time_sec'])
+        if 'rest_time_sec' in data:
+            pe.rest_time_sec = int(data['rest_time_sec'])
+    except (TypeError, ValueError):
+        return JsonResponse({'error': 'sets/reps/hold_time_sec/rest_time_sec must be numbers'}, status=400)
+
+    if 'schedule_morning' in data:
+        pe.schedule_morning = bool(data['schedule_morning'])
+    if 'schedule_day' in data:
+        pe.schedule_day = bool(data['schedule_day'])
+    if 'schedule_evening' in data:
+        pe.schedule_evening = bool(data['schedule_evening'])
+
+    pe.save(update_fields=[
+        'sets', 'reps', 'hold_time_sec', 'rest_time_sec',
+        'schedule_morning', 'schedule_day', 'schedule_evening', 'updated_at',
+    ])
+
+    return JsonResponse({
+        'success': True,
+        'exercise_id': pe.id,
+        'sets': pe.sets,
+        'reps': pe.reps,
+        'hold_time_sec': pe.hold_time_sec,
+        'rest_time_sec': pe.rest_time_sec,
+        'schedule_morning': pe.schedule_morning,
+        'schedule_day': pe.schedule_day,
+        'schedule_evening': pe.schedule_evening,
+    })
+
+
 def patient_stats(request, patient_code):
     user, err = _require_physio(request)
     if err:
