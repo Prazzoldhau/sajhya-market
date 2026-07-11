@@ -44,6 +44,13 @@ def patient_api_me(request):
                         'schedule_day': ti.schedule_day,
                         'schedule_evening': ti.schedule_evening,
                         'is_completed': ti.is_completed,
+                        'step_images': [
+                            {
+                                'order': si.order,
+                                'image_url': request.build_absolute_uri(si.image_url) if si.image_url else None,
+                                'label': si.label,
+                            } for si in ti.exercise.step_images.all()
+                        ] if ti.exercise else [],
                     } for ti in through_instances
                 ]
             }
@@ -232,6 +239,13 @@ def patient_api_login(request):
                         'schedule_day': ti.schedule_day,
                         'schedule_evening': ti.schedule_evening,
                         'is_completed': ti.is_completed,
+                        'step_images': [
+                            {
+                                'order': si.order,
+                                'image_url': request.build_absolute_uri(si.image_url) if si.image_url else None,
+                                'label': si.label,
+                            } for si in ti.exercise.step_images.all()
+                        ] if ti.exercise else [],
                     } for ti in through_instances
                 ]
             }
@@ -300,6 +314,13 @@ def patient_api_qr_login(request):
                         'schedule_day': ti.schedule_day,
                         'schedule_evening': ti.schedule_evening,
                         'is_completed': ti.is_completed,
+                        'step_images': [
+                            {
+                                'order': si.order,
+                                'image_url': request.build_absolute_uri(si.image_url) if si.image_url else None,
+                                'label': si.label,
+                            } for si in ti.exercise.step_images.all()
+                        ] if ti.exercise else [],
                     } for ti in through_instances
                 ]
             }
