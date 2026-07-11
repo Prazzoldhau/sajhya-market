@@ -10,12 +10,28 @@ admin.site.register(PrescriptionExercise)
 
 from django.contrib import admin
 from import_export.admin import ImportExportModelAdmin
-from .models import ExerciseMain
-from .resources import ExerciseResource
+from .models import ExerciseMain, ExerciseStepImage
+from .resources import ExerciseResource, ExerciseStepImageResource
+
+
+class ExerciseStepImageInline(admin.TabularInline):
+    model = ExerciseStepImage
+    extra = 1
+    ordering = ('order',)
+
 
 @admin.register(ExerciseMain)
 class ExerciseMainAdmin(ImportExportModelAdmin):
     resource_class = ExerciseResource
+    inlines = [ExerciseStepImageInline]
     list_display = ('exercise_name', 'sub_region_fk', 'exercise_type', 'difficulty_level')
     list_filter = ('exercise_type', 'difficulty_level', 'sub_region_fk')
     search_fields = ('exercise_name', 'exercise_description')
+
+
+@admin.register(ExerciseStepImage)
+class ExerciseStepImageAdmin(ImportExportModelAdmin):
+    resource_class = ExerciseStepImageResource
+    list_display = ('exercise', 'order', 'label', 'image_url')
+    list_filter = ('exercise',)
+    search_fields = ('exercise__exercise_name', 'label')

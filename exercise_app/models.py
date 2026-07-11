@@ -81,6 +81,25 @@ class ExerciseMain(models.Model):
     
 
 
+class ExerciseStepImage(models.Model):
+    """One frame in an exercise's ordered step-by-step image sequence
+    (e.g. starting position -> mid position -> end position), rendered
+    as a slideshow in the patient app. Rows, not columns: an exercise
+    with 3 steps has 3 rows here, one with 7 has 7 -- no fixed column
+    count to outgrow."""
+    exercise = models.ForeignKey(ExerciseMain, on_delete=models.CASCADE, related_name='step_images')
+    order = models.PositiveSmallIntegerField(help_text="1-based step number")
+    image_url = models.URLField()
+    label = models.CharField(max_length=100, blank=True, null=True, help_text='e.g. "Starting position"')
+
+    class Meta:
+        ordering = ['order', 'id']
+        unique_together = ['exercise', 'order']
+
+    def __str__(self):
+        return f"{self.exercise.exercise_name} — step {self.order}"
+
+
 class Prescription(models.Model):
     """Model to store exercise prescriptions"""
     
