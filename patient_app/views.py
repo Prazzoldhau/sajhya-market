@@ -52,7 +52,7 @@ def patient_api_me(request):
             'patient_id': patient.id,
             'patient_name': getattr(patient, 'patient_name', 'Patient'),
             'patient_code': patient.patient_code,
-            'diagnosis': getattr(patient, 'diagnosis', 'Not specified'),
+            'diagnosis': patient.patient_diagnosis or 'Not specified',
             'latest_prescription': prescription_data,
         })
     except AddPatient.DoesNotExist:
@@ -238,7 +238,7 @@ def patient_api_login(request):
 
         # Build response
         patient_name = getattr(patient, 'patient_name', 'Patient')
-        diagnosis = getattr(patient, 'diagnosis', 'Not specified')
+        diagnosis = patient.patient_diagnosis or 'Not specified'
         response_data = {
             'success': True,
             'patient_id': patient.id,
@@ -309,7 +309,7 @@ def patient_api_qr_login(request):
             'patient_id': patient.id,
             'patient_name': getattr(patient, 'patient_name', 'Patient'),
             'patient_code': patient.patient_code,
-            'diagnosis': getattr(patient, 'diagnosis', 'Not specified'),
+            'diagnosis': patient.patient_diagnosis or 'Not specified',
             'latest_prescription': prescription_data,
             'message': 'QR login successful',
         })
