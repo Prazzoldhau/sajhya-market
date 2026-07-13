@@ -5,7 +5,7 @@ def create_pharmacy_category(apps, schema_editor):
     Category = apps.get_model('marketplace_app', 'Category')
     Category.objects.get_or_create(
         name='Pharmacy',
-        defaults={'icon': '💊', 'description': 'Medicines and pharmacy products'},
+        defaults={'icon': '', 'description': 'Medicines and pharmacy products'},
     )
 
 
