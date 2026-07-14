@@ -23,6 +23,7 @@ urlpatterns = [
     # Marketplace
     path('api/categories/', views.patient_api_categories, name='patient_api_categories'),
     path('api/products/', views.patient_api_products, name='patient_api_products'),
+    path('api/pharmacy/products/', views.patient_api_pharmacy_products, name='patient_api_pharmacy_products'),
     path('api/cart/', views.patient_api_cart, name='patient_api_cart'),
     path('api/cart/add/<int:product_id>/', views.patient_api_cart_add, name='patient_api_cart_add'),
     path('api/cart/update/', views.patient_api_cart_update, name='patient_api_cart_update'),

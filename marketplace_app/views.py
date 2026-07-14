@@ -54,8 +54,10 @@ def _build_cart_lines(cart):
 
 
 def marketplace(request):
-    categories = Category.objects.all()
-    products = Product.objects.filter(in_stock=True).select_related('category')\
+    # Pharmacy is a separate section (see `pharmacy` view below) -- never
+    # listed or searchable from the general Marketplace page.
+    categories = Category.objects.exclude(name='Pharmacy')
+    products = Product.objects.filter(in_stock=True).exclude(category__name='Pharmacy').select_related('category')\
         .annotate(order_count=Count('orderitem'))\
         .order_by('-is_featured', '-order_count', 'name')
 
@@ -67,7 +69,7 @@ def marketplace(request):
     if search:
         products = products.filter(name__icontains=search)
 
-    featured = Product.objects.filter(is_featured=True, in_stock=True).select_related('category')[:4]
+    featured = Product.objects.filter(is_featured=True, in_stock=True).exclude(category__name='Pharmacy').select_related('category')[:4]
 
     context = {
         'categories': categories,
@@ -78,6 +80,23 @@ def marketplace(request):
         'cart_count': get_cart_count(request),
     }
     return render(request, 'marketplace/marketplace.html', context)
+
+
+def pharmacy(request):
+    products = Product.objects.filter(in_stock=True, category__name='Pharmacy').select_related('category')\
+        .annotate(order_count=Count('orderitem'))\
+        .order_by('-is_featured', '-order_count', 'name')
+
+    search = request.GET.get('search', '').strip()
+    if search:
+        products = products.filter(name__icontains=search)
+
+    context = {
+        'products': products,
+        'search': search,
+        'cart_count': get_cart_count(request),
+    }
+    return render(request, 'marketplace/pharmacy.html', context)
 
 
 def product_detail(request, product_id):
@@ -296,6 +315,7 @@ def patient_marketplace(request, patient_id):
     other_products = (
         Product.objects.filter(in_stock=True)
         .exclude(id__in=excluded_ids)
+        .exclude(category__name='Pharmacy')
         .select_related('category')
         .annotate(order_count=Count('orderitem'))
         .order_by('-is_featured', '-order_count', 'name')
@@ -303,7 +323,7 @@ def patient_marketplace(request, patient_id):
 
     # IDs the physio has already recommended (for toggle state on cards)
     is_physio = request.user.is_authenticated
-    categories = Category.objects.all()
+    categories = Category.objects.exclude(name='Pharmacy')
     context = {
         'patient': patient,
         'manual_recs': manual_recs,

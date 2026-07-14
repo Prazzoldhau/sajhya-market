@@ -7,6 +7,7 @@ urlpatterns = [
     path('recommendation/<int:rec_id>/remove/', views.remove_patient_recommendation, name='remove-patient-recommendation'),
     path('patient/<int:patient_id>/add-picks-to-cart/', views.add_picks_to_cart, name='add-picks-to-cart'),
     path('', views.marketplace, name='marketplace'),
+    path('pharmacy/', views.pharmacy, name='pharmacy'),
     path('product/<int:product_id>/', views.product_detail, name='product-detail'),
     path('add-to-cart/<int:product_id>/', views.add_to_cart, name='add-to-cart'),
     path('remove-from-cart/<int:product_id>/', views.remove_from_cart, name='remove-from-cart'),

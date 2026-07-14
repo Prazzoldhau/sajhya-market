@@ -25,6 +25,7 @@ urlpatterns = [
     path('shop/categories/',                     views.shop_category_list,           name='physio-shop-categories'),
     path('shop/products/',                       views.shop_product_list,            name='physio-shop-products'),
     path('shop/orders/',                         views.shop_order_list_create,       name='physio-shop-orders'),
+    path('shop/pharmacy/products/',              views.pharmacy_product_list,        name='physio-pharmacy-products'),
 
     # exercises
     path('regions/',                             views.region_list,                  name='physio-region-list'),

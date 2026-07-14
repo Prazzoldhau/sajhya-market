@@ -379,7 +379,9 @@ def shop_category_list(request):
     if err:
         return err
 
-    categories = Category.objects.all()
+    # Pharmacy is a separate section (see pharmacy_product_list) -- never
+    # listed as a Marketplace category.
+    categories = Category.objects.exclude(name='Pharmacy')
     data = [{'id': c.id, 'name': c.name, 'icon': c.icon} for c in categories]
     return JsonResponse({'categories': data})
 
@@ -389,11 +391,43 @@ def shop_product_list(request):
     if err:
         return err
 
-    qs = Product.objects.filter(in_stock=True).select_related('category')
+    # Excluded unconditionally (not just when no category filter is given)
+    # so the Marketplace endpoint never returns Pharmacy items even if a
+    # caller passes its category id directly.
+    qs = Product.objects.filter(in_stock=True).exclude(category__name='Pharmacy').select_related('category')
 
     category_id = request.GET.get('category', '').strip()
     if category_id:
         qs = qs.filter(category_id=category_id)
+
+    search = request.GET.get('search', '').strip()
+    if search:
+        qs = qs.filter(name__icontains=search)
+
+    qs = qs.order_by('-is_featured', 'name')
+    data = [
+        {
+            'id': p.id,
+            'name': p.name,
+            'category': p.category.name if p.category else None,
+            'category_id': p.category_id,
+            'description': p.description,
+            'price': str(p.price),
+            'unit': p.unit,
+            'image': _product_image_url(request, p),
+            'is_featured': p.is_featured,
+        }
+        for p in qs
+    ]
+    return JsonResponse({'products': data})
+
+
+def pharmacy_product_list(request):
+    user, err = _require_physio(request)
+    if err:
+        return err
+
+    qs = Product.objects.filter(in_stock=True, category__name='Pharmacy').select_related('category')
 
     search = request.GET.get('search', '').strip()
     if search:

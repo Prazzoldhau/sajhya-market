@@ -486,7 +486,9 @@ def patient_api_categories(request):
     patient, err = _patient_required(request)
     if err:
         return err
-    cats = Category.objects.all().order_by('id')
+    # Pharmacy is a separate section (see patient_api_pharmacy_products) --
+    # never listed as a Marketplace category.
+    cats = Category.objects.exclude(name='Pharmacy').order_by('id')
     return JsonResponse({'categories': [{'id': c.id, 'name': c.name, 'icon': c.icon} for c in cats]})
 
 
@@ -494,10 +496,32 @@ def patient_api_products(request):
     patient, err = _patient_required(request)
     if err:
         return err
-    qs = Product.objects.filter(in_stock=True).select_related('category')
+    # Excluded unconditionally so this endpoint never returns Pharmacy
+    # items, even if a caller passes its category id directly.
+    qs = Product.objects.filter(in_stock=True).exclude(category__name='Pharmacy').select_related('category')
     cat_id = request.GET.get('category', '').strip()
     if cat_id:
         qs = qs.filter(category_id=cat_id)
+    search = request.GET.get('search', '').strip()
+    if search:
+        qs = qs.filter(name__icontains=search)
+    data = [{
+        'id': p.id,
+        'name': p.name,
+        'price': str(p.price),
+        'unit': p.unit,
+        'category': p.category.name if p.category else '',
+        'image_url': _image_url(request, p.image),
+        'description': p.description,
+    } for p in qs]
+    return JsonResponse({'products': data})
+
+
+def patient_api_pharmacy_products(request):
+    patient, err = _patient_required(request)
+    if err:
+        return err
+    qs = Product.objects.filter(in_stock=True, category__name='Pharmacy').select_related('category')
     search = request.GET.get('search', '').strip()
     if search:
         qs = qs.filter(name__icontains=search)

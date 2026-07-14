@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Physio Marketplace — Sajhya{% endblock %}
+{% block title %}Pharmacy — Sajhya{% endblock %}
 
 {% block content %}
 
@@ -10,85 +10,33 @@
     <!-- Hero Banner -->
     <div class="mkt-hero">
         <div class="mkt-hero-text">
-            <h1>Physiotherapy Supplies</h1>
-            <p>Quality consumables &amp; equipment for your practice</p>
+            <h1>💊 Pharmacy</h1>
+            <p>Medicines &amp; healthcare products</p>
         </div>
         <form class="mkt-search-form" method="GET" action="">
-            {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category }}">{% endif %}
-            <input type="text" name="search" value="{{ search }}" placeholder="Search products..." class="mkt-search-input">
+            <input type="text" name="search" value="{{ search }}" placeholder="Search medicines..." class="mkt-search-input">
             <button type="submit" class="mkt-search-btn">🔍 Search</button>
-            {% if search %}<a href="?{% if selected_category %}category={{ selected_category }}{% endif %}" class="mkt-clear-btn">✕ Clear</a>{% endif %}
+            {% if search %}<a href="{% url 'pharmacy' %}" class="mkt-clear-btn">✕ Clear</a>{% endif %}
         </form>
             <div class="mkt-nav-right">
                 {% if request.user.is_staff %}
                 <a href="{% url 'vendor-orders' %}" class="mkt-back-btn">📦 Vendor</a>
                 {% endif %}
-                <a href="{% url 'pharmacy' %}" class="mkt-back-btn">💊 Pharmacy</a>
                 <a href="{% url 'view-cart' %}" class="mkt-cart-btn">
                     🛒 Cart
                     {% if cart_count > 0 %}
                     <span class="mkt-cart-badge">{{ cart_count }}</span>
                     {% endif %}
                 </a>
-                <a href="javascript:history.back()" class="mkt-back-btn">← Back</a>
+                <a href="{% url 'marketplace' %}" class="mkt-back-btn">🏥 Marketplace</a>
             </div>
     </div>
-
-    <!-- Category Pills -->
-    <div class="mkt-category-strip">
-        <a href="{% url 'marketplace' %}" class="mkt-cat-pill {% if not selected_category %}active{% endif %}">
-            🏥 All Products
-        </a>
-        {% for cat in categories %}
-        <a href="?category={{ cat.id }}" class="mkt-cat-pill {% if selected_category == cat.id|stringformat:'s' %}active{% endif %}">
-            {{ cat.icon }} {{ cat.name }}
-        </a>
-        {% endfor %}
-    </div>
-
-    <!-- Featured Section (main page only) -->
-    {% if not selected_category and not search and featured %}
-    <div class="mkt-section-header">
-        <h2>⭐ Featured Products</h2>
-        <span class="mkt-section-sub">Hand-picked essentials for physiotherapy</span>
-    </div>
-    <div class="mkt-product-grid mkt-featured-grid">
-        {% for product in featured %}
-        <div class="mkt-product-card mkt-featured-card">
-            <div class="mkt-product-img">
-                {% if product.image %}
-                    <img src="{% static product.image %}" alt="{{ product.name }}">
-                {% else %}
-                    <div class="mkt-img-placeholder">{{ product.category.icon|default:"📦" }}</div>
-                {% endif %}
-                <span class="mkt-featured-tag">⭐ Featured</span>
-            </div>
-            <div class="mkt-product-body">
-                <span class="mkt-cat-badge">{{ product.category.name|default:"General" }}</span>
-                <h3 class="mkt-product-name">{{ product.name }}</h3>
-                <p class="mkt-product-desc">{{ product.description|truncatewords:12 }}</p>
-                <div class="mkt-product-footer">
-                    <div class="mkt-price">
-                        NPR {{ product.price }}
-                        <small class="mkt-unit">/ {{ product.unit }}</small>
-                    </div>
-                    <div class="mkt-card-actions">
-                        <a href="{% url 'product-detail' product.id %}" class="mkt-btn-view">Details</a>
-                        <a href="{% url 'add-to-cart' product.id %}?next={{ request.get_full_path|urlencode }}" class="mkt-btn-add">+ Cart</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-    {% endif %}
 
     <!-- All Products -->
     <div class="mkt-section-header">
         <h2>
             {% if search %}Results for "{{ search }}"
-            {% elif selected_category %}Products
-            {% else %}All Products
+            {% else %}All Medicines
             {% endif %}
         </h2>
         <span class="mkt-section-sub mkt-count">{{ products|length }} item{{ products|length|pluralize }} found</span>
@@ -102,11 +50,11 @@
                 {% if product.image %}
                     <img src="{% static product.image %}" alt="{{ product.name }}">
                 {% else %}
-                    <div class="mkt-img-placeholder">{{ product.category.icon|default:"📦" }}</div>
+                    <div class="mkt-img-placeholder">💊</div>
                 {% endif %}
             </div>
             <div class="mkt-product-body">
-                <span class="mkt-cat-badge">{{ product.category.name|default:"General" }}</span>
+                <span class="mkt-cat-badge">Pharmacy</span>
                 <h3 class="mkt-product-name">{{ product.name }}</h3>
                 <p class="mkt-product-desc">{{ product.description|truncatewords:10 }}</p>
                 <div class="mkt-product-footer">
@@ -125,10 +73,10 @@
     </div>
     {% else %}
     <div class="empty-state">
-        <div style="font-size:3rem; margin-bottom:1rem;">🔍</div>
-        <h3>No products found</h3>
-        <p>Try a different search term or browse all categories.</p>
-        <a href="{% url 'marketplace' %}" class="mkt-btn-primary" style="margin-top:1rem; display:inline-block;">Browse All Products</a>
+        <div style="font-size:3rem; margin-bottom:1rem;">💊</div>
+        <h3>No medicines found</h3>
+        <p>Try a different search term.</p>
+        <a href="{% url 'pharmacy' %}" class="mkt-btn-primary" style="margin-top:1rem; display:inline-block;">Browse All Medicines</a>
     </div>
     {% endif %}
 
