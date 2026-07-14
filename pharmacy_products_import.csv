@@ -1,36 +1,36 @@
-name,category,description,price,unit,image,in_stock,is_featured
-Methylcobalamin,Pharmacy,,0.00,per piece,pharmacy/1 (1)/1.png,True,False
-Diclofenac Injection,Pharmacy,,0.00,per piece,pharmacy/1 (1)/10.png,True,False
-Lignocaine (Lidocaine) Injection,Pharmacy,,0.00,per piece,pharmacy/1 (1)/11.png,True,False
-Duloxetine,Pharmacy,,0.00,per piece,pharmacy/1 (1)/12.png,True,False
-Gabapentin,Pharmacy,,0.00,per piece,pharmacy/1 (1)/13.png,True,False
-Calcium + Vitamin D3 + Zinc,Pharmacy,,0.00,per piece,pharmacy/1 (1)/14.png,True,False
-Magnesium,Pharmacy,,0.00,per piece,pharmacy/1 (1)/15.png,True,False
-Pregabalin,Pharmacy,,0.00,per piece,pharmacy/1 (1)/2.png,True,False
-Etoricoxib (Ecox),Pharmacy,,0.00,per piece,pharmacy/1 (1)/3.png,True,False
-Pantoprazole,Pharmacy,,0.00,per piece,pharmacy/1 (1)/4.png,True,False
-Aceclofenac + Paracetamol + Serratiopeptidase,Pharmacy,,0.00,per piece,pharmacy/1 (1)/5.png,True,False
-Vitamin B-Complex with B12,Pharmacy,,0.00,per piece,pharmacy/1 (1)/6.png,True,False
-Paracetamol 650 mg,Pharmacy,,0.00,per piece,pharmacy/1 (1)/7.png,True,False
-Thiocolchicoside,Pharmacy,,0.00,per piece,pharmacy/1 (1)/8.png,True,False
-Tizanidine,Pharmacy,,0.00,per piece,pharmacy/1 (1)/9.png,True,False
-Rosuvastatin,Pharmacy,,0.00,per piece,pharmacy/1 (2)/1.png,True,False
-Aspirin,Pharmacy,,0.00,per piece,pharmacy/1 (2)/10.png,True,False
-Levothyroxine,Pharmacy,,0.00,per piece,pharmacy/1 (2)/11.png,True,False
-Omeprazole,Pharmacy,,0.00,per piece,pharmacy/1 (2)/12.png,True,False
-Pantoprazole,Pharmacy,,0.00,per piece,pharmacy/1 (2)/13.png,True,False
-Paracetamol,Pharmacy,,0.00,per piece,pharmacy/1 (2)/14.png,True,False
-Ibuprofen,Pharmacy,,0.00,per piece,pharmacy/1 (2)/15.png,True,False
-Montelukast,Pharmacy,,0.00,per piece,pharmacy/1 (2)/16.png,True,False
-Salbutamol,Pharmacy,,0.00,per piece,pharmacy/1 (2)/17.png,True,False
-Vitamin D3,Pharmacy,,0.00,per piece,pharmacy/1 (2)/18.png,True,False
-Vitamin B Complex,Pharmacy,,0.00,per piece,pharmacy/1 (2)/19.png,True,False
-Atorvastatin,Pharmacy,,0.00,per piece,pharmacy/1 (2)/2.png,True,False
-Calcium + Vitamin D,Pharmacy,,0.00,per piece,pharmacy/1 (2)/20.png,True,False
-Voglibose,Pharmacy,,0.00,per piece,pharmacy/1 (2)/3.png,True,False
-Metformin,Pharmacy,,0.00,per piece,pharmacy/1 (2)/4.png,True,False
-Gliclazide,Pharmacy,,0.00,per piece,pharmacy/1 (2)/5.png,True,False
-Amlodipine,Pharmacy,,0.00,per piece,pharmacy/1 (2)/6.png,True,False
-Losartan,Pharmacy,,0.00,per piece,pharmacy/1 (2)/7.png,True,False
-Telmisartan,Pharmacy,,0.00,per piece,pharmacy/1 (2)/8.png,True,False
-Metoprolol,Pharmacy,,0.00,per piece,pharmacy/1 (2)/9.png,True,False
+id,name,category,description,price,unit,image,in_stock,is_featured
+,Methylcobalamin,Pharmacy,,0.00,per piece,pharmacy/1 (1)/1.png,True,False
+,Diclofenac Injection,Pharmacy,,0.00,per piece,pharmacy/1 (1)/10.png,True,False
+,Lignocaine (Lidocaine) Injection,Pharmacy,,0.00,per piece,pharmacy/1 (1)/11.png,True,False
+,Duloxetine,Pharmacy,,0.00,per piece,pharmacy/1 (1)/12.png,True,False
+,Gabapentin,Pharmacy,,0.00,per piece,pharmacy/1 (1)/13.png,True,False
+,Calcium + Vitamin D3 + Zinc,Pharmacy,,0.00,per piece,pharmacy/1 (1)/14.png,True,False
+,Magnesium,Pharmacy,,0.00,per piece,pharmacy/1 (1)/15.png,True,False
+,Pregabalin,Pharmacy,,0.00,per piece,pharmacy/1 (1)/2.png,True,False
+,Etoricoxib (Ecox),Pharmacy,,0.00,per piece,pharmacy/1 (1)/3.png,True,False
+,Pantoprazole,Pharmacy,,0.00,per piece,pharmacy/1 (1)/4.png,True,False
+,Aceclofenac + Paracetamol + Serratiopeptidase,Pharmacy,,0.00,per piece,pharmacy/1 (1)/5.png,True,False
+,Vitamin B-Complex with B12,Pharmacy,,0.00,per piece,pharmacy/1 (1)/6.png,True,False
+,Paracetamol 650 mg,Pharmacy,,0.00,per piece,pharmacy/1 (1)/7.png,True,False
+,Thiocolchicoside,Pharmacy,,0.00,per piece,pharmacy/1 (1)/8.png,True,False
+,Tizanidine,Pharmacy,,0.00,per piece,pharmacy/1 (1)/9.png,True,False
+,Rosuvastatin,Pharmacy,,0.00,per piece,pharmacy/1 (2)/1.png,True,False
+,Aspirin,Pharmacy,,0.00,per piece,pharmacy/1 (2)/10.png,True,False
+,Levothyroxine,Pharmacy,,0.00,per piece,pharmacy/1 (2)/11.png,True,False
+,Omeprazole,Pharmacy,,0.00,per piece,pharmacy/1 (2)/12.png,True,False
+,Pantoprazole,Pharmacy,,0.00,per piece,pharmacy/1 (2)/13.png,True,False
+,Paracetamol,Pharmacy,,0.00,per piece,pharmacy/1 (2)/14.png,True,False
+,Ibuprofen,Pharmacy,,0.00,per piece,pharmacy/1 (2)/15.png,True,False
+,Montelukast,Pharmacy,,0.00,per piece,pharmacy/1 (2)/16.png,True,False
+,Salbutamol,Pharmacy,,0.00,per piece,pharmacy/1 (2)/17.png,True,False
+,Vitamin D3,Pharmacy,,0.00,per piece,pharmacy/1 (2)/18.png,True,False
+,Vitamin B Complex,Pharmacy,,0.00,per piece,pharmacy/1 (2)/19.png,True,False
+,Atorvastatin,Pharmacy,,0.00,per piece,pharmacy/1 (2)/2.png,True,False
+,Calcium + Vitamin D,Pharmacy,,0.00,per piece,pharmacy/1 (2)/20.png,True,False
+,Voglibose,Pharmacy,,0.00,per piece,pharmacy/1 (2)/3.png,True,False
+,Metformin,Pharmacy,,0.00,per piece,pharmacy/1 (2)/4.png,True,False
+,Gliclazide,Pharmacy,,0.00,per piece,pharmacy/1 (2)/5.png,True,False
+,Amlodipine,Pharmacy,,0.00,per piece,pharmacy/1 (2)/6.png,True,False
+,Losartan,Pharmacy,,0.00,per piece,pharmacy/1 (2)/7.png,True,False
+,Telmisartan,Pharmacy,,0.00,per piece,pharmacy/1 (2)/8.png,True,False
+,Metoprolol,Pharmacy,,0.00,per piece,pharmacy/1 (2)/9.png,True,False
