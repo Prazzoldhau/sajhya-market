@@ -22,8 +22,8 @@ class ProductResource(resources.ModelResource):
 
     class Meta:
         model = Product
-        fields = ('id', 'name', 'category', 'description', 'price', 'unit', 'in_stock', 'is_featured')
-        export_order = ('id', 'name', 'category', 'description', 'price', 'unit', 'in_stock', 'is_featured')
+        fields = ('id', 'name', 'category', 'description', 'price', 'unit', 'image', 'in_stock', 'is_featured')
+        export_order = ('id', 'name', 'category', 'description', 'price', 'unit', 'image', 'in_stock', 'is_featured')
         import_id_fields = ('id',)
 
 
