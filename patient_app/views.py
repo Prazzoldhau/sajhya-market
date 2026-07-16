@@ -1,17 +1,28 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from personal_account.models import AddPatient
+from personal_account.models import AddPatient, ActivationCard, get_nepal_time
 from exercise_app.models import Prescription, PrescriptionExercise, ExerciseFeedback
 from marketplace_app.models import Category, Product, Order, OrderItem, Commission, CommissionRate, PatientProductRecommendation
 from marketplace_app.views import get_recommended_for_diagnosis
 from django.http import JsonResponse, HttpResponse
 from django.conf import settings
 import json
+from datetime import timedelta
 from decimal import Decimal
 from urllib.parse import quote
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import ensure_csrf_cookie
 from .models import PushSubscription
+
+def _activation_status(patient):
+    active = patient.is_activation_active
+    days_remaining = (patient.activation_expires_at - get_nepal_time()).days if active else None
+    return {
+        'activation_active': active,
+        'activation_expires_at': patient.activation_expires_at.isoformat() if patient.activation_expires_at else None,
+        'activation_days_remaining': days_remaining,
+    }
+
 
 def patient_api_me(request):
     patient_id = request.session.get('patient_id')
@@ -61,6 +72,7 @@ def patient_api_me(request):
             'patient_code': patient.patient_code,
             'diagnosis': patient.patient_diagnosis or 'Not specified',
             'latest_prescription': prescription_data,
+            **_activation_status(patient),
         })
     except AddPatient.DoesNotExist:
         return JsonResponse({'error': 'Patient not found'}, status=404)
@@ -260,6 +272,7 @@ def patient_api_login(request):
             'patient_code': patient.patient_code,
             'diagnosis': diagnosis,
             'latest_prescription': prescription_data,
+            **_activation_status(patient),
             'message': 'Login successful'
         }
 
@@ -332,6 +345,7 @@ def patient_api_qr_login(request):
             'patient_code': patient.patient_code,
             'diagnosis': patient.patient_diagnosis or 'Not specified',
             'latest_prescription': prescription_data,
+            **_activation_status(patient),
             'message': 'QR login successful',
         })
 
@@ -341,6 +355,54 @@ def patient_api_qr_login(request):
         return JsonResponse({'success': False, 'error': 'Invalid QR code'}, status=401)
     except Exception as e:
         return JsonResponse({'success': False, 'error': f'Server error: {str(e)}'}, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def patient_api_activate(request):
+    patient_id = request.session.get('patient_id')
+    if not patient_id:
+        return JsonResponse({'success': False, 'error': 'Not authenticated'}, status=401)
+
+    try:
+        patient = AddPatient.objects.get(id=patient_id)
+    except AddPatient.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Patient not found'}, status=404)
+
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON'}, status=400)
+
+    code = data.get('code', '').strip().upper()
+    if not code:
+        return JsonResponse({'success': False, 'error': 'Activation code is required'}, status=400)
+
+    try:
+        card = ActivationCard.objects.get(code=code)
+    except ActivationCard.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Invalid activation code'}, status=404)
+
+    if card.is_used:
+        return JsonResponse({'success': False, 'error': 'This activation code has already been used'}, status=400)
+
+    now = get_nepal_time()
+    # If the patient still has time left, extend from that point rather than
+    # from now, so redeeming early never loses days already paid for.
+    base = patient.activation_expires_at if patient.activation_expires_at and patient.activation_expires_at > now else now
+    patient.activation_expires_at = base + timedelta(days=card.duration_days)
+    patient.save(update_fields=['activation_expires_at'])
+
+    card.is_used = True
+    card.used_by = patient
+    card.used_at = now
+    card.save(update_fields=['is_used', 'used_by', 'used_at'])
+
+    return JsonResponse({
+        'success': True,
+        'message': 'Activation successful',
+        **_activation_status(patient),
+    })
 
 
 @csrf_exempt
