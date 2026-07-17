@@ -72,8 +72,8 @@ class ExerciseMain(models.Model):
     hold_time_sec = models.IntegerField()
     default_rest_time_sec = models.IntegerField(default=60)
 
-    exercise_description = models.CharField(max_length=500)
-    exercise_description_nepali = models.CharField(max_length=500, blank=True, default='')
+    exercise_description = models.TextField(blank=True, default='')
+    exercise_description_nepali = models.TextField(blank=True, default='')
     exercise_url = models.URLField(null=True, blank=True)
 
     def __str__(self):
