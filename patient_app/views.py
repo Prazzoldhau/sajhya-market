@@ -55,6 +55,7 @@ def patient_api_me(request):
                         'schedule_day': ti.schedule_day,
                         'schedule_evening': ti.schedule_evening,
                         'is_completed': ti.is_completed,
+                        'description': ti.exercise.exercise_description if ti.exercise else '',
                         'step_images': [
                             {
                                 'order': si.order,
@@ -251,6 +252,7 @@ def patient_api_login(request):
                         'schedule_day': ti.schedule_day,
                         'schedule_evening': ti.schedule_evening,
                         'is_completed': ti.is_completed,
+                        'description': ti.exercise.exercise_description if ti.exercise else '',
                         'step_images': [
                             {
                                 'order': si.order,
@@ -327,6 +329,7 @@ def patient_api_qr_login(request):
                         'schedule_day': ti.schedule_day,
                         'schedule_evening': ti.schedule_evening,
                         'is_completed': ti.is_completed,
+                        'description': ti.exercise.exercise_description if ti.exercise else '',
                         'step_images': [
                             {
                                 'order': si.order,
