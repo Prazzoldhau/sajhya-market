@@ -75,6 +75,7 @@ class ExerciseMain(models.Model):
     exercise_description = models.TextField(blank=True, default='')
     exercise_description_nepali = models.TextField(blank=True, default='')
     exercise_url = models.URLField(null=True, blank=True)
+    youtube_url = models.URLField(null=True, blank=True, help_text='Link to a YouTube video demonstrating this exercise')
 
     def __str__(self):
         return self.exercise_name

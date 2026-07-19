@@ -24,7 +24,7 @@ class ExerciseStepImageInline(admin.TabularInline):
 class ExerciseMainAdmin(ImportExportModelAdmin):
     resource_class = ExerciseResource
     inlines = [ExerciseStepImageInline]
-    list_display = ('exercise_name', 'sub_region_fk', 'exercise_type', 'difficulty_level')
+    list_display = ('exercise_name', 'sub_region_fk', 'exercise_type', 'difficulty_level', 'youtube_url')
     list_filter = ('exercise_type', 'difficulty_level', 'sub_region_fk')
     search_fields = ('exercise_name', 'exercise_description')
 
