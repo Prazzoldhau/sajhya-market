@@ -1,0 +1,34 @@
+1	Wrist Flexor Stretch
+2	Wrist Extensor Stretch
+3	Triceps Stretch (Overhead)
+4	Bicep Stretch (Wall)
+5	Passive Elbow Flexion/Extension
+6	Forearm Pronation/Supination (Passive)
+7	Isometric Wrist Extension
+8	Isometric Wrist Flexion
+9	Towel Twist (Forearm)
+10	Finger Extension with Rubber Band
+11	Ball Squeeze (Grip Strength)
+12	Triceps Kickback (Light weight)
+13	Bicep Curl (Light weight)
+14	Hammer Curl
+15	Supine Elbow Flexion (Passive stretch)
+16	Elbow Extension Isometric at 90°
+17	Ulnar Nerve Glide (Claw to OK sign)
+18	Median Nerve Glide
+19	Radial Nerve Glide
+20	Eccentric Wrist Extension
+21	Reverse Bicep Curl
+22	Overhead Triceps Extension
+23	Concentration Curl
+24	Wrist Roller (Forearm)
+25	Farmer's Walk (Elbow stable)
+26	Zottman Curl
+27	JM Press
+28	Close Grip Push-up
+29	Ring Triceps Extension
+30	Plyometric Push-up (Elbow focus)
+31	Weighted Dips
+32	Elbow Planche Lean
+33	False Grip Hang (Ring)
+34	Single Arm Reverse Curl
