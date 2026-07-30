@@ -1,0 +1,56 @@
+1	Chin Tuck (Supine)
+2	Chin Tuck (Seated)
+3	Chin Tuck (Standing against wall)
+4	Cervical Retraction (Seated)
+5	Cervical Flexion (Nodding)
+6	Cervical Extension (Looking up)
+7	Cervical Lateral Flexion (Ear to shoulder)
+8	Cervical Rotation (Look over shoulder)
+9	Upper Trapezius Stretch
+10	Levator Scapulae Stretch
+11	Scalene Stretch
+12	Suboccipital Release (Supine with towel)
+13	Deep Cervical Flexor Isometric (Supine)
+14	Chin Tuck with Overpressure (Finger assist)
+15	Cervical Rotation Stretch (Gentle overpressure)
+16	Cervical Lateral Flexion Stretch (Gentle)
+17	Cervical Flexion Isometric (Seated)
+18	Cervical Extension Isometric (Seated)
+19	Cervical Lateral Flexion Isometric (Seated)
+20	Cervical Rotation Isometric (Seated)
+21	Deep Neck Flexor Endurance (Supine)
+22	Chin Tuck with Head Lift (Supine)
+23	Prone Chin Tuck (Face down)
+24	Prone Cervical Extension (Face down)
+25	Prone Cervical Extension with Chin Tuck
+26	Side-Lying Cervical Lateral Flexion
+27	Quadruped Cervical Retraction
+28	Theraband Cervical Retraction
+29	Theraband Cervical Flexion
+30	Theraband Cervical Extension
+31	Theraband Cervical Lateral Flexion
+32	Theraband Cervical Rotation
+33	Deep Cervical Flexor Progression (Pressure Biofeedback)
+34	Craniocervical Flexion Test (Hold)
+35	Upper Trapezius Strengthening (Shrugs)
+36	Seated Rows (Scapular/Cervical integration)
+37	Chin Tuck with Axial Extension
+38	Cervical Proprioception (Head repositioning)
+39	Cervical Proprioception (Laser pointer)
+40	Supine Deep Neck Flexor Hold with Limb Load
+41	Prone Cervical Extension with Weight
+42	Side-Lying Cervical Lateral Flexion with Weight
+43	Theraband Cervical Pattern (Diagonal D1/D2)
+44	Cervical Rotation with Resistance (Prone)
+45	4-Way Neck Machine (Isotonic)
+46	Neck Harness Lifts (Weight plate)
+47	Iron Neck Training (Rotational)
+48	Wrestler's Bridge (Full - Advanced only)
+49	Headstand (Tripod - Advanced only)
+50	Multi-planar Cervical Perturbation Training
+51	Dynamic Visual Fixation (Head movement with fixed gaze)
+52	Gaze Stability Training (VOR)
+53	Cervical Endurance Test (Hold positions)
+54	Supine Chin Tuck with Respiratory Challenge
+55	Closed Chain Cervical Stabilization (Wall)
+56	Cervical Perturbation on Swiss Ball
