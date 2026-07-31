@@ -1,0 +1,25 @@
+1	Bodyweight Squat
+2	Walking Lunge
+3	Glute Bridge
+4	Straight Leg Raise
+5	Terminal Knee Extension (TKE)
+6	Wall Sit
+7	Step-up
+8	Seated Knee Flexion / Extension
+9	Calf Stretch (Gastrocnemius)
+10	Prone Knee Bend
+11	Bulgarian Split Squat
+12	Reverse Lunge
+13	Lateral Lunge
+14	Nordic Hamstring Curl
+15	Poliquin Step-up
+16	Shallow Squat Isometric Hold
+17	Knee Extension with Band
+18	Supine Knee Flexion with Towel
+19	Heel Elevated Squat
+20	Cossack Squat
+21	Single Leg Glute Bridge
+22	Shrimp Squat
+23	Banded TKE (Standing)
+24	Seated Knee Extension Isometric
+25	Half Kneeling Hip Flexor Stretch (Knee Focus)
