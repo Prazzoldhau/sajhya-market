@@ -1,0 +1,18 @@
+35	Active-Assisted Elbow Flexion (Wand Assisted)
+36	Active-Assisted Elbow Extension (Wand Assisted)
+37	Table Slide Elbow Extension Stretch
+38	Gravity-Assisted Elbow Extension (Weighted Stretch)
+39	Overpressure Elbow Flexion Stretch (Opposite Hand Assist)
+40	Bilateral Prayer Stretch for Elbow Extension
+41	Wall Slide Elbow Extension Stretch
+42	Forearm Pronation Overpressure Stretch
+43	Forearm Supination Overpressure Stretch
+44	Towel-Assisted Elbow Flexion Stretch
+45	Contract-Relax (PNF) Elbow Extension Stretch
+46	Post-Surgical Scar Mobilization (Elbow)
+47	Static Progressive Elbow Extension Stretch (Splint/Turnbuckle)
+48	Behind-the-Back Elbow Flexion Stretch
+49	Cross-Body Triceps Stretch
+50	Seated Gravity Elbow Extension Hang
+51	Wrist and Finger AROM (Secondary Stiffness Prevention)
+52	Shoulder Pendulum Exercise (Adjacent Joint Stiffness Prevention)
