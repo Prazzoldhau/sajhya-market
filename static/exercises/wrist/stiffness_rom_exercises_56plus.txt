@@ -1,0 +1,20 @@
+56	Active-Assisted Wrist Flexion (Opposite Hand Assist)
+57	Active-Assisted Wrist Extension (Opposite Hand Assist)
+58	Table-Top Prayer Stretch (Wrist Extension)
+59	Reverse Prayer Stretch (Wrist Flexion)
+60	Passive Radial Deviation Overpressure Stretch
+61	Passive Ulnar Deviation Overpressure Stretch
+62	Tendon Gliding Exercises (Composite Fist Sequence)
+63	Wrist Circles (Active ROM)
+64	Forearm Pronation/Supination Overpressure Stretch (DRUJ Focus)
+65	Contract-Relax (PNF) Wrist Extension Stretch
+66	Contract-Relax (PNF) Wrist Flexion Stretch
+67	Fist-to-Fan Stretch (Finger Extension, Wrist Neutral)
+68	Weight-Bearing Wrist Extension Stretch (Quadruped)
+69	Passive DRUJ Rotation Stretch (Forearm Twist)
+70	Post-Surgical Scar Mobilization (Wrist)
+71	Retrograde Massage for Edema (Post-Fracture Swelling)
+72	Gentle Putty-Assisted Wrist ROM
+73	Wrist Extension Stretch with Strap
+74	Wrist Flexion Stretch with Strap
+75	Finger and Thumb AROM (Secondary Stiffness Prevention)

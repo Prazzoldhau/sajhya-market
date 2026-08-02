@@ -1,0 +1,20 @@
+26	Passive Knee Flexion Stretch (Heel Slide)
+27	Active-Assisted Knee Flexion (Wall Slide / Chair Assisted)
+28	Prone Hang Knee Extension Stretch (Gravity Assisted)
+29	Seated Towel-Assisted Knee Extension Stretch
+30	Overpressure Knee Extension Stretch (Table Edge)
+31	Supine Wall Slide Knee Flexion Stretch
+32	Quadriceps Set (Static Quad Contraction)
+33	Patellar Mobilization (Self, Superior-Inferior Glide)
+34	Patellar Mobilization (Self, Medial-Lateral Glide)
+35	Heel Slide with Strap Assist
+36	Stationary Bike ROM (Low Resistance)
+37	Prone Quad Stretch (Knee Flexion Focus)
+38	Contract-Relax (PNF) Knee Flexion Stretch
+39	Contract-Relax (PNF) Knee Extension Stretch
+40	Post-Surgical Scar Mobilization (Knee)
+41	Static Progressive Knee Extension Stretch (Splint/Brace)
+42	Standing Weight-Bearing Knee Flexion Stretch
+43	Seated Heel Prop Terminal Knee Extension Stretch
+44	Ankle Pumps (Secondary Stiffness/DVT Prevention)
+45	Hip AROM in Supine (Adjacent Joint Stiffness Prevention)
