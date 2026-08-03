@@ -13,6 +13,7 @@ urlpatterns = [
     path('api/logout/', views.patient_api_logout, name='patient_api_logout'),
     path('api/me/', views.patient_api_me, name='patient_api_me'),
     path('api/activate/', views.patient_api_activate, name='patient_api_activate'),
+    path('api/pair-physio/', views.patient_api_pair_physio, name='patient_api_pair_physio'),
 
     # Push notifications
     path('sw.js', views.patient_service_worker, name='patient-service-worker'),

@@ -25,10 +25,14 @@ class AddPatient(models.Model):
     qr_token = models.CharField(max_length=32,null=True, editable=False, unique=True, blank=True)
     activation_expires_at = models.DateTimeField(null=True, blank=True)
         
-    # Foreign key points to the user who created the patient
+    # Foreign key points to the user who created the patient. Nullable because
+    # self-registered patients (from the patient-facing app) have no creating
+    # physio -- they get linked via PatientPhysioPairing instead.
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
+        null=True,
+        blank=True,
         related_name='physio_assigned'
     )
     
@@ -155,5 +159,31 @@ class ActivationCard(models.Model):
 
     def __str__(self):
         return f"{self.code} ({'used' if self.is_used else 'unused'})"
+
+
+class PatientPhysioPairing(models.Model):
+    """Links a patient to a physio who can access them. AddPatient.created_by
+    is the *creator* of the patient record (nullable for self-registered
+    patients); this table is the general-purpose patient<->physio access map,
+    covering physio-created, referral, and self-registration-via-QR cases."""
+
+    SOURCE_CHOICES = (
+        ('self_registered_qr', 'Self-registered via QR'),
+        ('physio_created', 'Physio-created'),
+        ('referral', 'Referral'),
+    )
+
+    patient = models.ForeignKey(AddPatient, on_delete=models.CASCADE, related_name='pairings')
+    physio = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='patient_pairings')
+    clinic = models.ForeignKey(Clinic, on_delete=models.SET_NULL, null=True, blank=True, related_name='patient_pairings')
+    enterprise = models.ForeignKey(Enterprise, on_delete=models.SET_NULL, null=True, blank=True, related_name='patient_pairings')
+    source = models.CharField(max_length=20, choices=SOURCE_CHOICES)
+    paired_at = models.DateTimeField(default=get_nepal_time)
+
+    class Meta:
+        unique_together = ('patient', 'physio')
+
+    def __str__(self):
+        return f"{self.patient.patient_code} <-> {self.physio_id} ({self.source})"
 
 

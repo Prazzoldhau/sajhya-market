@@ -13,6 +13,9 @@ urlpatterns = [
     path('patients/<str:patient_code>/',         views.patient_detail,               name='physio-patient-detail'),
     path('patients/<str:patient_code>/stats/',   views.patient_stats,                name='physio-patient-stats'),
 
+    # pairing
+    path('pairing/qr/',                          views.physio_pairing_qr,            name='physio-pairing-qr'),
+
     # clinics
     path('clinics/',                             views.clinic_list,                  name='physio-clinic-list'),
     path('clinics/<int:clinic_id>/',             views.clinic_detail,                name='physio-clinic-detail'),

@@ -18,6 +18,11 @@ class User(AbstractUser):
         default='personal'
     )
     personal_code = models.CharField(max_length=15, unique=True, editable=False, null=True, blank=True)
+    # Secret used for the physio's patient-pairing QR (separate from
+    # personal_code, which is a semi-public directory identifier shown to
+    # clinics searching for a physio -- this one is never displayed anywhere
+    # except the pairing QR screen).
+    pairing_token = models.CharField(max_length=32, unique=True, editable=False, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     def generate_personal_code(self):
         """Generate a unique personal code like PER-A3F9K2"""
@@ -29,22 +34,23 @@ class User(AbstractUser):
             code = prefix + random_part
             if not User.objects.filter(personal_code=code).exists():
                 return code
-    
+
+    def generate_pairing_token(self):
+        return secrets.token_urlsafe(24)
+
     def save(self, *args, **kwargs):
-        # Only generate a code if it doesn't already exist
+        # Only generate codes if they don't already exist
         if not self.personal_code:
-            # Generate the code outside the transaction to avoid long locks
             self.personal_code = self.generate_personal_code()
-            # Now save within a transaction to handle any race condition
-            try:
-                with transaction.atomic():
-                    super().save(*args, **kwargs)
-            except IntegrityError:
-                # Very rare: another user saved with the same code at the exact same time
-                # Regenerate and retry once
-                self.personal_code = self.generate_personal_code()
+        if not self.pairing_token:
+            self.pairing_token = self.generate_pairing_token()
+        try:
+            with transaction.atomic():
                 super().save(*args, **kwargs)
-        else:
+        except IntegrityError:
+            # Very rare: another user saved with the same code/token at the exact same time
+            self.personal_code = self.generate_personal_code()
+            self.pairing_token = self.generate_pairing_token()
             super().save(*args, **kwargs)
     
     def __str__(self):

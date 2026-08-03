@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from personal_account.models import AddPatient, ActivationCard, get_nepal_time
+from personal_account.models import AddPatient, ActivationCard, PatientPhysioPairing, get_nepal_time
 from exercise_app.models import Prescription, PrescriptionExercise, ExerciseFeedback
 from marketplace_app.models import Category, Product, Order, OrderItem, Commission, CommissionRate, PatientProductRecommendation
 from marketplace_app.views import get_recommended_for_diagnosis
@@ -416,6 +416,49 @@ def patient_api_activate(request):
 
 @csrf_exempt
 @require_http_methods(["POST"])
+def patient_api_pair_physio(request):
+    """Scanning a physio's pairing QR lands here: links this patient to that
+    physio via PatientPhysioPairing (source='self_registered_qr'), the
+    counterpart to the physio-side pairing QR display in physio_api_app."""
+    patient_id = request.session.get('patient_id')
+    if not patient_id:
+        return JsonResponse({'success': False, 'error': 'Not authenticated'}, status=401)
+
+    try:
+        patient = AddPatient.objects.get(id=patient_id)
+    except AddPatient.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Patient not found'}, status=404)
+
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON'}, status=400)
+
+    pairing_token = data.get('pairing_token', '').strip()
+    if not pairing_token:
+        return JsonResponse({'success': False, 'error': 'Pairing code is required'}, status=400)
+
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    try:
+        physio = User.objects.get(pairing_token=pairing_token)
+    except User.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Invalid pairing code'}, status=404)
+
+    pairing, created = PatientPhysioPairing.objects.get_or_create(
+        patient=patient, physio=physio,
+        defaults={'source': 'self_registered_qr'},
+    )
+
+    return JsonResponse({
+        'success': True,
+        'physio_name': physio.get_full_name() or physio.username,
+        'already_paired': not created,
+    })
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
 def submit_exercise_feedback(request, exercise_id):
     patient_id = request.session.get('patient_id')
     if not patient_id:
@@ -760,6 +803,11 @@ def patient_api_physio(request):
     if err:
         return err
     physio = patient.created_by
+    if not physio:
+        # Self-registered patients have no created_by -- fall back to the
+        # most recent pairing (e.g. from scanning a physio's pairing QR).
+        pairing = PatientPhysioPairing.objects.filter(patient=patient).order_by('-paired_at').first()
+        physio = pairing.physio if pairing else None
     if not physio:
         return JsonResponse({'physio': None})
     return JsonResponse({'physio': {

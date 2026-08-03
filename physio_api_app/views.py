@@ -2,7 +2,7 @@ import json
 from decimal import Decimal
 from urllib.parse import quote
 from django.contrib.auth import authenticate, login, logout
-from django.db.models import Max
+from django.db.models import Max, Q
 from django.http import JsonResponse
 from django.templatetags.static import static as static_url
 from django.utils import timezone
@@ -10,7 +10,7 @@ from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
 
-from personal_account.models import AddPatient
+from personal_account.models import AddPatient, PatientPhysioPairing
 from clinic_account.models import Clinic
 from exercise_app.models import Region, SubRegion, ExerciseMain, Prescription, PrescriptionExercise
 from prescription_app.models import TreatmentSession
@@ -44,6 +44,28 @@ def _require_physio(request):
     if request.user.is_authenticated:
         return request.user, None
     return None, JsonResponse({'error': 'Authentication required'}, status=401)
+
+
+def get_patients_for_physio(user):
+    """All patients a physio can see: ones they created directly, plus any
+    they're paired with (self-registration QR, referral acceptance, etc via
+    PatientPhysioPairing). Each returned patient gets a `_pairing_source`
+    attribute for JSON serialization, resolved via one extra query (no N+1)."""
+    qs = AddPatient.objects.filter(
+        Q(created_by=user) | Q(pairings__physio=user)
+    ).distinct().order_by('-created_at')
+
+    pairing_source_by_patient = dict(
+        PatientPhysioPairing.objects.filter(physio=user).values_list('patient_id', 'source')
+    )
+    for p in qs:
+        # Fallback only matters for a created_by-owned patient that somehow
+        # lacks a pairing row (shouldn't happen after the 0009 backfill,
+        # kept defensive for any gap between 0008 deploying and 0009 running).
+        p._pairing_source = pairing_source_by_patient.get(
+            p.id, 'physio_created' if p.created_by_id == user.id else ''
+        )
+    return qs
 
 
 # ─── auth ─────────────────────────────────────────────────────────────────────
@@ -113,7 +135,7 @@ def patient_list(request):
 
     if request.method == 'GET':
         q = request.GET.get('q', '').strip()
-        qs = AddPatient.objects.filter(created_by=user).order_by('-created_at')
+        qs = get_patients_for_physio(user)
         if q:
             qs = qs.filter(patient_name__icontains=q)
         data = [
@@ -125,6 +147,7 @@ def patient_list(request):
                 'patient_diagnosis': p.patient_diagnosis,
                 'completed_session': p.completed_session,
                 'created_at': p.created_at.isoformat(),
+                'source': getattr(p, '_pairing_source', ''),
             }
             for p in qs
         ]
@@ -154,6 +177,10 @@ def patient_list(request):
             created_by=user,
             origin_clinic=origin_clinic,
         )
+        PatientPhysioPairing.objects.get_or_create(
+            patient=patient, physio=user,
+            defaults={'clinic': origin_clinic, 'source': 'physio_created'},
+        )
         return JsonResponse({
             'success': True,
             'patient': {
@@ -178,6 +205,8 @@ def patient_detail(request, patient_code):
 
     prescriptions = Prescription.objects.filter(patient=patient).order_by('-created_at')
     sessions = TreatmentSession.objects.filter(patient=patient).order_by('-session_date')
+    pairing = PatientPhysioPairing.objects.filter(patient=patient, physio=user).first()
+    source = pairing.source if pairing else ''
 
     return JsonResponse({
         'patient': {
@@ -189,6 +218,7 @@ def patient_detail(request, patient_code):
             'completed_session': patient.completed_session,
             'created_at': patient.created_at.isoformat(),
             'qr_token': patient.qr_token or '',
+            'source': source,
         },
         'prescriptions': [
             {
@@ -209,6 +239,19 @@ def patient_detail(request, patient_code):
             }
             for s in sessions
         ],
+    })
+
+
+# ─── pairing ──────────────────────────────────────────────────────────────────
+
+def physio_pairing_qr(request):
+    user, err = _require_physio(request)
+    if err:
+        return err
+
+    return JsonResponse({
+        'pairing_token': user.pairing_token or '',
+        'physio_name': user.get_full_name() or user.username,
     })
 
 
