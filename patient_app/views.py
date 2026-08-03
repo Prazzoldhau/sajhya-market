@@ -12,6 +12,7 @@ from urllib.parse import quote
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import ensure_csrf_cookie
+from django.contrib.auth.hashers import make_password, check_password
 from .models import PushSubscription
 
 def _activation_status(patient):
@@ -215,14 +216,26 @@ def add_recs_to_cart(request):
 def patient_api_login(request):
     try:
         data = json.loads(request.body)
-        patient_code = data.get('username', '').strip()
-        pin_input = data.get('password', '').strip()
+        identifier = data.get('username', '').strip()
+        secret = data.get('password', '').strip()
 
-        if not patient_code or not pin_input:
+        if not identifier or not secret:
             return JsonResponse({'success': False, 'error': 'Username and password are required'}, status=400)
 
-        patient = AddPatient.objects.get(patient_code=patient_code)
-        if patient.patient_contact != pin_input:
+        patient = (
+            AddPatient.objects.filter(patient_code=identifier).first()
+            or AddPatient.objects.filter(username__iexact=identifier).first()
+        )
+        if not patient:
+            return JsonResponse({'success': False, 'error': 'Invalid credentials'}, status=401)
+
+        if patient.username:
+            # Self-registered patient: verify the hashed password they chose.
+            valid = check_password(secret, patient.password)
+        else:
+            # Physio-created patient: legacy patient_code + phone-as-PIN check.
+            valid = patient.patient_contact == secret
+        if not valid:
             return JsonResponse({'success': False, 'error': 'Invalid credentials'}, status=401)
 
         request.session['patient_id'] = patient.id
@@ -362,6 +375,55 @@ def patient_api_qr_login(request):
         return JsonResponse({'success': False, 'error': 'Invalid JSON'}, status=400)
     except AddPatient.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Invalid QR code'}, status=401)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': f'Server error: {str(e)}'}, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def patient_api_signup(request):
+    """Lets a patient create their own account from the app, with no physio
+    involved yet -- they land unassigned and pair with a physio afterward via
+    patient_api_pair_physio (see AddPatient.created_by docstring). Unlike
+    physio-created patients (who log in with patient_code + phone), a
+    self-registered patient chooses their own username and password."""
+    try:
+        data = json.loads(request.body)
+        patient_name = data.get('patient_name', '').strip()
+        username = data.get('username', '').strip()
+        password = data.get('password', '')
+        patient_contact = data.get('patient_contact', '').strip()
+
+        if not patient_name or not username or not password:
+            return JsonResponse({'success': False, 'error': 'Name, username and password are required'}, status=400)
+        if len(password) < 6:
+            return JsonResponse({'success': False, 'error': 'Password must be at least 6 characters'}, status=400)
+        if AddPatient.objects.filter(username__iexact=username).exists():
+            return JsonResponse({'success': False, 'error': 'That username is already taken'}, status=409)
+
+        patient = AddPatient.objects.create(
+            patient_name=patient_name,
+            patient_contact=patient_contact,
+            patient_diagnosis='Not specified',
+            username=username,
+            password=make_password(password),
+        )
+        request.session['patient_id'] = patient.id
+
+        return JsonResponse({
+            'success': True,
+            'patient_id': patient.id,
+            'patient_name': patient.patient_name,
+            'patient_code': patient.patient_code,
+            'username': patient.username,
+            'diagnosis': patient.patient_diagnosis,
+            'latest_prescription': None,
+            **_activation_status(patient),
+            'message': 'Account created successfully',
+        })
+
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON'}, status=400)
     except Exception as e:
         return JsonResponse({'success': False, 'error': f'Server error: {str(e)}'}, status=500)
 
