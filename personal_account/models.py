@@ -26,10 +26,10 @@ class AddPatient(models.Model):
     activation_expires_at = models.DateTimeField(null=True, blank=True)
 
     # Only set for patients who signed themselves up from the app (see
-    # patient_api_signup). Physio-created patients keep logging in with
-    # patient_code + patient_contact as before; username being set is what
-    # tells patient_api_login to check the hashed password instead.
-    username = models.CharField(max_length=50, unique=True, null=True, blank=True)
+    # patient_api_signup) and chose their own password. Physio-created
+    # patients keep logging in with patient_code + patient_contact as
+    # before; this field being set is what tells patient_api_login to
+    # check the hashed password instead of the legacy phone-as-PIN.
     password = models.CharField(max_length=128, null=True, blank=True, help_text='Hashed, never stored in plain text')
 
     # Foreign key points to the user who created the patient. Nullable because

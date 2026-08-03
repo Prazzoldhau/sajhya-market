@@ -216,20 +216,17 @@ def add_recs_to_cart(request):
 def patient_api_login(request):
     try:
         data = json.loads(request.body)
-        identifier = data.get('username', '').strip()
+        patient_code = data.get('username', '').strip()
         secret = data.get('password', '').strip()
 
-        if not identifier or not secret:
-            return JsonResponse({'success': False, 'error': 'Username and password are required'}, status=400)
+        if not patient_code or not secret:
+            return JsonResponse({'success': False, 'error': 'Patient Code and password are required'}, status=400)
 
-        patient = (
-            AddPatient.objects.filter(patient_code=identifier).first()
-            or AddPatient.objects.filter(username__iexact=identifier).first()
-        )
+        patient = AddPatient.objects.filter(patient_code=patient_code).first()
         if not patient:
             return JsonResponse({'success': False, 'error': 'Invalid credentials'}, status=401)
 
-        if patient.username:
+        if patient.password:
             # Self-registered patient: verify the hashed password they chose.
             valid = check_password(secret, patient.password)
         else:
@@ -384,28 +381,24 @@ def patient_api_qr_login(request):
 def patient_api_signup(request):
     """Lets a patient create their own account from the app, with no physio
     involved yet -- they land unassigned and pair with a physio afterward via
-    patient_api_pair_physio (see AddPatient.created_by docstring). Unlike
-    physio-created patients (who log in with patient_code + phone), a
-    self-registered patient chooses their own username and password."""
+    patient_api_pair_physio (see AddPatient.created_by docstring). Their
+    login identifier is the auto-generated patient_code (same as
+    physio-created patients); what's different is they choose their own
+    password instead of using their phone number as the PIN."""
     try:
         data = json.loads(request.body)
         patient_name = data.get('patient_name', '').strip()
-        username = data.get('username', '').strip()
         password = data.get('password', '')
-        patient_contact = data.get('patient_contact', '').strip()
 
-        if not patient_name or not username or not password:
-            return JsonResponse({'success': False, 'error': 'Name, username and password are required'}, status=400)
+        if not patient_name or not password:
+            return JsonResponse({'success': False, 'error': 'Name and password are required'}, status=400)
         if len(password) < 6:
             return JsonResponse({'success': False, 'error': 'Password must be at least 6 characters'}, status=400)
-        if AddPatient.objects.filter(username__iexact=username).exists():
-            return JsonResponse({'success': False, 'error': 'That username is already taken'}, status=409)
 
         patient = AddPatient.objects.create(
             patient_name=patient_name,
-            patient_contact=patient_contact,
+            patient_contact='',
             patient_diagnosis='Not specified',
-            username=username,
             password=make_password(password),
         )
         request.session['patient_id'] = patient.id
@@ -415,7 +408,6 @@ def patient_api_signup(request):
             'patient_id': patient.id,
             'patient_name': patient.patient_name,
             'patient_code': patient.patient_code,
-            'username': patient.username,
             'diagnosis': patient.patient_diagnosis,
             'latest_prescription': None,
             **_activation_status(patient),
