@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     'summit_app',
     'visit_notes_app',
     'physio_api_app',
+    'vendor_api_app',
 
 ]
 
