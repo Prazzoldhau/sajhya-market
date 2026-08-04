@@ -1,10 +1,10 @@
 import json
 from decimal import Decimal
 from urllib.parse import quote
+from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
 from django.db.models import Max, Q
 from django.http import JsonResponse
-from django.templatetags.static import static as static_url
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
@@ -410,10 +410,19 @@ def home_visit_update_status(request, booking_id):
 def _product_image_url(request, product):
     """Product.image stores a static-relative path (e.g. 'categorized_product/9/9 (023).png').
     Build a full URL clients can load directly, percent-encoding spaces/parens
-    that the raw path may contain."""
+    that the raw path may contain.
+
+    Deliberately does NOT go through django.templatetags.static.static() --
+    that resolves through the collectstatic manifest (staticfiles.json), and
+    on production that manifest is currently stale relative to what's on disk
+    (verified live: the manifest's hashed filenames 404, e.g.
+    /static/categorized_product/9/9 (003).75ae8ead298f.png does not exist,
+    while the plain /static/categorized_product/9/9 (003).png does). Building
+    the URL directly from STATIC_URL, same as patient_app._image_url, sidesteps
+    the stale manifest entirely."""
     if not product.image:
         return ''
-    path = static_url(product.image)
+    path = f'{settings.STATIC_URL}{product.image}'
     return request.build_absolute_uri(quote(path, safe='/'))
 
 
