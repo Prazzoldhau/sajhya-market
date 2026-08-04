@@ -791,15 +791,22 @@ def patient_api_order(request):
         return JsonResponse({'error': 'Invalid JSON'}, status=400)
     delivery_address = data.get('delivery_address', '').strip()
     notes = data.get('notes', '').strip()
+    # Self-registered patients have no patient_contact on file (that field
+    # is no longer collected at signup), so the checkout form now asks for
+    # a phone number directly; physio-created patients still have one
+    # stored, which we fall back to if the app didn't send one.
+    customer_phone = data.get('customer_phone', '').strip() or patient.patient_contact
     if not delivery_address:
         return JsonResponse({'error': 'Delivery address required'}, status=400)
+    if not customer_phone:
+        return JsonResponse({'error': 'Phone number required'}, status=400)
 
     total = sum(Decimal(str(item['price'])) * item['quantity'] for item in cart.values())
 
     order = Order.objects.create(
         customer_name=patient.patient_name,
         customer_email=f'{patient.patient_code}@sajhya.local',
-        customer_phone=patient.patient_contact,
+        customer_phone=customer_phone,
         delivery_address=delivery_address,
         notes=notes,
         total_amount=total,
