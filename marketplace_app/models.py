@@ -37,6 +37,25 @@ class Product(models.Model):
         return self.name
 
 
+class ProductVariant(models.Model):
+    """A purchasable option of a Product with its own price/stock/photo -- e.g.
+    a resistance band's strength, a brace's size. Optional: most products have
+    none and are bought directly. image is optional; blank means "use the
+    parent Product's photo" (only override it for genuinely different-looking
+    variants, e.g. color)."""
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='variants')
+    label = models.CharField(max_length=100)  # e.g. "Medium (Green)", "Large"
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    image = models.CharField(max_length=200, blank=True, default='')
+    in_stock = models.BooleanField(default=True)
+    sort_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['sort_order', 'id']
+
+    def __str__(self):
+        return f"{self.product.name} — {self.label}"
+
 
 class Order(models.Model):
     STATUS_CHOICES = [
@@ -123,6 +142,7 @@ class Commission(models.Model):
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
+    variant = models.ForeignKey(ProductVariant, on_delete=models.SET_NULL, null=True, blank=True)
     product_name = models.CharField(max_length=200)
     quantity = models.PositiveIntegerField(default=1)
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)

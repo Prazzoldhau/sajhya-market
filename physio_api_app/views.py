@@ -3,7 +3,7 @@ from decimal import Decimal
 from urllib.parse import quote
 from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
-from django.db.models import Max, Q
+from django.db.models import Max, Prefetch, Q
 from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
@@ -16,7 +16,7 @@ from exercise_app.models import Region, SubRegion, ExerciseMain, Prescription, P
 from prescription_app.models import TreatmentSession
 from referral_app.models import Referral
 from find_physio_app.models import BookingRequest
-from marketplace_app.models import Category, Product, Order, OrderItem
+from marketplace_app.models import Category, Product, ProductVariant, Order, OrderItem
 
 
 # ─── helpers ──────────────────────────────────────────────────────────────────
@@ -407,10 +407,11 @@ def home_visit_update_status(request, booking_id):
 
 # ─── shop (marketplace_app) ───────────────────────────────────────────────────
 
-def _product_image_url(request, product):
-    """Product.image stores a static-relative path (e.g. 'categorized_product/9/9 (023).png').
-    Build a full URL clients can load directly, percent-encoding spaces/parens
-    that the raw path may contain.
+def _product_image_url(request, obj):
+    """obj is a Product or ProductVariant -- both store a static-relative path
+    in `.image` (e.g. 'categorized_product/9/9 (023).png'). Build a full URL
+    clients can load directly, percent-encoding spaces/parens the raw path may
+    contain.
 
     Deliberately does NOT go through django.templatetags.static.static() --
     that resolves through the collectstatic manifest (staticfiles.json), and
@@ -420,10 +421,44 @@ def _product_image_url(request, product):
     while the plain /static/categorized_product/9/9 (003).png does). Building
     the URL directly from STATIC_URL, same as patient_app._image_url, sidesteps
     the stale manifest entirely."""
-    if not product.image:
+    if not obj.image:
         return ''
-    path = f'{settings.STATIC_URL}{product.image}'
+    path = f'{settings.STATIC_URL}{obj.image}'
     return request.build_absolute_uri(quote(path, safe='/'))
+
+
+def _variants_prefetch():
+    """Shared Prefetch for shop_product_list/pharmacy_product_list -- one query
+    for all products' variants instead of one per product."""
+    return Prefetch(
+        'variants',
+        queryset=ProductVariant.objects.filter(in_stock=True).order_by('sort_order', 'id'),
+        to_attr='in_stock_variants',
+    )
+
+
+def _product_variants(request, product):
+    """Serialize a product's in-stock variants, falling back to the parent
+    product's photo when a variant doesn't have its own.
+
+    Expects `in_stock_variants` to be prefetched via
+    Prefetch('variants', ..., to_attr='in_stock_variants') on the queryset
+    (see shop_product_list/pharmacy_product_list) to avoid a query per
+    product; falls back to a fresh query if it wasn't, so this stays safe
+    to call on a single product too."""
+    variants = getattr(product, 'in_stock_variants', None)
+    if variants is None:
+        variants = product.variants.filter(in_stock=True).order_by('sort_order', 'id')
+    return [
+        {
+            'id': v.id,
+            'label': v.label,
+            'price': str(v.price),
+            'in_stock': v.in_stock,
+            'image': _product_image_url(request, v) if v.image else _product_image_url(request, product),
+        }
+        for v in variants
+    ]
 
 
 def shop_category_list(request):
@@ -446,7 +481,7 @@ def shop_product_list(request):
     # Excluded unconditionally (not just when no category filter is given)
     # so the Marketplace endpoint never returns Pharmacy items even if a
     # caller passes its category id directly.
-    qs = Product.objects.filter(in_stock=True).exclude(category__name='Pharmacy').select_related('category')
+    qs = Product.objects.filter(in_stock=True).exclude(category__name='Pharmacy').select_related('category').prefetch_related(_variants_prefetch())
 
     category_id = request.GET.get('category', '').strip()
     if category_id:
@@ -468,6 +503,7 @@ def shop_product_list(request):
             'unit': p.unit,
             'image': _product_image_url(request, p),
             'is_featured': p.is_featured,
+            'variants': _product_variants(request, p),
         }
         for p in qs
     ]
@@ -479,7 +515,7 @@ def pharmacy_product_list(request):
     if err:
         return err
 
-    qs = Product.objects.filter(in_stock=True, category__name='Pharmacy').select_related('category')
+    qs = Product.objects.filter(in_stock=True, category__name='Pharmacy').select_related('category').prefetch_related(_variants_prefetch())
 
     search = request.GET.get('search', '').strip()
     if search:
@@ -497,6 +533,7 @@ def pharmacy_product_list(request):
             'unit': p.unit,
             'image': _product_image_url(request, p),
             'is_featured': p.is_featured,
+            'variants': _product_variants(request, p),
         }
         for p in qs
     ]
@@ -546,9 +583,17 @@ def shop_order_list_create(request):
                 product = Product.objects.get(id=item.get('product_id'), in_stock=True)
             except Product.DoesNotExist:
                 continue
+            variant = None
+            variant_id = item.get('variant_id')
+            if variant_id:
+                try:
+                    variant = ProductVariant.objects.get(id=variant_id, product=product, in_stock=True)
+                except ProductVariant.DoesNotExist:
+                    continue  # stale/invalid selection -- skip rather than 500
             qty = max(1, int(item.get('quantity', 1)))
-            order_items.append((product, qty))
-            total += product.price * qty
+            unit_price = variant.price if variant else product.price
+            order_items.append((product, variant, qty, unit_price))
+            total += unit_price * qty
 
         if not order_items:
             return JsonResponse({'error': 'No valid products in order'}, status=400)
@@ -562,13 +607,15 @@ def shop_order_list_create(request):
             notes=notes,
             total_amount=total,
         )
-        for product, qty in order_items:
+        for product, variant, qty, unit_price in order_items:
+            name = f'{product.name} — {variant.label}' if variant else product.name
             OrderItem.objects.create(
                 order=order,
                 product=product,
-                product_name=product.name,
+                variant=variant,
+                product_name=name,
                 quantity=qty,
-                unit_price=product.price,
+                unit_price=unit_price,
             )
 
         return JsonResponse({

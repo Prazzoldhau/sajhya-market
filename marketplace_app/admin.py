@@ -2,7 +2,7 @@ from django.contrib import admin
 from import_export import resources, fields
 from import_export.admin import ImportExportModelAdmin
 from import_export.widgets import ForeignKeyWidget
-from .models import Category, Product, Order, OrderItem, Commission, CommissionRate, DiagnosisProductMap, PatientProductRecommendation
+from .models import Category, Product, ProductVariant, Order, OrderItem, Commission, CommissionRate, DiagnosisProductMap, PatientProductRecommendation
 
 
 class CategoryResource(resources.ModelResource):
@@ -34,6 +34,12 @@ class CategoryAdmin(ImportExportModelAdmin):
     search_fields = ['name']
 
 
+class ProductVariantInline(admin.TabularInline):
+    model = ProductVariant
+    extra = 1
+    fields = ['label', 'price', 'image', 'in_stock', 'sort_order']
+
+
 @admin.register(Product)
 class ProductAdmin(ImportExportModelAdmin):
     resource_class = ProductResource
@@ -41,6 +47,7 @@ class ProductAdmin(ImportExportModelAdmin):
     list_filter = ['category', 'in_stock', 'is_featured']
     search_fields = ['name', 'description']
     list_editable = ['in_stock', 'is_featured', 'price']
+    inlines = [ProductVariantInline]
 
 
 class OrderItemInline(admin.TabularInline):

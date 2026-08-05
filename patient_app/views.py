@@ -1,7 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.db.models import Prefetch
 from personal_account.models import AddPatient, ActivationCard, PatientPhysioPairing, get_nepal_time
 from exercise_app.models import Prescription, PrescriptionExercise, ExerciseFeedback
-from marketplace_app.models import Category, Product, Order, OrderItem, Commission, CommissionRate, PatientProductRecommendation
+from marketplace_app.models import Category, Product, ProductVariant, Order, OrderItem, Commission, CommissionRate, PatientProductRecommendation
 from marketplace_app.views import get_recommended_for_diagnosis
 from django.http import JsonResponse, HttpResponse
 from django.conf import settings
@@ -641,6 +642,36 @@ def _image_url(request, image_path):
     return request.build_absolute_uri(f'{settings.STATIC_URL}{encoded}')
 
 
+def _variants_prefetch():
+    """Shared Prefetch for patient_api_products/patient_api_pharmacy_products --
+    one query for all products' variants instead of one per product."""
+    return Prefetch(
+        'variants',
+        queryset=ProductVariant.objects.filter(in_stock=True).order_by('sort_order', 'id'),
+        to_attr='in_stock_variants',
+    )
+
+
+def _product_variants(request, product):
+    """Serialize a product's in-stock variants, falling back to the parent
+    product's photo when a variant doesn't have its own. Expects
+    `in_stock_variants` to be prefetched via _variants_prefetch() on the
+    queryset; falls back to a fresh query if it wasn't."""
+    variants = getattr(product, 'in_stock_variants', None)
+    if variants is None:
+        variants = product.variants.filter(in_stock=True).order_by('sort_order', 'id')
+    return [
+        {
+            'id': v.id,
+            'label': v.label,
+            'price': str(v.price),
+            'in_stock': v.in_stock,
+            'image_url': _image_url(request, v.image) if v.image else _image_url(request, product.image),
+        }
+        for v in variants
+    ]
+
+
 def _get_patient_cart(request):
     return request.session.get('patient_cart', {})
 
@@ -648,6 +679,14 @@ def _get_patient_cart(request):
 def _save_patient_cart(request, cart):
     request.session['patient_cart'] = cart
     request.session.modified = True
+
+
+def _parse_cart_key(key):
+    """Cart dict keys are 'product_id' or 'product_id:variant_id'."""
+    if ':' in key:
+        pid_str, vid_str = key.split(':', 1)
+        return int(pid_str), int(vid_str)
+    return int(key), None
 
 
 def patient_api_categories(request):
@@ -666,7 +705,7 @@ def patient_api_products(request):
         return err
     # Excluded unconditionally so this endpoint never returns Pharmacy
     # items, even if a caller passes its category id directly.
-    qs = Product.objects.filter(in_stock=True).exclude(category__name='Pharmacy').select_related('category')
+    qs = Product.objects.filter(in_stock=True).exclude(category__name='Pharmacy').select_related('category').prefetch_related(_variants_prefetch())
     cat_id = request.GET.get('category', '').strip()
     if cat_id:
         qs = qs.filter(category_id=cat_id)
@@ -681,6 +720,7 @@ def patient_api_products(request):
         'category': p.category.name if p.category else '',
         'image_url': _image_url(request, p.image),
         'description': p.description,
+        'variants': _product_variants(request, p),
     } for p in qs]
     return JsonResponse({'products': data})
 
@@ -689,7 +729,7 @@ def patient_api_pharmacy_products(request):
     patient, err = _patient_required(request)
     if err:
         return err
-    qs = Product.objects.filter(in_stock=True, category__name='Pharmacy').select_related('category')
+    qs = Product.objects.filter(in_stock=True, category__name='Pharmacy').select_related('category').prefetch_related(_variants_prefetch())
     search = request.GET.get('search', '').strip()
     if search:
         qs = qs.filter(name__icontains=search)
@@ -701,6 +741,7 @@ def patient_api_pharmacy_products(request):
         'category': p.category.name if p.category else '',
         'image_url': _image_url(request, p.image),
         'description': p.description,
+        'variants': _product_variants(request, p),
     } for p in qs]
     return JsonResponse({'products': data})
 
@@ -712,11 +753,14 @@ def patient_api_cart(request):
     cart = _get_patient_cart(request)
     items = []
     total = Decimal('0')
-    for pid, item in cart.items():
+    for key, item in cart.items():
+        pid, vid = _parse_cart_key(key)
         item_total = Decimal(str(item['price'])) * item['quantity']
         total += item_total
         items.append({
-            'product_id': int(pid),
+            'product_id': pid,
+            'variant_id': vid,
+            'variant_label': item.get('variant_label', ''),
             'name': item['name'],
             'price': str(item['price']),
             'quantity': item['quantity'],
@@ -738,17 +782,28 @@ def patient_api_cart_add(request, product_id):
     if err:
         return err
     product = get_object_or_404(Product, id=product_id, in_stock=True)
+
+    try:
+        body = json.loads(request.body) if request.body else {}
+    except json.JSONDecodeError:
+        body = {}
+    variant = None
+    variant_id = body.get('variant_id')
+    if variant_id:
+        variant = get_object_or_404(ProductVariant, id=variant_id, product=product, in_stock=True)
+
     cart = _get_patient_cart(request)
-    pid = str(product_id)
-    if pid in cart:
-        cart[pid]['quantity'] += 1
+    key = f'{product_id}:{variant.id}' if variant else str(product_id)
+    if key in cart:
+        cart[key]['quantity'] += 1
     else:
-        cart[pid] = {
+        cart[key] = {
             'name': product.name,
-            'price': str(product.price),
+            'variant_label': variant.label if variant else '',
+            'price': str(variant.price if variant else product.price),
             'quantity': 1,
             'unit': product.unit,
-            'image_url': _image_url(request, product.image),
+            'image_url': _image_url(request, (variant.image if variant and variant.image else product.image)),
         }
     _save_patient_cart(request, cart)
     return JsonResponse({'success': True, 'cart_count': sum(i['quantity'] for i in cart.values())})
@@ -762,16 +817,18 @@ def patient_api_cart_update(request):
         return err
     try:
         data = json.loads(request.body)
-        pid = str(data['product_id'])
+        pid = int(data['product_id'])
+        vid = data.get('variant_id')
         qty = int(data.get('quantity', 0))
     except (json.JSONDecodeError, KeyError, ValueError):
         return JsonResponse({'error': 'Invalid data'}, status=400)
+    key = f'{pid}:{vid}' if vid else str(pid)
     cart = _get_patient_cart(request)
-    if pid in cart:
+    if key in cart:
         if qty <= 0:
-            del cart[pid]
+            del cart[key]
         else:
-            cart[pid]['quantity'] = qty
+            cart[key]['quantity'] = qty
     _save_patient_cart(request, cart)
     return JsonResponse({'success': True, 'cart_count': sum(i['quantity'] for i in cart.values())})
 
@@ -811,15 +868,19 @@ def patient_api_order(request):
         notes=notes,
         total_amount=total,
     )
-    for pid, item in cart.items():
+    for key, item in cart.items():
+        pid, vid = _parse_cart_key(key)
         try:
-            product = Product.objects.get(id=int(pid))
+            product = Product.objects.get(id=pid)
         except Product.DoesNotExist:
             product = None
+        variant = ProductVariant.objects.filter(id=vid).first() if vid else None
+        name = f"{item['name']} — {item['variant_label']}" if item.get('variant_label') else item['name']
         OrderItem.objects.create(
             order=order,
             product=product,
-            product_name=item['name'],
+            variant=variant,
+            product_name=name,
             quantity=item['quantity'],
             unit_price=Decimal(str(item['price'])),
         )
