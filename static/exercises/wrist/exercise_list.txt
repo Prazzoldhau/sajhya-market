@@ -1,55 +1,75 @@
-Wrist Flexor Stretch (Passive)
-Wrist Extensor Stretch (Passive)
-Wrist Radial Deviation Stretch
-Wrist Ulnar Deviation Stretch
-Passive Wrist Flexion/Extension
-Passive Wrist Radial/Ulnar Deviation
-Finger Flexion/Extension (Active)
-Finger Scissors (Abduction/Adduction)
-Thumb Opposition Touches
-Wrist Flexion Isometric
-Wrist Extension Isometric
-Wrist Radial Deviation Isometric
-Wrist Ulnar Deviation Isometric
-Finger Extension with Rubber Band
-Ball Squeeze (Grip Strength)
-Putty Squeeze (Therapy putty)
-Putty Finger Spread
-Putty Thumb Abduction
-Towel Wringing (Light)
-Wrist Flexion (Light weight - Palm up)
-Wrist Extension (Light weight - Palm down)
-Wrist Radial Deviation (Light weight)
-Wrist Ulnar Deviation (Light weight)
-Wrist Flexor Stretch (Active)
-Wrist Extensor Stretch (Active)
-Median Nerve Glide (Wrist focus)
-Ulnar Nerve Glide (Wrist focus)
-Radial Nerve Glide (Wrist focus)
-Reverse Wrist Curl (Palm down)
-Wrist Roller (Forward/Reverse)
-Farmer's Walk (Wrist stable)
-Plate Pinch Grip Hold
-Dead Hang (Wrist neutral)
-Fingertip Push-up (Knees down)
-Wrist Curl on Swiss Ball
-Eccentric Wrist Extension (Tendinopathy)
-Eccentric Wrist Flexion (Tendinopathy)
-Towel Roll (Grip endurance)
-Climbing Hold Hang (Open crimp)
-Climbing Hold Hang (Closed crimp)
-Rice Bucket (Extension/Flexion)
-Rice Bucket (Circular motions)
-Weighted Wrist Pronation/Supination
-Single Arm Farmer's Carry (Unstable load)
-Handstand against Wall (Wrist prep)
-Handstand Push-up (Partial)
-Planche Lean (Wrist extension loading)
-False Grip Hang (Rings)
-Pseudo Planche Push-up
-Clap Push-up (Wrist explosive)
-Medicine Ball Wall Toss (Catch)
-Grip Strength Crusher (Heavy gripper)
-Block Weight Pinch Lift
-One Arm Hang (Wrist neutral)
-Muscle-up Transition (Wrist mobility)
+1	Wrist Flexor Stretch (Passive)
+2	Wrist Extensor Stretch (Passive)
+3	Wrist Radial Deviation Stretch
+4	Wrist Ulnar Deviation Stretch
+5	Passive Wrist Flexion/Extension
+6	Passive Wrist Radial/Ulnar Deviation
+7	Finger Flexion/Extension (Active)
+8	Finger Scissors (Abduction/Adduction)
+9	Thumb Opposition Touches
+10	Wrist Flexion Isometric
+11	Wrist Extension Isometric
+12	Wrist Radial Deviation Isometric
+13	Wrist Ulnar Deviation Isometric
+14	Finger Extension with Rubber Band
+15	Ball Squeeze (Grip Strength)
+16	Putty Squeeze (Therapy putty)
+17	Putty Finger Spread
+18	Putty Thumb Abduction
+19	Towel Wringing (Light)
+20	Wrist Flexion (Light weight - Palm up)
+21	Wrist Extension (Light weight - Palm down)
+22	Wrist Radial Deviation (Light weight)
+23	Wrist Ulnar Deviation (Light weight)
+24	Wrist Flexor Stretch (Active)
+25	Wrist Extensor Stretch (Active)
+26	Median Nerve Glide (Wrist focus)
+27	Ulnar Nerve Glide (Wrist focus)
+28	Radial Nerve Glide (Wrist focus)
+29	Reverse Wrist Curl (Palm down)
+30	Wrist Roller (Forward/Reverse)
+31	Farmer's Walk (Wrist stable)
+32	Plate Pinch Grip Hold
+33	Dead Hang (Wrist neutral)
+34	Fingertip Push-up (Knees down)
+35	Wrist Curl on Swiss Ball
+36	Eccentric Wrist Extension (Tendinopathy)
+37	Eccentric Wrist Flexion (Tendinopathy)
+38	Towel Roll (Grip endurance)
+39	Climbing Hold Hang (Open crimp)
+40	Climbing Hold Hang (Closed crimp)
+41	Rice Bucket (Extension/Flexion)
+42	Rice Bucket (Circular motions)
+43	Weighted Wrist Pronation/Supination
+44	Single Arm Farmer's Carry (Unstable load)
+45	Handstand against Wall (Wrist prep)
+46	Handstand Push-up (Partial)
+47	Planche Lean (Wrist extension loading)
+48	False Grip Hang (Rings)
+49	Pseudo Planche Push-up
+50	Clap Push-up (Wrist explosive)
+51	Medicine Ball Wall Toss (Catch)
+52	Grip Strength Crusher (Heavy gripper)
+53	Block Weight Pinch Lift
+54	One Arm Hang (Wrist neutral)
+55	Muscle-up Transition (Wrist mobility)
+56	Active-Assisted Wrist Flexion (Opposite Hand Assist)
+57	Active-Assisted Wrist Extension (Opposite Hand Assist)
+58	Table-Top Prayer Stretch (Wrist Extension)
+59	Reverse Prayer Stretch (Wrist Flexion)
+60	Passive Radial Deviation Overpressure Stretch
+61	Passive Ulnar Deviation Overpressure Stretch
+62	Tendon Gliding Exercises (Composite Fist Sequence)
+63	Wrist Circles (Active ROM)
+64	Forearm Pronation/Supination Overpressure Stretch (DRUJ Focus)
+65	Contract-Relax (PNF) Wrist Extension Stretch
+66	Contract-Relax (PNF) Wrist Flexion Stretch
+67	Fist-to-Fan Stretch (Finger Extension, Wrist Neutral)
+68	Weight-Bearing Wrist Extension Stretch (Quadruped)
+69	Passive DRUJ Rotation Stretch (Forearm Twist)
+70	Post-Surgical Scar Mobilization (Wrist)
+71	Retrograde Massage for Edema (Post-Fracture Swelling)
+72	Gentle Putty-Assisted Wrist ROM
+73	Wrist Extension Stretch with Strap
+74	Wrist Flexion Stretch with Strap
+75	Finger and Thumb AROM (Secondary Stiffness Prevention)
