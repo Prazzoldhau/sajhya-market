@@ -939,6 +939,7 @@ body {
 
 /* --- Hero Banner --- */
 .mkt-hero {
+    position: relative;
     background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
     border-radius: 20px;
     padding: 2.5rem 2rem;
@@ -949,6 +950,35 @@ body {
     gap: 1.5rem;
     flex-wrap: wrap;
     box-shadow: 0 10px 30px rgba(17, 153, 142, 0.25);
+    overflow: hidden;
+}
+
+.mkt-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.16) 1.5px, transparent 1.5px);
+    background-size: 22px 22px;
+    -webkit-mask-image: radial-gradient(ellipse 75% 85% at 20% 40%, black 10%, transparent 75%);
+    mask-image: radial-gradient(ellipse 75% 85% at 20% 40%, black 10%, transparent 75%);
+    pointer-events: none;
+}
+
+.mkt-hero::after {
+    content: '';
+    position: absolute;
+    top: -40%;
+    right: -8%;
+    width: 320px;
+    height: 320px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.14) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.mkt-hero > * {
+    position: relative;
+    z-index: 1;
 }
 
 .mkt-hero-text h1 {
@@ -956,6 +986,7 @@ body {
     font-weight: 700;
     color: white;
     margin-bottom: 0.4rem;
+    letter-spacing: -0.01em;
 }
 
 .mkt-hero-text p {
@@ -1098,6 +1129,7 @@ body {
     border-radius: 18px;
     overflow: hidden;
     box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.05);
     transition: all 0.3s ease;
     display: flex;
     flex-direction: column;
@@ -1105,16 +1137,17 @@ body {
 
 .mkt-product-card:hover {
     transform: translateY(-6px);
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.14);
+    box-shadow: 0 18px 38px rgba(17, 153, 142, 0.16);
+    border-color: rgba(17, 153, 142, 0.18);
 }
 
 .mkt-featured-card {
-    border: 2px solid rgba(17, 153, 142, 0.2);
+    border: 2px solid rgba(17, 153, 142, 0.25);
 }
 
 .mkt-product-img {
     position: relative;
-    height: 180px;
+    height: 210px;
     background: linear-gradient(135deg, #f0fdf4, #e0f2fe);
     display: flex;
     align-items: center;
@@ -1125,11 +1158,24 @@ body {
 .mkt-product-img img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;   /* shows the whole product, no cropping */
+    padding: 14px;
+    transition: transform 0.4s ease;
+}
+
+.mkt-product-card:hover .mkt-product-img img {
+    transform: scale(1.06);
 }
 
 .mkt-img-placeholder {
-    font-size: 4rem;
+    width: 76px;
+    height: 76px;
+    border-radius: 50%;
+    background: rgba(17, 153, 142, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.1rem;
     user-select: none;
 }
 
@@ -1143,7 +1189,26 @@ body {
     border-radius: 20px;
     font-size: 0.75rem;
     font-weight: 600;
+    box-shadow: 0 3px 10px rgba(217, 119, 6, 0.35);
 }
+
+/* --- Grid entrance animation --- */
+@keyframes mktCardIn {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.mkt-product-grid .mkt-product-card {
+    animation: mktCardIn 0.5s ease backwards;
+}
+
+.mkt-product-grid .mkt-product-card:nth-child(1) { animation-delay: 0.02s; }
+.mkt-product-grid .mkt-product-card:nth-child(2) { animation-delay: 0.06s; }
+.mkt-product-grid .mkt-product-card:nth-child(3) { animation-delay: 0.10s; }
+.mkt-product-grid .mkt-product-card:nth-child(4) { animation-delay: 0.14s; }
+.mkt-product-grid .mkt-product-card:nth-child(5) { animation-delay: 0.18s; }
+.mkt-product-grid .mkt-product-card:nth-child(6) { animation-delay: 0.22s; }
+.mkt-product-grid .mkt-product-card:nth-child(n+7) { animation-delay: 0.24s; }
 
 .mkt-product-body {
     padding: 1.2rem;
