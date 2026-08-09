@@ -1577,6 +1577,14 @@ body {
     flex-shrink: 0;
 }
 
+.mkt-cart-icon-img {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+
 .mkt-cart-item-info {
     flex: 1;
 }
