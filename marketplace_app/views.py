@@ -48,6 +48,7 @@ def _build_cart_lines(cart):
             'quantity': item['quantity'],
             'unit': item.get('unit', ''),
             'category': item.get('category', ''),
+            'image': item.get('image', ''),
             'item_total': item_total,
         })
     return lines, total
@@ -127,6 +128,7 @@ def add_to_cart(request, product_id):
             'quantity': 1,
             'unit': product.unit,
             'category': product.category.name if product.category else '',
+            'image': product.image,
         }
 
     _save_cart(request, cart)
@@ -385,6 +387,7 @@ def add_picks_to_cart(request, patient_id):
                 'quantity': 1,
                 'unit': p.unit,
                 'category': p.category.name if p.category else '',
+                'image': p.image,
             }
     _save_cart(request, cart)
     return redirect('view-cart')

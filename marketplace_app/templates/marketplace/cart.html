@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load marketplace_extras %}
 
 {% block title %}Your Cart — Physio Marketplace{% endblock %}
 
@@ -26,7 +27,11 @@
 
             {% for item in cart_items %}
             <div class="mkt-cart-row">
+                {% if item.image %}
+                <img src="{{ item.image|plain_static }}" alt="{{ item.name }}" class="mkt-cart-icon-img">
+                {% else %}
                 <div class="mkt-cart-icon">📦</div>
+                {% endif %}
                 <div class="mkt-cart-item-info">
                     <div class="mkt-cart-item-name">{{ item.name }}</div>
                     <div class="mkt-cart-item-meta">{{ item.category }} &bull; {{ item.unit }}</div>
