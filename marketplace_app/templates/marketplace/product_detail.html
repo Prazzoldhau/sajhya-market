@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load marketplace_extras %}
 
 {% block title %}{{ product.name }} — Physio Marketplace{% endblock %}
 
@@ -37,7 +38,7 @@
         <!-- Image Panel -->
         <div class="mkt-detail-img-panel">
             {% if product.image %}
-                <img src="{% static product.image %}" alt="{{ product.name }}" class="mkt-detail-img">
+                <img src="{{ product.image|plain_static }}" alt="{{ product.name }}" class="mkt-detail-img">
             {% else %}
                 <div class="mkt-detail-placeholder">
                     <span>{{ product.category.icon|default:"📦" }}</span>
@@ -96,7 +97,7 @@
         <div class="mkt-product-card">
             <div class="mkt-product-img">
                 {% if rp.image %}
-                    <img src="{% static rp.image %}" alt="{{ rp.name }}">
+                    <img src="{{ rp.image|plain_static }}" alt="{{ rp.name }}">
                 {% else %}
                     <div class="mkt-img-placeholder">{{ rp.category.icon|default:"📦" }}</div>
                 {% endif %}

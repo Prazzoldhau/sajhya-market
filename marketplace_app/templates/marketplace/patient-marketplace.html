@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load marketplace_extras %}
 
 {% block title %}Products for {{ patient.patient_name }} — Sajhya{% endblock %}
 
@@ -63,7 +64,7 @@
         <div class="mkt-product-card" style="border:1.5px solid rgba(102,126,234,.3);">
             <div class="mkt-product-img">
                 {% if rec.product.image %}
-                    <img src="{% static rec.product.image %}" alt="{{ rec.product.name }}">
+                    <img src="{{ rec.product.image|plain_static }}" alt="{{ rec.product.name }}">
                 {% else %}
                     <div class="mkt-img-placeholder">{{ rec.product.category.icon|default:"📦" }}</div>
                 {% endif %}
@@ -107,7 +108,7 @@
         <div class="mkt-product-card" style="border:1.5px solid rgba(17,153,142,.25);">
             <div class="mkt-product-img">
                 {% if product.image %}
-                    <img src="{% static product.image %}" alt="{{ product.name }}">
+                    <img src="{{ product.image|plain_static }}" alt="{{ product.name }}">
                 {% else %}
                     <div class="mkt-img-placeholder">{{ product.category.icon|default:"📦" }}</div>
                 {% endif %}
@@ -148,7 +149,7 @@
         <div class="mkt-product-card">
             <div class="mkt-product-img">
                 {% if product.image %}
-                    <img src="{% static product.image %}" alt="{{ product.name }}">
+                    <img src="{{ product.image|plain_static }}" alt="{{ product.name }}">
                 {% else %}
                     <div class="mkt-img-placeholder">{{ product.category.icon|default:"📦" }}</div>
                 {% endif %}
