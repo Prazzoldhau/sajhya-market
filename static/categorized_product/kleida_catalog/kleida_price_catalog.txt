@@ -1,0 +1,45 @@
+Kleida Skin Care Products - Nepal Price Catalog
+Compiled from: ePharmacy.com.np, Healme Nepal, Kinaun, Hamro Shringar
+(Prices in NPR, checked cross-site for consistency)
+
+01. Kleida Skin Lightening Moisturiser 100gm
+    ePharmacy: Rs 1195   |   Healme: Rs 1111 (7% off, list Rs 1195)   |   Kinaun: Rs 1195
+    Image: 01_Skin_Lightening_Moisturiser_100gm.jpg
+
+02. Kleida Age Erase Serum
+    ePharmacy: Rs 1985   |   Healme: Rs 1886 (5% off, list Rs 1985)
+    Image: 02_Age_Erase_Serum.jpg
+
+03. Kleida Sun Safe Sunscreen SPF50
+    ePharmacy: Rs 980    |   Healme: Rs 911 (7% off, list Rs 980)
+    Image: 03_Sun_Safe_Sunscreen_SPF50.jpg
+
+04. Kleida Eternal Serum
+    ePharmacy: Rs 2815   |   Healme: Rs 2393 (15% off, list Rs 2815)
+    Image: 04_Eternal_Serum.jpg
+
+05. Kleida Nice Serum 30ml
+    ePharmacy: Rs 1645   |   Healme: Rs 1530 (7% off, list Rs 1645, listed as "Kleida Nice")
+    Image: 05_Nice_Serum_30ml.jpg
+
+06. Kleida Foaming Face Wash 100gm
+    ePharmacy: Rs 645    |   Healme: Rs 600 (7% off, list Rs 645)
+    Image: 06_Foaming_Face_Wash_100gm.jpg
+
+07. Kleida Coconut Oil
+    ePharmacy: Rs 560
+    Image: 07_Coconut_Oil.jpg
+
+08. Kleida IR SPF 50+ Sunscreen 50gm
+    ePharmacy: Rs 1280
+    Image: 08_IR_SPF50_Sunscreen_50gm.jpg
+
+09. Kleida Age Erase Pro Serum 30ml
+    ePharmacy: Rs 1985   |   Hamro Shringar: Rs 1985 (no discount)
+    Image: 09_Age_Erase_Pro_Serum_30ml.jpg
+
+Notes:
+- Healme consistently runs a ~5-15% discount off the same list price ePharmacy shows at full price.
+- Brand is spelled "Kleida" on official retailer listings (not "Klieda").
+- Sources checked: healme.com.np/brand/kleida, epharmacy.com.np/kleida, kinaun.com, hamroshringar.com
+- Prices are as scraped on the date of this catalog; confirm on-site before purchase as retailer pricing changes.
