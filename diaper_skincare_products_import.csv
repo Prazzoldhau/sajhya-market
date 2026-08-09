@@ -1,0 +1,70 @@
+id,name,category,description,price,unit,image,in_stock,is_featured
+,Aiwibi Diapers - Newborn,Diapers,,0.00,per piece,,True,False
+,Aiwibi Diapers - Small,Diapers,,0.00,per piece,,True,False
+,Aiwibi Diapers - Medium,Diapers,,0.00,per piece,,True,False
+,Aiwibi Diapers - Large,Diapers,,0.00,per piece,,True,False
+,Aiwibi Diapers - XL,Diapers,,0.00,per piece,,True,False
+,Aiwibi Diapers - XXL,Diapers,,0.00,per piece,,True,False
+,Zuvara Diapers - Small,Diapers,,0.00,per piece,,True,False
+,Zuvara Diapers - Medium,Diapers,,0.00,per piece,,True,False
+,Zuvara Diapers - Large,Diapers,,0.00,per piece,,True,False
+,Zuvara Diapers - XL,Diapers,,0.00,per piece,,True,False
+,Zuvara Diapers - XXL,Diapers,,0.00,per piece,,True,False
+,Shadow SPF 50+ Cream 75gm,Fixderma,,880.00,per piece,,True,False
+,Salyzap Body Spray For Acne 50ml,Fixderma,,560.00,per piece,,True,False
+,Kairfoll Anti Hair Loss Shampoo 200ml,Fixderma,,1480.00,per piece,,True,False
+,Moisturizing Lotion 150ml,Fixderma,,536.00,per piece,,True,False
+,C Enhance-25 Serum 15gm,Fixderma,,1400.00,per piece,,True,False
+,Shadow A-Gel Sunscreen SPF 30 75ml,Fixderma,,640.00,per piece,,True,False
+,FCL Penta Peel Pads,Fixderma,,2000.00,per piece,,True,False
+,Shadow SPF 30+ Gel For Oily Skin 75g,Fixderma,,720.00,per piece,,True,False
+,Scar Gel 15gm,Fixderma,,616.00,per piece,,True,False
+,Under Eye Cream 15gm,Fixderma,,792.00,per piece,,True,False
+,Shadow SPF 50+ Gel 75gm,Fixderma,,1000.00,per piece,,True,False
+,Shadow Silicone Matte Cream SPF 50 50ml,Fixderma,,1360.00,per piece,,True,False
+,Shadow SPF 30 Transparent Silicone Gel 30gm,Fixderma,,1256.00,per piece,,True,False
+,Shadow SPF 30+ Cream 75gm,Fixderma,,704.00,per piece,,True,False
+,Shadow Kids SPF 20+ Cream,Fixderma,,600.00,per piece,,True,False
+,Kairfoll Capillar Lotion,Fixderma,,3200.00,per piece,,True,False
+,Kairfoll Anti Hair Loss Conditioner 200g,Fixderma,,1320.00,per piece,,True,False
+,Skarfix-Plus Cream,Fixderma,,448.00,per piece,,True,False
+,Foot Cream 60gm,Fixderma,,360.00,per piece,,True,False
+,Strallium Stretch Mark Cream 75gm,Fixderma,,880.00,per piece,,True,False
+,Strawberry Face Wash 50ml,Fixderma,,360.00,per piece,,True,False
+,Sraisoft Daisy 100ml,Fixderma,,424.00,per piece,,True,False
+,Bioteez-S 75ml,Fixderma,,488.00,per piece,,True,False
+,Salyzap Lotion Night Time 20gm,Fixderma,,296.00,per piece,,True,False
+,FCL Hydrating Mask 100gm,Fixderma,,1280.00,per piece,,True,False
+,FCL Detan Mask 100gm,Fixderma,,1280.00,per piece,,True,False
+,FCL AHA Lotion 15 100ml,Fixderma,,1600.00,per piece,,True,False
+,Nigrifix Cream For Acanthosis Nigricans 100gm,Fixderma,,1240.00,per piece,,True,False
+,Salyzap Body Wash For Body Acne 200ml,Fixderma,,1160.00,per piece,,True,False
+,Kairfoll Anti Hair Loss Conditioner 200gm,Fixderma,,960.00,per piece,,True,False
+,Bioteez-S Anti Dandruff Shampoo 75ml,Fixderma,,392.00,per piece,,True,False
+,Shadow Sunscreen SPF 30+ Lotion 75gm,Fixderma,,816.00,per piece,,True,False
+,FCL Light Weight Non-Greasy Broad Spectrum SPF 80 Lotion 50ml,Fixderma,,1720.00,per piece,,True,False
+,Shadow RX SPF 55+ Gel 75gm,Fixderma,,880.00,per piece,,True,False
+,Mandefix Foaming Face Cleanser 100ml,Fixderma,,1192.00,per piece,,True,False
+,0.05%% Pure Retinol Reticuram Face Serum 15ml,Fixderma,,1152.00,per piece,,True,False
+,Moisturizing Cream For Dry Skin 75g,Fixderma,,504.00,per piece,,True,False
+,Face 21 Cream 50gm,Fixderma,,760.00,per piece,,True,False
+,Fidelia Moisturizing Cream For Dry Skin 75gm,Fixderma,,504.00,per piece,,True,False
+,Shadow Tinted Sunscreen For Face SPF 50 30gm,Fixderma,,792.00,per piece,,True,False
+,Strawberry Face Wash 75g,Fixderma,,320.00,per piece,,True,False
+,Fidelia Foot Cream 75g,Fixderma,,552.00,per piece,,True,False
+,Skarfix-TX Cream 15gm,Fixderma,,760.00,per piece,,True,False
+,Non Drying Cleanser 75gm,Fixderma,,392.00,per piece,,True,False
+,2%% Salicylic Acid Face Cleanser (Salyzap) 60gm,Fixderma,,416.00,per piece,,True,False
+,Shadow Sunscreen SPF 30+ Cream 75gm,Fixderma,,600.00,per piece,,True,False
+,Age Reverse Serum 30ml,Fixderma,,1680.00,per piece,,True,False
+,Shadow Sunscreen SPF 80+ Lotion 75ml,Fixderma,,1248.00,per piece,,True,False
+,Strallium Stretch Mark Cream 75g,Fixderma,,680.00,per piece,,True,False
+,Kleida Skin Lightening Moisturiser 100gm,Kleida,,1195.00,per piece,,True,False
+,Kleida Age Erase Serum,Kleida,,1985.00,per piece,,True,False
+,Kleida Sun Safe Sunscreen SPF50,Kleida,,980.00,per piece,,True,False
+,Kleida Eternal Serum,Kleida,,2815.00,per piece,,True,False
+,Kleida Nice Serum 30ml,Kleida,,1645.00,per piece,,True,False
+,Kleida Foaming Face Wash 100gm,Kleida,,645.00,per piece,,True,False
+,Kleida Coconut Oil,Kleida,,560.00,per piece,,True,False
+,Kleida IR SPF 50+ Sunscreen 50gm,Kleida,,1280.00,per piece,,True,False
+,Kleida Age Erase Pro Serum 30ml,Kleida,,1985.00,per piece,,True,False
