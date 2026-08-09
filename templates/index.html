@@ -399,7 +399,7 @@ footer{padding:60px 64px 40px;background:var(--ink)}
   <div class="nav-links">
     <a href="#find-care">Services</a>
     <a href="{% url 'find-physio' %}">Doctors</a>
-    <a href="#find-care">Pharmacy</a>
+    <a href="{% url 'marketplace' %}">Marketplace</a>
     <a href="{% url 'app-download-page'%}">Tools</a>
     <a href="#">About</a>
     <a href="{% url 'login'%}" class="nbtn nbtn-o">Sign in</a>
@@ -409,7 +409,7 @@ footer{padding:60px 64px 40px;background:var(--ink)}
 </nav>
 
 <div class="mmenu" id="mm">
-  <a href="#find-care">Services</a><a href="{% url 'find-physio' %}">Find Physio</a><a href="#find-care">Pharmacy</a><a href="{% url 'app-download-page'%}">Tools</a><a href="#">About</a>
+  <a href="#find-care">Services</a><a href="{% url 'find-physio' %}">Find Physio</a><a href="{% url 'marketplace' %}">Marketplace</a><a href="{% url 'app-download-page'%}">Tools</a><a href="#">About</a>
   <div class="mmenu-ctas">
     <a href="{% url 'login'%}" class="mc-o">Sign in</a>
     <a href="{% url 'package_page'%}" class="mc-f">Get Started</a>
@@ -496,7 +496,7 @@ footer{padding:60px 64px 40px;background:var(--ink)}
         <div class="fc-cat-cta">Find Doctors <span>↗</span></div>
       </div>
     </a>
-    <a href="#" class="fc-cat">
+    <a href="{% url 'pharmacy' %}" class="fc-cat">
       <div class="fc-cat-img">
         <img src="{% static 'pics/pharmacy.jpg' %}" alt="Pharmacy" loading="lazy">
         <div class="fc-cat-ov"></div>
@@ -507,6 +507,19 @@ footer{padding:60px 64px 40px;background:var(--ink)}
         <div class="fc-cat-title">Pharmacy</div>
         <p class="fc-cat-desc">Order prescribed medicines online. Delivered across Nepal with real-time tracking.</p>
         <div class="fc-cat-cta">Shop Medicines <span>↗</span></div>
+      </div>
+    </a>
+    <a href="{% url 'marketplace' %}" class="fc-cat">
+      <div class="fc-cat-img">
+        <img src="{% static 'pics/physio_tool.jpg' %}" alt="Marketplace" loading="lazy">
+        <div class="fc-cat-ov"></div>
+        <span class="fc-cat-badge" style="background:rgba(11,143,132,.88);color:#fff">● Live</span>
+      </div>
+      <div class="fc-cat-body">
+        <div class="fc-cat-ico" style="background:var(--teal-p)">🛒</div>
+        <div class="fc-cat-title">Marketplace</div>
+        <p class="fc-cat-desc">Braces, supports, therapy equipment and rehab supplies — browse the full catalogue, no sign-in needed.</p>
+        <div class="fc-cat-cta">Shop Supplies <span>↗</span></div>
       </div>
     </a>
     <a href="{% url 'app-download-page' %}" class="fc-cat">
@@ -570,7 +583,7 @@ footer{padding:60px 64px 40px;background:var(--ink)}
       <div class="svc-body"><div class="svc-ico" style="background:var(--rose-p)">💉</div><h3 class="svc-title">Nursing Tools</h3><p class="svc-desc">Vitals monitoring, medication management, care planning, and shift handover tools for clinical nurses.</p><div class="svc-arr">↗</div></div>
     </div>
     </a>
-    <a href="#" class="svc-link">
+    <a href="{% url 'pharmacy' %}" class="svc-link">
     <div class="svc">
       <div class="svc-img"><img src="{% static 'pics/pharmacy.jpg' %}"alt="Pharmacy" loading="lazy"><div class="svc-img-ov"></div><span class="sbadge bl">● Live</span></div>
       <div class="svc-body"><div class="svc-ico" style="background:var(--sage-p)">💊</div><h3 class="svc-title">Pharmacy Tools</h3><p class="svc-desc">Order medicines, track deliveries, set refill reminders across a verified catalogue throughout Nepal.</p><div class="svc-arr">↗</div></div>
@@ -722,7 +735,7 @@ footer{padding:60px 64px 40px;background:var(--ink)}
       <p class="ft-tag">Your complete healthcare platform.</p>
     </div>
     <div class="ft-cols">
-      <div class="ft-col"><h5>Services</h5><ul><li><a href="{% url 'find-physio' %}">Find Physio</a></li><li><a href="{% url 'app-download-page' %}">Physio Tools</a></li><li><a href="#">OT Tools</a></li><li><a href="#">Speech Tools</a></li><li><a href="#">Nursing Tools</a></li><li><a href="#">Pharmacy Tools</a></li></ul></div>
+      <div class="ft-col"><h5>Services</h5><ul><li><a href="{% url 'find-physio' %}">Find Physio</a></li><li><a href="{% url 'app-download-page' %}">Physio Tools</a></li><li><a href="#">OT Tools</a></li><li><a href="#">Speech Tools</a></li><li><a href="#">Nursing Tools</a></li><li><a href="{% url 'pharmacy' %}">Pharmacy</a></li><li><a href="{% url 'marketplace' %}">Marketplace</a></li></ul></div>
       <div class="ft-col"><h5>Company</h5><ul><li><a href="#">About</a></li><li><a href="#">Blog</a></li><li><a href="#">Careers</a></li><li><a href="#">Press</a></li></ul></div>
       <div class="ft-col"><h5>Support</h5><ul><li><a href="#">Help Centre</a></li><li><a href="#">Privacy Policy</a></li><li><a href="#">Terms of Use</a></li><li><a href="#">Contact</a></li></ul></div>
     </div>
