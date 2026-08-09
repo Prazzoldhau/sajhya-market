@@ -62,17 +62,21 @@
         padding:1rem;background:rgba(102,126,234,.03);">
         {% for rec in manual_recs %}
         <div class="mkt-product-card" style="border:1.5px solid rgba(102,126,234,.3);">
-            <div class="mkt-product-img">
-                {% if rec.product.image %}
-                    <img src="{{ rec.product.image|plain_static }}" alt="{{ rec.product.name }}">
-                {% else %}
-                    <div class="mkt-img-placeholder">{{ rec.product.category.icon|default:"📦" }}</div>
-                {% endif %}
-                <span class="mkt-featured-tag" style="background:#4338ca;">👨‍⚕️ Your Pick</span>
-            </div>
+            <a href="{% url 'product-detail' rec.product.id %}" class="mkt-product-link">
+                <div class="mkt-product-img">
+                    {% if rec.product.image %}
+                        <img src="{{ rec.product.image|plain_static }}" alt="{{ rec.product.name }}">
+                    {% else %}
+                        <div class="mkt-img-placeholder">{{ rec.product.category.icon|default:"📦" }}</div>
+                    {% endif %}
+                    <span class="mkt-featured-tag" style="background:#4338ca;">👨‍⚕️ Your Pick</span>
+                </div>
+            </a>
             <div class="mkt-product-body">
                 <span class="mkt-cat-badge">{{ rec.product.category.name|default:"General" }}</span>
-                <h3 class="mkt-product-name">{{ rec.product.name }}</h3>
+                <a href="{% url 'product-detail' rec.product.id %}" class="mkt-product-link">
+                    <h3 class="mkt-product-name">{{ rec.product.name }}</h3>
+                </a>
                 {% if rec.note %}
                 <p style="font-size:0.78rem;color:#4338ca;font-style:italic;margin-bottom:4px;">{{ rec.note }}</p>
                 {% endif %}
@@ -106,17 +110,21 @@
         padding:1rem;background:rgba(17,153,142,.03);">
         {% for product in auto_recommended %}
         <div class="mkt-product-card" style="border:1.5px solid rgba(17,153,142,.25);">
-            <div class="mkt-product-img">
-                {% if product.image %}
-                    <img src="{{ product.image|plain_static }}" alt="{{ product.name }}">
-                {% else %}
-                    <div class="mkt-img-placeholder">{{ product.category.icon|default:"📦" }}</div>
-                {% endif %}
-                <span class="mkt-featured-tag" style="background:#11998e;">✅ Suggested</span>
-            </div>
+            <a href="{% url 'product-detail' product.id %}" class="mkt-product-link">
+                <div class="mkt-product-img">
+                    {% if product.image %}
+                        <img src="{{ product.image|plain_static }}" alt="{{ product.name }}">
+                    {% else %}
+                        <div class="mkt-img-placeholder">{{ product.category.icon|default:"📦" }}</div>
+                    {% endif %}
+                    <span class="mkt-featured-tag" style="background:#11998e;">✅ Suggested</span>
+                </div>
+            </a>
             <div class="mkt-product-body">
                 <span class="mkt-cat-badge">{{ product.category.name|default:"General" }}</span>
-                <h3 class="mkt-product-name">{{ product.name }}</h3>
+                <a href="{% url 'product-detail' product.id %}" class="mkt-product-link">
+                    <h3 class="mkt-product-name">{{ product.name }}</h3>
+                </a>
                 <p class="mkt-product-desc">{{ product.description|truncatewords:8 }}</p>
                 <div class="mkt-product-footer">
                     <div class="mkt-price">NPR {{ product.price }}<small class="mkt-unit">/ {{ product.unit }}</small></div>
@@ -147,16 +155,20 @@
     <div class="mkt-product-grid">
         {% for product in other_products %}
         <div class="mkt-product-card">
-            <div class="mkt-product-img">
-                {% if product.image %}
-                    <img src="{{ product.image|plain_static }}" alt="{{ product.name }}">
-                {% else %}
-                    <div class="mkt-img-placeholder">{{ product.category.icon|default:"📦" }}</div>
-                {% endif %}
-            </div>
+            <a href="{% url 'product-detail' product.id %}" class="mkt-product-link">
+                <div class="mkt-product-img">
+                    {% if product.image %}
+                        <img src="{{ product.image|plain_static }}" alt="{{ product.name }}">
+                    {% else %}
+                        <div class="mkt-img-placeholder">{{ product.category.icon|default:"📦" }}</div>
+                    {% endif %}
+                </div>
+            </a>
             <div class="mkt-product-body">
                 <span class="mkt-cat-badge">{{ product.category.name|default:"General" }}</span>
-                <h3 class="mkt-product-name">{{ product.name }}</h3>
+                <a href="{% url 'product-detail' product.id %}" class="mkt-product-link">
+                    <h3 class="mkt-product-name">{{ product.name }}</h3>
+                </a>
                 <p class="mkt-product-desc">{{ product.description|truncatewords:8 }}</p>
                 <div class="mkt-product-footer">
                     <div class="mkt-price">NPR {{ product.price }}<small class="mkt-unit">/ {{ product.unit }}</small></div>

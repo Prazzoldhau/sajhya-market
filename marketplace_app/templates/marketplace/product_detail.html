@@ -95,16 +95,20 @@
     <div class="mkt-product-grid">
         {% for rp in related %}
         <div class="mkt-product-card">
-            <div class="mkt-product-img">
-                {% if rp.image %}
-                    <img src="{{ rp.image|plain_static }}" alt="{{ rp.name }}">
-                {% else %}
-                    <div class="mkt-img-placeholder">{{ rp.category.icon|default:"📦" }}</div>
-                {% endif %}
-            </div>
+            <a href="{% url 'product-detail' rp.id %}" class="mkt-product-link">
+                <div class="mkt-product-img">
+                    {% if rp.image %}
+                        <img src="{{ rp.image|plain_static }}" alt="{{ rp.name }}">
+                    {% else %}
+                        <div class="mkt-img-placeholder">{{ rp.category.icon|default:"📦" }}</div>
+                    {% endif %}
+                </div>
+            </a>
             <div class="mkt-product-body">
                 <span class="mkt-cat-badge">{{ rp.category.name|default:"General" }}</span>
-                <h3 class="mkt-product-name">{{ rp.name }}</h3>
+                <a href="{% url 'product-detail' rp.id %}" class="mkt-product-link">
+                    <h3 class="mkt-product-name">{{ rp.name }}</h3>
+                </a>
                 <div class="mkt-product-footer">
                     <div class="mkt-price">NPR {{ rp.price }}</div>
                     <div class="mkt-card-actions">
