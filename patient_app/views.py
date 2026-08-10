@@ -579,6 +579,33 @@ def patient_api_logout(request):
     return JsonResponse({'success': True})
 
 
+def _purge_patient_personal_data(patient):
+    """Erase everything that identifies `patient`, keeping the records the
+    practice has to retain. Shared by the in-app and web deletion routes so the
+    two cannot drift apart. Caller wraps this in a transaction.
+    """
+    PushSubscription.objects.filter(patient=patient).delete()
+    PatientPhysioPairing.objects.filter(patient=patient).delete()
+    PatientProductRecommendation.objects.filter(patient=patient).delete()
+
+    # Marketplace orders carry a delivery name, phone and address, and are
+    # linked to the patient only by the synthetic {patient_code}@sajhya.local
+    # address. The order rows themselves stay (they back order history,
+    # supplier fulfilment and physio commission accounting) but the delivery
+    # details are personal data and are cleared. customer_email is kept as the
+    # link key; once the patient is anonymised it identifies nobody.
+    Order.objects.filter(
+        customer_email=f'{patient.patient_code}@sajhya.local'
+    ).update(
+        customer_name='Deleted patient',
+        customer_phone='',
+        delivery_address='',
+        notes='',
+    )
+
+    patient.anonymise_for_deletion()
+
+
 @csrf_exempt
 @require_http_methods(['POST'])
 def patient_api_delete_account(request):
@@ -612,10 +639,7 @@ def patient_api_delete_account(request):
 
     try:
         with transaction.atomic():
-            PushSubscription.objects.filter(patient=patient).delete()
-            PatientPhysioPairing.objects.filter(patient=patient).delete()
-            PatientProductRecommendation.objects.filter(patient=patient).delete()
-            patient.anonymise_for_deletion()
+            _purge_patient_personal_data(patient)
     except Exception:
         logger.exception('Account deletion failed for patient id=%s', patient.id)
         return JsonResponse(
@@ -627,6 +651,21 @@ def patient_api_delete_account(request):
     # in and able to retry rather than locked out of a half-deleted account.
     request.session.flush()
     return JsonResponse({'success': True})
+
+
+@require_http_methods(['GET'])
+def patient_privacy_policy(request):
+    """Public privacy policy for the Sajhya patient app.
+
+    Google Play requires a reachable policy URL on the store listing and in the
+    Data Safety form; for an app handling health data it is checked closely.
+    The content must stay in step with what the code actually does -- notably
+    _purge_patient_personal_data() and the retention it describes.
+    """
+    return render(request, 'patient-privacy-policy.html', {
+        'last_updated': '10 August 2026',
+        'contact_email': settings.PRIVACY_CONTACT_EMAIL,
+    })
 
 
 @require_http_methods(['GET', 'POST'])
@@ -667,10 +706,7 @@ def patient_delete_account_web(request):
 
     try:
         with transaction.atomic():
-            PushSubscription.objects.filter(patient=patient).delete()
-            PatientPhysioPairing.objects.filter(patient=patient).delete()
-            PatientProductRecommendation.objects.filter(patient=patient).delete()
-            patient.anonymise_for_deletion()
+            _purge_patient_personal_data(patient)
     except Exception:
         logger.exception('Web account deletion failed for patient id=%s', patient.id)
         return render(request, 'patient-delete-account.html', {

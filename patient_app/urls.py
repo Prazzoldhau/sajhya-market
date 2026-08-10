@@ -22,6 +22,10 @@ urlpatterns = [
     # in the Play Console Data Safety form.
     path('delete-account/', views.patient_delete_account_web, name='patient-delete-account-web'),
 
+    # Public privacy policy. Its URL is mandatory on the Play Store listing and
+    # in the Data Safety form for an app handling health data.
+    path('privacy-policy/', views.patient_privacy_policy, name='patient-privacy-policy'),
+
     # Push notifications
     path('sw.js', views.patient_service_worker, name='patient-service-worker'),
     path('api/push/subscribe/', views.patient_api_push_subscribe, name='patient_api_push_subscribe'),
