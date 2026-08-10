@@ -15,6 +15,12 @@ urlpatterns = [
     path('api/me/', views.patient_api_me, name='patient_api_me'),
     path('api/activate/', views.patient_api_activate, name='patient_api_activate'),
     path('api/pair-physio/', views.patient_api_pair_physio, name='patient_api_pair_physio'),
+    path('api/delete-account/', views.patient_api_delete_account, name='patient_api_delete_account'),
+
+    # Public, no-login-required deletion page. Google Play requires a deletion
+    # route reachable from a browser without installing the app; this URL goes
+    # in the Play Console Data Safety form.
+    path('delete-account/', views.patient_delete_account_web, name='patient-delete-account-web'),
 
     # Push notifications
     path('sw.js', views.patient_service_worker, name='patient-service-worker'),

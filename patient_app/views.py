@@ -6,7 +6,9 @@ from marketplace_app.models import Category, Product, ProductVariant, Order, Ord
 from marketplace_app.views import get_recommended_for_diagnosis
 from django.http import JsonResponse, HttpResponse
 from django.conf import settings
+from django.db import transaction
 import json
+import logging
 from datetime import timedelta
 from decimal import Decimal
 from urllib.parse import quote
@@ -15,6 +17,9 @@ from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.contrib.auth.hashers import make_password, check_password
 from .models import PushSubscription
+
+logger = logging.getLogger(__name__)
+
 
 def _activation_status(patient):
     active = patient.is_activation_active
@@ -33,6 +38,10 @@ def patient_api_me(request):
     
     try:
         patient = AddPatient.objects.get(id=patient_id)
+        # Session outliving a deletion (e.g. a second device): report signed out.
+        if patient.is_deleted:
+            return JsonResponse({'error': 'Not authenticated'}, status=401)
+
         latest_prescription = Prescription.objects.filter(patient=patient).order_by('-created_at').first()
         prescription_data = None
         if latest_prescription:
@@ -227,6 +236,12 @@ def patient_api_login(request):
         if not patient:
             return JsonResponse({'success': False, 'error': 'Invalid credentials'}, status=401)
 
+        # A deleted account keeps its row (anonymised) so clinical records stay
+        # linked, so it must be refused here explicitly. Same generic message as
+        # a bad password -- whether a code once existed is not worth disclosing.
+        if patient.is_deleted:
+            return JsonResponse({'success': False, 'error': 'Invalid credentials'}, status=401)
+
         if patient.password:
             # Self-registered patient: verify the hashed password they chose.
             valid = check_password(secret, patient.password)
@@ -318,6 +333,12 @@ def patient_api_qr_login(request):
             return JsonResponse({'success': False, 'error': 'QR token is required'}, status=400)
 
         patient = AddPatient.objects.get(qr_token=qr_token)
+        # Deletion clears qr_token, so a deleted patient should not be reachable
+        # here at all; checked anyway so a re-issued token can never resurrect a
+        # deleted account.
+        if patient.is_deleted:
+            return JsonResponse({'success': False, 'error': 'Invalid QR code'}, status=401)
+
         request.session['patient_id'] = patient.id
 
         latest_prescription = Prescription.objects.filter(patient=patient).order_by('-created_at').first()
@@ -558,6 +579,109 @@ def patient_api_logout(request):
     return JsonResponse({'success': True})
 
 
+@csrf_exempt
+@require_http_methods(['POST'])
+def patient_api_delete_account(request):
+    """Delete the signed-in patient's account.
+
+    Google Play requires an in-app deletion path for any app that offers
+    account creation, so the patient app calls this from
+    Dashboard > overflow > Delete my account.
+
+    The AddPatient row is anonymised rather than dropped. Deleting it would
+    cascade into prescriptions, exercise feedback, physio session notes and
+    visit notes -- clinical records the practice is required to retain -- and
+    would orphan marketplace orders and the physio commissions calculated from
+    them. Instead every identifying field is cleared (see
+    AddPatient.anonymise_for_deletion) and the app-side personal data is
+    deleted outright:
+
+      * push subscriptions   -- device endpoints, directly identifying
+      * physio pairings      -- who was treating this person
+      * product recommendations -- inferred from their diagnosis
+      * the session cart     -- lives in the session, dropped with the flush
+
+    What survives is de-identified: a patient_code with no name, contact,
+    password or QR token attached, plus the clinical and financial history
+    hanging off it. Retention must be disclosed in the privacy policy for the
+    Play Data Safety declaration.
+    """
+    patient, err = _patient_required(request)
+    if err:
+        return err
+
+    try:
+        with transaction.atomic():
+            PushSubscription.objects.filter(patient=patient).delete()
+            PatientPhysioPairing.objects.filter(patient=patient).delete()
+            PatientProductRecommendation.objects.filter(patient=patient).delete()
+            patient.anonymise_for_deletion()
+    except Exception:
+        logger.exception('Account deletion failed for patient id=%s', patient.id)
+        return JsonResponse(
+            {'success': False, 'error': 'Could not delete account. Please try again.'},
+            status=500,
+        )
+
+    # Only after the data is gone, so a failure above leaves the patient signed
+    # in and able to retry rather than locked out of a half-deleted account.
+    request.session.flush()
+    return JsonResponse({'success': True})
+
+
+@require_http_methods(['GET', 'POST'])
+def patient_delete_account_web(request):
+    """Browser-based account deletion, no app install required.
+
+    Google Play requires a deletion route reachable from outside the app; its
+    URL is submitted with the Data Safety form. Authenticates with the same
+    credentials as the app so a deletion request cannot be forged from a
+    patient code alone -- those are printed on cards and are not secret.
+    """
+    if request.method == 'GET':
+        return render(request, 'patient-delete-account.html')
+
+    patient_code = (request.POST.get('patient_code') or '').strip()
+    secret = (request.POST.get('password') or '').strip()
+    confirm = (request.POST.get('confirm') or '').strip().upper()
+
+    if confirm != 'DELETE':
+        return render(request, 'patient-delete-account.html', {
+            'error': 'Type DELETE in the confirmation box to continue.',
+            'patient_code': patient_code,
+        })
+
+    patient = AddPatient.objects.filter(patient_code=patient_code).first()
+    valid = False
+    if patient and not patient.is_deleted:
+        if patient.password:
+            valid = check_password(secret, patient.password)
+        else:
+            valid = patient.patient_contact == secret
+
+    if not valid:
+        return render(request, 'patient-delete-account.html', {
+            'error': 'Invalid Patient Code or PIN/password.',
+            'patient_code': patient_code,
+        })
+
+    try:
+        with transaction.atomic():
+            PushSubscription.objects.filter(patient=patient).delete()
+            PatientPhysioPairing.objects.filter(patient=patient).delete()
+            PatientProductRecommendation.objects.filter(patient=patient).delete()
+            patient.anonymise_for_deletion()
+    except Exception:
+        logger.exception('Web account deletion failed for patient id=%s', patient.id)
+        return render(request, 'patient-delete-account.html', {
+            'error': 'Something went wrong. Please try again or contact support.',
+            'patient_code': patient_code,
+        })
+
+    request.session.flush()
+    return render(request, 'patient-delete-account.html', {'deleted': True})
+
+
 # ==================== PUSH NOTIFICATIONS ====================
 
 def patient_service_worker(request):
@@ -630,9 +754,14 @@ def _patient_required(request):
     if not pid:
         return None, JsonResponse({'error': 'Not authenticated'}, status=401)
     try:
-        return AddPatient.objects.get(id=pid), None
+        patient = AddPatient.objects.get(id=pid)
     except AddPatient.DoesNotExist:
         return None, JsonResponse({'error': 'Patient not found'}, status=404)
+    # Covers a session still live on another device when the account was
+    # deleted; treated as signed out so the app returns to the login screen.
+    if patient.is_deleted:
+        return None, JsonResponse({'error': 'Not authenticated'}, status=401)
+    return patient, None
 
 
 def _image_url(request, image_path):
