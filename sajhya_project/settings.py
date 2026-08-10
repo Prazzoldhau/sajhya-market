@@ -200,4 +200,4 @@ VAPID_CLAIM_EMAIL = env('VAPID_CLAIM_EMAIL')
 # Shown on the public privacy policy as the contact for data protection
 # requests. Google Play requires a working contact on the policy it checks, so
 # this must be a mailbox that is actually monitored.
-PRIVACY_CONTACT_EMAIL = env('PRIVACY_CONTACT_EMAIL', default='support@sajhya.com')
+PRIVACY_CONTACT_EMAIL = env('PRIVACY_CONTACT_EMAIL', default='aestheticphysiox@gmail.com')

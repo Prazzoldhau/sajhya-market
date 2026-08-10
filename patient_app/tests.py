@@ -1,5 +1,6 @@
 import json
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
 from django.test import TestCase
@@ -169,6 +170,13 @@ class DeleteAccountTests(TestCase):
         # Must actually state the deletion route Play is told about.
         self.assertIn(reverse('patient-delete-account-web'), body)
         self.assertIn('Privacy Policy', body)
+
+    def test_privacy_policy_shows_a_contact_address(self):
+        """Play checks that the contact on the policy works, so the page must
+        never render an empty or placeholder mailto."""
+        body = self.client.get(reverse('patient-privacy-policy')).content.decode()
+        self.assertIn(f'mailto:{settings.PRIVACY_CONTACT_EMAIL}', body)
+        self.assertIn('@', settings.PRIVACY_CONTACT_EMAIL)
 
     def test_deletion_page_links_to_the_policy(self):
         body = self.client.get(reverse('patient-delete-account-web')).content.decode()
