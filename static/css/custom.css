@@ -2080,12 +2080,12 @@ body {
     .mkt-product-grid,
     .mkt-featured-grid {
         grid-template-columns: 1fr 1fr;
-        gap: 0.7rem;
+        gap: 1rem;
         margin-bottom: 2rem;
     }
 
     .mkt-product-img img {
-        padding: 2px;
+        padding: 10px;
     }
 
     .mkt-img-placeholder {
