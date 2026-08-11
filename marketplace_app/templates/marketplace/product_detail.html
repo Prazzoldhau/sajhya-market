@@ -113,7 +113,6 @@
                     <div class="mkt-price">NPR {{ rp.price }}</div>
                     <div class="mkt-card-actions">
                         <a href="{% url 'product-detail' rp.id %}" class="mkt-btn-view">Details</a>
-                        <a href="{% url 'add-to-cart' rp.id %}?next={{ request.get_full_path|urlencode }}" class="mkt-btn-add">+ Cart</a>
                     </div>
                 </div>
             </div>

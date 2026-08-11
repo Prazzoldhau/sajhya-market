@@ -79,7 +79,6 @@
                     </div>
                     <div class="mkt-card-actions">
                         <a href="{% url 'product-detail' product.id %}" class="mkt-btn-view">Details</a>
-                        <a href="{% url 'add-to-cart' product.id %}?next={{ request.get_full_path|urlencode }}" class="mkt-btn-add">+ Cart</a>
                     </div>
                 </div>
             </div>
@@ -125,7 +124,6 @@
                     </div>
                     <div class="mkt-card-actions">
                         <a href="{% url 'product-detail' product.id %}" class="mkt-btn-view">Details</a>
-                        <a href="{% url 'add-to-cart' product.id %}?next={{ request.get_full_path|urlencode }}" class="mkt-btn-add">🛒 Add</a>
                     </div>
                 </div>
             </div>
@@ -144,46 +142,3 @@
 </div><!-- /container -->
 {% endblock %}
 
-{% block extra_js %}
-<script>
-(function () {
-    function updateBadge(count) {
-        var cartBtn = document.querySelector('.mkt-cart-btn');
-        if (!cartBtn) return;
-        var badge = cartBtn.querySelector('.mkt-cart-badge');
-        if (count > 0) {
-            if (!badge) {
-                badge = document.createElement('span');
-                badge.className = 'mkt-cart-badge';
-                cartBtn.appendChild(badge);
-            }
-            badge.textContent = count;
-        } else if (badge) {
-            badge.remove();
-        }
-    }
-
-    document.addEventListener('click', function (e) {
-        var btn = e.target.closest('.mkt-btn-add');
-        if (!btn) return;
-        e.preventDefault();
-
-        fetch(btn.href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-            .then(function (r) { return r.json(); })
-            .then(function (data) {
-                if (!data.success) return;
-                updateBadge(data.cart_count);
-                var orig = btn.textContent;
-                btn.textContent = '✓';
-                btn.style.background = '#11998e';
-                btn.style.color = '#fff';
-                setTimeout(function () {
-                    btn.textContent = orig;
-                    btn.style.background = '';
-                    btn.style.color = '';
-                }, 1000);
-            });
-    });
-}());
-</script>
-{% endblock %}
