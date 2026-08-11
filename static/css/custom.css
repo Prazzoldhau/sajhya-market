@@ -1113,13 +1113,15 @@ body {
 /* --- Product Grid --- */
 .mkt-product-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    /* capped at 300px (not 1fr) so tiles -- now square via aspect-ratio --
+       can't stretch into oversized squares when a row has few results */
+    grid-template-columns: repeat(auto-fill, minmax(240px, 300px));
     gap: 1.5rem;
     margin-bottom: 3rem;
 }
 
 .mkt-featured-grid {
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(260px, 320px));
     margin-bottom: 2.5rem;
 }
 
@@ -1158,8 +1160,8 @@ body {
 
 .mkt-product-img {
     position: relative;
-    height: 210px;
-    background: linear-gradient(135deg, #f0fdf4, #e0f2fe);
+    aspect-ratio: 1 / 1;   /* daraz-style square tile that scales with card width, so it never shrinks to a tiny fixed box on narrow screens */
+    background: #fff;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1170,7 +1172,7 @@ body {
     width: 100%;
     height: 100%;
     object-fit: contain;   /* shows the whole product, no cropping */
-    padding: 14px;
+    padding: 6px;
     transition: transform 0.4s ease;
 }
 
@@ -2006,7 +2008,7 @@ body {
     }
 
     .mkt-product-grid {
-        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(180px, 220px));
     }
 
     .mkt-nav-center {
@@ -2083,12 +2085,8 @@ body {
         margin-bottom: 2rem;
     }
 
-    .mkt-product-img {
-        height: 120px;
-    }
-
     .mkt-product-img img {
-        padding: 8px;
+        padding: 4px;
     }
 
     .mkt-img-placeholder {
@@ -2136,8 +2134,20 @@ body {
         width: 100%;
     }
 
+    /* When Details is paired with an Add button (e.g. physio patient-picks
+       grid), hide it to save space -- Add is the primary action there. */
     .mkt-card-actions .mkt-btn-view {
         display: none;
+    }
+
+    /* But where Details is the only action (marketplace/pharmacy/related
+       products, since quick-add was removed from those grids), it becomes
+       the primary tap target and needs to actually be visible. */
+    .mkt-card-actions .mkt-btn-view:only-child {
+        display: block;
+        flex: 1;
+        text-align: center;
+        padding: 7px 10px;
     }
 
     .mkt-card-actions .mkt-btn-add {
