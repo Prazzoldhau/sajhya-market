@@ -1113,15 +1113,16 @@ body {
 /* --- Product Grid --- */
 .mkt-product-grid {
     display: grid;
-    /* capped at 300px (not 1fr) so tiles -- now square via aspect-ratio --
-       can't stretch into oversized squares when a row has few results */
-    grid-template-columns: repeat(auto-fill, minmax(240px, 300px));
+    /* capped (not 1fr) so tiles -- square via aspect-ratio -- can't stretch
+       into oversized squares when a row has few results; bumped up from
+       240-300 to fit fewer, bigger cards per row */
+    grid-template-columns: repeat(auto-fill, minmax(280px, 340px));
     gap: 1.5rem;
     margin-bottom: 3rem;
 }
 
 .mkt-featured-grid {
-    grid-template-columns: repeat(auto-fill, minmax(260px, 320px));
+    grid-template-columns: repeat(auto-fill, minmax(300px, 360px));
     margin-bottom: 2.5rem;
 }
 
@@ -1172,7 +1173,7 @@ body {
     width: 100%;
     height: 100%;
     object-fit: contain;   /* shows the whole product, no cropping */
-    padding: 6px;
+    padding: 2px;
     transition: transform 0.4s ease;
 }
 
@@ -1276,12 +1277,6 @@ body {
     font-size: 1.05rem;
     font-weight: 700;
     color: #11998e;
-}
-
-.mkt-unit {
-    font-size: 0.75rem;
-    color: #999;
-    font-weight: 400;
 }
 
 .mkt-card-actions {
@@ -1421,13 +1416,13 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 350px;
-    padding: 2rem;
+    min-height: 460px;
+    padding: 1.5rem;
 }
 
 .mkt-detail-img {
     max-width: 100%;
-    max-height: 350px;
+    max-height: 460px;
     object-fit: contain;
     border-radius: 12px;
 }
@@ -2008,7 +2003,7 @@ body {
     }
 
     .mkt-product-grid {
-        grid-template-columns: repeat(auto-fill, minmax(180px, 220px));
+        grid-template-columns: repeat(auto-fill, minmax(200px, 260px));
     }
 
     .mkt-nav-center {
@@ -2086,7 +2081,7 @@ body {
     }
 
     .mkt-product-img img {
-        padding: 4px;
+        padding: 2px;
     }
 
     .mkt-img-placeholder {
