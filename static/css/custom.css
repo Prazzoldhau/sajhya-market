@@ -1114,15 +1114,16 @@ body {
 .mkt-product-grid {
     display: grid;
     /* capped (not 1fr) so tiles -- square via aspect-ratio -- can't stretch
-       into oversized squares when a row has few results; bumped up from
-       240-300 to fit fewer, bigger cards per row */
-    grid-template-columns: repeat(auto-fill, minmax(280px, 340px));
+       into oversized squares when a row has few results. Max must stay
+       <=270px for 4 columns to fit the 1200px .container (1152px content
+       width after padding, with a 24px gap: 4*270 + 3*24 = 1152). */
+    grid-template-columns: repeat(auto-fill, minmax(220px, 260px));
     gap: 1.5rem;
     margin-bottom: 3rem;
 }
 
 .mkt-featured-grid {
-    grid-template-columns: repeat(auto-fill, minmax(300px, 360px));
+    grid-template-columns: repeat(auto-fill, minmax(240px, 260px));
     margin-bottom: 2.5rem;
 }
 
