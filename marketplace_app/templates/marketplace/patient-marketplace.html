@@ -81,7 +81,7 @@
                 <p style="font-size:0.78rem;color:#4338ca;font-style:italic;margin-bottom:4px;">{{ rec.note }}</p>
                 {% endif %}
                 <div class="mkt-product-footer">
-                    <div class="mkt-price">NPR {{ rec.product.price }}<small class="mkt-unit">/ {{ rec.product.unit }}</small></div>
+                    <div class="mkt-price">NPR {{ rec.product.price }}</div>
                     <div class="mkt-card-actions" style="flex-direction:column;gap:4px;">
                         <a href="{% url 'add-to-cart' rec.product.id %}?next={{ request.get_full_path|urlencode }}" class="mkt-btn-add">🛒 Add</a>
                         {% if is_physio %}
@@ -127,7 +127,7 @@
                 </a>
                 <p class="mkt-product-desc">{{ product.description|truncatewords:8 }}</p>
                 <div class="mkt-product-footer">
-                    <div class="mkt-price">NPR {{ product.price }}<small class="mkt-unit">/ {{ product.unit }}</small></div>
+                    <div class="mkt-price">NPR {{ product.price }}</div>
                     <div class="mkt-card-actions" style="flex-direction:column;gap:4px;">
                         <a href="{% url 'add-to-cart' product.id %}?next={{ request.get_full_path|urlencode }}" class="mkt-btn-add">🛒 Add</a>
                         {% if is_physio %}
@@ -171,7 +171,7 @@
                 </a>
                 <p class="mkt-product-desc">{{ product.description|truncatewords:8 }}</p>
                 <div class="mkt-product-footer">
-                    <div class="mkt-price">NPR {{ product.price }}<small class="mkt-unit">/ {{ product.unit }}</small></div>
+                    <div class="mkt-price">NPR {{ product.price }}</div>
                     <div class="mkt-card-actions" style="flex-direction:column;gap:4px;">
                         <div style="display:flex;gap:4px;">
                             <a href="{% url 'product-detail' product.id %}" class="mkt-btn-view">Details</a>
