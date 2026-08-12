@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Delete your Sajhya account</title>
+  <style>
+    :root { --blue:#0A6EBD; --red:#c0392b; --ink:#1c1c1e; --muted:#6b7280; }
+    * { box-sizing:border-box; }
+    body {
+      margin:0; padding:24px 16px; background:#f4f6fa; color:var(--ink);
+      font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; line-height:1.55;
+    }
+    .card {
+      max-width:560px; margin:0 auto; background:#fff; border-radius:12px;
+      padding:28px 24px; box-shadow:0 1px 3px rgba(0,0,0,.08);
+    }
+    h1 { font-size:1.4rem; margin:0 0 4px; color:var(--blue); }
+    .sub { color:var(--muted); margin:0 0 22px; font-size:.94rem; }
+    label { display:block; font-weight:600; font-size:.88rem; margin:16px 0 6px; }
+    input {
+      width:100%; padding:11px 12px; font-size:1rem;
+      border:1px solid #d1d5db; border-radius:8px; background:#fff; color:var(--ink);
+    }
+    input:focus { outline:2px solid var(--blue); outline-offset:1px; border-color:var(--blue); }
+    .hint { font-size:.82rem; color:var(--muted); margin-top:5px; }
+    button {
+      width:100%; margin-top:24px; padding:13px; font-size:1rem; font-weight:600;
+      color:#fff; background:var(--red); border:0; border-radius:8px; cursor:pointer;
+    }
+    button:hover { background:#a5301f; }
+    .box { padding:13px 15px; border-radius:8px; font-size:.9rem; margin-bottom:18px; }
+    .error { background:#fdecea; color:#8a1c12; border:1px solid #f5c6c2; }
+    .ok { background:#e8f6ec; color:#14602c; border:1px solid #b7e0c3; }
+    .what { background:#f8f9fb; border:1px solid #e5e7eb; border-radius:8px;
+            padding:14px 16px; font-size:.88rem; margin-bottom:20px; }
+    .what ul { margin:8px 0 0; padding-left:20px; }
+    .what li { margin:3px 0; }
+    footer { max-width:560px; margin:18px auto 0; font-size:.82rem; color:var(--muted); text-align:center; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    {% if deleted %}
+      <h1>Account deleted</h1>
+      <div class="box ok">
+        Your Sajhya account has been deleted and you have been signed out
+        everywhere. You can close this page.
+      </div>
+      <p class="hint">
+        If you sign up again in future you will receive a new Patient Code;
+        your previous one cannot be reused.
+      </p>
+    {% else %}
+      <h1>Delete your Sajhya account</h1>
+      <p class="sub">
+        This is permanent and cannot be undone. You can also do this in the
+        Sajhya app under the &#8942; menu on your dashboard.
+      </p>
+
+      {% if error %}<div class="box error">{{ error }}</div>{% endif %}
+
+      <div class="what">
+        <strong>What happens</strong>
+        <ul>
+          <li>Your name, contact number, password and QR code are erased.</li>
+          <li>Your physiotherapist pairing and product recommendations are deleted.</li>
+          <li>Notifications to your devices stop immediately.</li>
+          <li>You are signed out on every device and cannot sign in again.</li>
+        </ul>
+        <p style="margin:10px 0 0">
+          Treatment records (prescriptions, exercise history, session and visit
+          notes) and past orders are kept in de-identified form, with no name or
+          contact details attached. Your physiotherapy practice is required to
+          retain clinical and financial records; see our
+          <a href="{% url 'patient-privacy-policy' %}">privacy policy</a> for how
+          long.
+        </p>
+      </div>
+
+      <form method="post" autocomplete="off">
+        {% csrf_token %}
+        <label for="patient_code">Patient Code</label>
+        <input id="patient_code" name="patient_code" required
+               value="{{ patient_code|default:'' }}" placeholder="PAT-XXXXXX">
+
+        <label for="password">PIN or Password</label>
+        <input id="password" name="password" type="password" required
+               placeholder="Your PIN or password">
+
+        <label for="confirm">Type DELETE to confirm</label>
+        <input id="confirm" name="confirm" required placeholder="DELETE">
+        <p class="hint">Typed exactly, in capitals.</p>
+
+        <button type="submit">Delete my account permanently</button>
+      </form>
+    {% endif %}
+  </div>
+  <footer>Sajhya &middot; Need help? Contact your physiotherapist.</footer>
+</body>
+</html>

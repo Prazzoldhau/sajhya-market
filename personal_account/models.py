@@ -62,6 +62,40 @@ class AddPatient(models.Model):
     )
 
     created_at = models.DateTimeField(default=get_nepal_time)
+
+    # Set when the patient deletes their own account from the app (see
+    # patient_app.views.patient_api_delete_account). The row is anonymised in
+    # place rather than dropped: prescriptions, session notes and orders hang
+    # off it, and those are clinical and financial records the practice has to
+    # keep. Everything that identifies the person -- name, contact, password,
+    # QR token -- is cleared at the same time, so what remains is not personal
+    # data. Every login path must refuse a patient with is_deleted set.
+    is_deleted = models.BooleanField(default=False)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+
+    def anonymise_for_deletion(self):
+        """Strip personal data and lock the account out, keeping the row so
+        linked clinical/financial records stay intact. Callers are responsible
+        for deleting the related app-side data (push subscriptions, physio
+        pairings, product recommendations) and flushing the session.
+
+        Deliberately writes via queryset.update() rather than save(): save()
+        regenerates qr_token and qr_code whenever they are falsy, so clearing
+        them and saving would immediately hand the deleted account a working
+        QR login token back.
+        """
+        type(self).objects.filter(pk=self.pk).update(
+            patient_name='Deleted patient',
+            patient_contact='',
+            password=None,
+            qr_token=None,
+            qr_code=None,
+            activation_expires_at=None,
+            is_deleted=True,
+            deleted_at=get_nepal_time(),
+        )
+        self.refresh_from_db()
+
     def generate_patient_code(self):
         prefix = "PAT-"
         length = 6  # shorter than 10 for readability; adjust as needed
