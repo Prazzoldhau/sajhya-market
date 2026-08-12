@@ -363,43 +363,6 @@ body > .container.mt-3:empty {
     color: var(--store-ink);
 }
 
-/* ---------- Filter pills (All Products) ---------- */
-
-.store-filter-row {
-    display: flex;
-    gap: 0.6rem;
-    overflow-x: auto;
-    margin-bottom: 1.6rem;
-    scrollbar-width: none;
-}
-
-.store-filter-row::-webkit-scrollbar {
-    display: none;
-}
-
-.store-pill {
-    flex: 0 0 auto;
-    padding: 0.5rem 1.1rem;
-    border-radius: 999px;
-    border: 1px solid var(--store-border);
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--store-muted);
-    background: #fff;
-    white-space: nowrap;
-}
-
-.store-pill:hover {
-    border-color: var(--store-primary);
-    color: var(--store-ink);
-}
-
-.store-pill.is-active {
-    background: var(--store-ink);
-    border-color: var(--store-ink);
-    color: #fff;
-}
-
 .store-empty {
     padding: 3rem 0;
     text-align: center;
