@@ -281,7 +281,7 @@ body > .container.mt-3:empty {
 
 .store-card-img {
     aspect-ratio: 1 / 1;
-    background: var(--store-surface);
+    background: #fff;
     display: flex;
     align-items: center;
     justify-content: center;
