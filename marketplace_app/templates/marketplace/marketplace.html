@@ -61,7 +61,10 @@
     <section class="store-wrap store-categories" id="categories">
         <div class="store-cat-row">
             {% for cat in categories %}
-            <a href="?category={{ cat.id }}" class="store-pill {% if selected_category == cat.id|stringformat:'s' %}is-active{% endif %}">{{ cat.name }}</a>
+            <a href="?category={{ cat.id }}" class="store-cat {% if selected_category == cat.id|stringformat:'s' %}is-active{% endif %}">
+                <span class="store-cat-circle">{{ cat.icon|default:"🏥" }}</span>
+                <span>{{ cat.name }}</span>
+            </a>
             {% endfor %}
         </div>
     </section>
