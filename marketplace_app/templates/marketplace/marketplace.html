@@ -5,7 +5,7 @@
 {% block title %}Sajhya Marketplace{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/marketplace-store.css' %}">
+<link rel="stylesheet" href="{{ 'css/marketplace-store.css'|plain_static }}">
 {% endblock %}
 
 {% block content %}
@@ -67,9 +67,9 @@
         </div>
         <div class="store-hero-art">
             <div class="blob"></div>
-            <img class="art-main" src="{% static 'categorized_product/5/5 (001).png' %}" alt="Dumbbells">
-            <img class="art-two" src="{% static 'categorized_product/bioderma/1 (1).png' %}" alt="Bioderma Atoderm cream">
-            <img class="art-three" src="{% static 'categorized_product/1/1 (002).png' %}" alt="Resistance band">
+            <img class="art-main" src="{{ 'categorized_product/5/5 (001).png'|plain_static }}" alt="Dumbbells">
+            <img class="art-two" src="{{ 'categorized_product/bioderma/1 (1).png'|plain_static }}" alt="Bioderma Atoderm cream">
+            <img class="art-three" src="{{ 'categorized_product/1/1 (002).png'|plain_static }}" alt="Resistance band">
         </div>
     </section>
 
