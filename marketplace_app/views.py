@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
+from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.db.models import Sum, Count
 from .models import Category, Product, Order, OrderItem, DiagnosisProductMap, PatientProductRecommendation
@@ -72,9 +73,14 @@ def marketplace(request):
 
     featured = Product.objects.filter(is_featured=True, in_stock=True).exclude(category__name='Pharmacy').select_related('category')[:4]
 
+    # 259+ products rendered in one page was slow and image-heavy -- page it.
+    paginator = Paginator(products, 24)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
     context = {
         'categories': categories,
-        'products': products,
+        'products': page_obj,
+        'page_obj': page_obj,
         'featured': featured,
         'selected_category': category_id,
         'search': search,
