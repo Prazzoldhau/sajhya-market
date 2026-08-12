@@ -105,7 +105,7 @@
                 {% else %}All Products
                 {% endif %}
             </h2>
-            <span class="store-sub">{{ products|length }} item{{ products|length|pluralize }}</span>
+            <span class="store-sub">{{ page_obj.paginator.count }} item{{ page_obj.paginator.count|pluralize }}</span>
         </div>
 
         {% if products %}
@@ -129,6 +129,18 @@
         {% else %}
         <div class="store-empty">
             <p>No products found. Try a different search or category.</p>
+        </div>
+        {% endif %}
+
+        {% if page_obj.paginator.num_pages > 1 %}
+        <div class="store-pagination">
+            {% if page_obj.has_previous %}
+            <a href="?{% if selected_category %}category={{ selected_category }}&{% endif %}{% if search %}search={{ search }}&{% endif %}page={{ page_obj.previous_page_number }}" class="store-page-link">← Prev</a>
+            {% endif %}
+            <span class="store-page-status">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+            <a href="?{% if selected_category %}category={{ selected_category }}&{% endif %}{% if search %}search={{ search }}&{% endif %}page={{ page_obj.next_page_number }}" class="store-page-link">Next →</a>
+            {% endif %}
         </div>
         {% endif %}
     </section>

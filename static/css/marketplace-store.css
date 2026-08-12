@@ -369,6 +369,37 @@ body > .container.mt-3:empty {
     color: var(--store-muted);
 }
 
+.store-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.25rem;
+    margin-top: 2.5rem;
+}
+
+.store-page-link {
+    padding: 0.6rem 1.3rem;
+    border-radius: 999px;
+    border: 1px solid var(--store-border);
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--store-ink);
+    background: #fff;
+    white-space: nowrap;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.store-page-link:hover {
+    border-color: var(--store-primary);
+    background: var(--store-primary-soft);
+    color: var(--store-primary);
+}
+
+.store-page-status {
+    font-size: 0.85rem;
+    color: var(--store-muted);
+}
+
 /* ---------- Trust badges ---------- */
 
 .store-trust {
