@@ -2,141 +2,181 @@
 {% load static %}
 {% load marketplace_extras %}
 
-{% block title %}Physio Marketplace — Sajhya{% endblock %}
+{% block title %}Sajhya Marketplace{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/marketplace-store.css' %}">
+{% endblock %}
 
 {% block content %}
+<div class="store">
 
-<div class="container mkt-container">
+    <!-- Header -->
+    <header class="store-header">
+        <div class="store-wrap store-header-row">
+            <a href="{% url 'marketplace' %}" class="store-logo">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 21s-7.2-4.6-10-9.3C.4 8.4 1.8 4.8 5.2 3.8c2-.6 4 .1 5.3 1.8L12 7l1.5-1.4c1.3-1.7 3.3-2.4 5.3-1.8 3.4 1 4.8 4.6 3.2 7.9C19.2 16.4 12 21 12 21z" fill="#2f5fdb"/>
+                    <path d="M8.5 12.5l1.8-2.7 1.6 3.4 1.9-3.9 1.4 2.1" stroke="#fff" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+                Sajhya
+            </a>
 
-    <!-- Hero Banner -->
-    <div class="mkt-hero">
-        <div class="mkt-hero-text">
-            <h1>Sajhya Marketplace</h1>
-            <p>Everything for your health, recovery &amp; wellbeing</p>
-        </div>
-        <form class="mkt-search-form" method="GET" action="">
-            {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category }}">{% endif %}
-            <input type="text" name="search" value="{{ search }}" placeholder="Search products..." class="mkt-search-input">
-            <button type="submit" class="mkt-search-btn">🔍 Search</button>
-            {% if search %}<a href="?{% if selected_category %}category={{ selected_category }}{% endif %}" class="mkt-clear-btn">✕ Clear</a>{% endif %}
-        </form>
-            <div class="mkt-nav-right">
-                {% if request.user.is_staff %}
-                <a href="{% url 'vendor-orders' %}" class="mkt-back-btn">📦 Vendor</a>
-                {% endif %}
-                <a href="{% url 'pharmacy' %}" class="mkt-back-btn">💊 Pharmacy</a>
-                <a href="{% url 'view-cart' %}" class="mkt-cart-btn">
-                    🛒 Cart
-                    {% if cart_count > 0 %}
-                    <span class="mkt-cart-badge">{{ cart_count }}</span>
-                    {% endif %}
+            <nav class="store-nav">
+                <a href="{% url 'marketplace' %}" class="is-active">Store</a>
+                <a href="#categories">Categories</a>
+                <a href="{% url 'marketplace' %}">Brands</a>
+                <a href="{% url 'pharmacy' %}">For Professionals</a>
+            </nav>
+
+            <form class="store-search" method="GET" action="{% url 'marketplace' %}">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
+                    <path d="M21 21l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <input type="text" name="search" value="{{ search }}" placeholder="Search for products...">
+            </form>
+
+            <div class="store-header-icons">
+                <a href="{% url 'view-cart' %}" class="store-icon-btn" title="Cart">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M6 6h15l-1.5 9h-12L6 6z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                        <path d="M6 6L4.5 3H2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                        <circle cx="10" cy="20" r="1.4" fill="currentColor"/>
+                        <circle cx="17" cy="20" r="1.4" fill="currentColor"/>
+                    </svg>
+                    {% if cart_count > 0 %}<span class="store-icon-badge">{{ cart_count }}</span>{% endif %}
                 </a>
-                <a href="javascript:history.back()" class="mkt-back-btn">← Back</a>
+                <a href="{% url 'login' %}" class="store-icon-btn" title="Account">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="12" cy="8" r="3.4" stroke="currentColor" stroke-width="1.8"/>
+                        <path d="M4.5 20c1.4-3.4 4.4-5.2 7.5-5.2s6.1 1.8 7.5 5.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    </svg>
+                </a>
             </div>
-    </div>
+        </div>
+    </header>
 
-    <!-- Category Pills -->
-    <div class="mkt-category-strip">
-        <a href="{% url 'marketplace' %}" class="mkt-cat-pill {% if not selected_category %}active{% endif %}">
-            🏥 All Products
-        </a>
-        {% for cat in categories %}
-        <a href="?category={{ cat.id }}" class="mkt-cat-pill {% if selected_category == cat.id|stringformat:'s' %}active{% endif %}">
-            {{ cat.icon }} {{ cat.name }}
-        </a>
-        {% endfor %}
-    </div>
+    <!-- Hero -->
+    <section class="store-wrap store-hero">
+        <div>
+            <span class="store-hero-eyebrow">Sajhya Marketplace</span>
+            <h1>Better care.<br>Better you.</h1>
+            <p>Handpicked health and wellness products you can trust.</p>
+            <a href="#all-products" class="store-btn-primary">Shop All Products</a>
+        </div>
+        <div class="store-hero-art">
+            <div class="blob"></div>
+            <img class="art-main" src="{% static 'categorized_product/5/5 (001).png' %}" alt="Dumbbells">
+            <img class="art-two" src="{% static 'categorized_product/bioderma/1 (1).png' %}" alt="Bioderma Atoderm cream">
+            <img class="art-three" src="{% static 'categorized_product/1/1 (002).png' %}" alt="Resistance band">
+        </div>
+    </section>
 
-    <!-- Featured Section (main page only) -->
+    <!-- Category strip -->
+    <section class="store-wrap store-categories" id="categories">
+        <div class="store-cat-row">
+            {% for cat in categories %}
+            <a href="?category={{ cat.id }}" class="store-cat {% if selected_category == cat.id|stringformat:'s' %}is-active{% endif %}">
+                <span class="store-cat-circle">{{ cat.icon|default:"🏥" }}</span>
+                <span>{{ cat.name }}</span>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Featured Products -->
     {% if not selected_category and not search and featured %}
-    <div class="mkt-section-header">
-        <h2>⭐ Featured Products</h2>
-        <span class="mkt-section-sub">Hand-picked essentials across every category</span>
-    </div>
-    <div class="mkt-product-grid mkt-featured-grid">
-        {% for product in featured %}
-        <div class="mkt-product-card mkt-featured-card">
-            <a href="{% url 'product-detail' product.id %}" class="mkt-product-link">
-                <div class="mkt-product-img">
+    <section class="store-wrap store-section">
+        <div class="store-section-head">
+            <h2>Featured Products</h2>
+            <a href="#all-products" class="store-view-all">View all</a>
+        </div>
+        <div class="store-grid">
+            {% for product in featured %}
+            <a href="{% url 'product-detail' product.id %}" class="store-card">
+                <div class="store-card-img">
                     {% if product.image %}
                         <img src="{{ product.image|plain_static }}" alt="{{ product.name }}">
                     {% else %}
-                        <div class="mkt-img-placeholder">{{ product.category.icon|default:"📦" }}</div>
+                        <span class="placeholder">{{ product.category.icon|default:"📦" }}</span>
                     {% endif %}
-                    <span class="mkt-featured-tag">⭐ Featured</span>
+                </div>
+                <div class="store-card-body">
+                    <p class="store-card-name">{{ product.name }}</p>
+                    <div class="store-card-price">NPR {{ product.price }}</div>
                 </div>
             </a>
-            <div class="mkt-product-body">
-                <span class="mkt-cat-badge">{{ product.category.name|default:"General" }}</span>
-                <a href="{% url 'product-detail' product.id %}" class="mkt-product-link">
-                    <h3 class="mkt-product-name">{{ product.name }}</h3>
-                </a>
-                <p class="mkt-product-desc">{{ product.description|truncatewords:12 }}</p>
-                <div class="mkt-product-footer">
-                    <div class="mkt-price">
-                        NPR {{ product.price }}
-                    </div>
-                    <div class="mkt-card-actions">
-                        <a href="{% url 'product-detail' product.id %}" class="mkt-btn-view">Details</a>
-                    </div>
-                </div>
-            </div>
+            {% endfor %}
         </div>
-        {% endfor %}
-    </div>
+    </section>
     {% endif %}
 
     <!-- All Products -->
-    <div class="mkt-section-header">
-        <h2>
-            {% if search %}Results for "{{ search }}"
-            {% elif selected_category %}Products
-            {% else %}All Products
-            {% endif %}
-        </h2>
-        <span class="mkt-section-sub mkt-count">{{ products|length }} item{{ products|length|pluralize }} found</span>
-    </div>
+    <section class="store-wrap store-section" id="all-products">
+        <div class="store-section-head">
+            <h2>
+                {% if search %}Results for "{{ search }}"
+                {% elif selected_category %}Products
+                {% else %}All Products
+                {% endif %}
+            </h2>
+            <span class="store-sub">{{ products|length }} item{{ products|length|pluralize }}</span>
+        </div>
 
-    {% if products %}
-    <div class="mkt-product-grid">
-        {% for product in products %}
-        <div class="mkt-product-card">
-            <a href="{% url 'product-detail' product.id %}" class="mkt-product-link">
-                <div class="mkt-product-img">
+        <div class="store-filter-row">
+            <a href="{% url 'marketplace' %}" class="store-pill {% if not selected_category %}is-active{% endif %}">All</a>
+            {% for cat in categories %}
+            <a href="?category={{ cat.id }}" class="store-pill {% if selected_category == cat.id|stringformat:'s' %}is-active{% endif %}">{{ cat.icon }} {{ cat.name }}</a>
+            {% endfor %}
+        </div>
+
+        {% if products %}
+        <div class="store-grid">
+            {% for product in products %}
+            <a href="{% url 'product-detail' product.id %}" class="store-card">
+                <div class="store-card-img">
                     {% if product.image %}
                         <img src="{{ product.image|plain_static }}" alt="{{ product.name }}">
                     {% else %}
-                        <div class="mkt-img-placeholder">{{ product.category.icon|default:"📦" }}</div>
+                        <span class="placeholder">{{ product.category.icon|default:"📦" }}</span>
                     {% endif %}
                 </div>
-            </a>
-            <div class="mkt-product-body">
-                <span class="mkt-cat-badge">{{ product.category.name|default:"General" }}</span>
-                <a href="{% url 'product-detail' product.id %}" class="mkt-product-link">
-                    <h3 class="mkt-product-name">{{ product.name }}</h3>
-                </a>
-                <p class="mkt-product-desc">{{ product.description|truncatewords:10 }}</p>
-                <div class="mkt-product-footer">
-                    <div class="mkt-price">
-                        NPR {{ product.price }}
-                    </div>
-                    <div class="mkt-card-actions">
-                        <a href="{% url 'product-detail' product.id %}" class="mkt-btn-view">Details</a>
-                    </div>
+                <div class="store-card-body">
+                    <p class="store-card-name">{{ product.name }}</p>
+                    <div class="store-card-price">NPR {{ product.price }}</div>
                 </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="store-empty">
+            <p>No products found. Try a different search or category.</p>
+        </div>
+        {% endif %}
+    </section>
+
+    <!-- Trust badges -->
+    <section class="store-wrap store-trust">
+        <div class="store-trust-row">
+            <div class="store-trust-item">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="10" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M8 10V7a4 4 0 018 0v3" stroke="currentColor" stroke-width="1.6"/></svg>
+                <div><strong>Secure Payments</strong><span>100% safe &amp; secure</span></div>
+            </div>
+            <div class="store-trust-item">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 7h11v9H3z" stroke="currentColor" stroke-width="1.6"/><path d="M14 10h4l3 3v3h-7z" stroke="currentColor" stroke-width="1.6"/><circle cx="7.5" cy="18" r="1.6" stroke="currentColor" stroke-width="1.4"/><circle cx="17.5" cy="18" r="1.6" stroke="currentColor" stroke-width="1.4"/></svg>
+                <div><strong>Fast Delivery</strong><span>Quick delivery across Nepal</span></div>
+            </div>
+            <div class="store-trust-item">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 12a8 8 0 0113.9-5.4M20 12a8 8 0 01-13.9 5.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M18 4v3.5h-3.5M6 20v-3.5h3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <div><strong>7 Days Return</strong><span>Hassle-free returns</span></div>
+            </div>
+            <div class="store-trust-item">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3l7 3v6c0 4.5-3 7.7-7 9-4-1.3-7-4.5-7-9V6l7-3z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <div><strong>Genuine Products</strong><span>100% authentic</span></div>
             </div>
         </div>
-        {% endfor %}
-    </div>
-    {% else %}
-    <div class="empty-state">
-        <div style="font-size:3rem; margin-bottom:1rem;">🔍</div>
-        <h3>No products found</h3>
-        <p>Try a different search term or browse all categories.</p>
-        <a href="{% url 'marketplace' %}" class="mkt-btn-primary" style="margin-top:1rem; display:inline-block;">Browse All Products</a>
-    </div>
-    {% endif %}
+    </section>
 
-</div><!-- /container -->
+</div>
 {% endblock %}
-

@@ -1,0 +1,621 @@
+/* =====================================================
+   Sajhya Marketplace -- Storefront redesign
+   Deliberately isolated from custom.css: every rule here is scoped
+   under .store, and nothing on this page uses the old .mkt-* classes,
+   so this file never has to fight the ~2000 lines of shared site CSS.
+   Loaded only on marketplace.html via {% block extra_css %}.
+   ===================================================== */
+
+/* base.html always renders an empty Bootstrap .container.mt-3 above <main>
+   for Django messages; with no message its margin still exposes custom.css's
+   global purple body gradient as a sliver above this page's white header.
+   The old hero's own gradient used to mask that seam -- this one needs it
+   overridden explicitly. Safe to set unscoped since this file only loads
+   on this page. */
+html, body {
+    background: #fff !important;
+}
+
+/* the actual source of the gap: base.html's empty Bootstrap
+   .container.mt-3 wrapper for Django messages still carries its
+   margin-top even with nothing inside it */
+body > .container.mt-3:empty {
+    margin: 0 !important;
+}
+
+.store {
+    --store-primary: #2f5fdb;
+    --store-primary-dark: #1f47b8;
+    --store-primary-soft: #eaf0fe;
+    --store-ink: #14181f;
+    --store-muted: #6b7280;
+    --store-border: #e7e9ee;
+    --store-surface: #f6f7f9;
+    --store-radius: 16px;
+
+    background: #fff;
+    color: var(--store-ink);
+    font-family: 'Poppins', sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+.store * {
+    box-sizing: border-box;
+}
+
+.store a {
+    text-decoration: none;
+    color: inherit;
+}
+
+.store img {
+    max-width: 100%;
+    display: block;
+}
+
+.store-wrap {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 2rem;
+}
+
+/* ---------- Header ---------- */
+
+.store-header {
+    border-bottom: 1px solid var(--store-border);
+    padding: 1.1rem 0;
+}
+
+.store-header-row {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.store-logo {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--store-ink);
+    flex-shrink: 0;
+}
+
+.store-logo svg {
+    width: 26px;
+    height: 26px;
+}
+
+.store-nav {
+    display: flex;
+    align-items: center;
+    gap: 1.75rem;
+    flex-shrink: 0;
+}
+
+.store-nav a {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--store-muted);
+    padding-bottom: 4px;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+}
+
+.store-nav a:hover {
+    color: var(--store-ink);
+}
+
+.store-nav a.is-active {
+    color: var(--store-ink);
+    font-weight: 600;
+    border-bottom-color: var(--store-primary);
+}
+
+.store-search {
+    flex: 1;
+    min-width: 0; /* flex items don't shrink below their content's intrinsic
+        width by default -- without this the <input> forces the whole
+        header row to overflow instead of wrapping/shrinking on narrow
+        screens */
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: var(--store-surface);
+    border: 1px solid transparent;
+    border-radius: 999px;
+    padding: 0.65rem 1.1rem;
+    max-width: 380px;
+    margin-left: auto;
+}
+
+.store-search:focus-within {
+    border-color: var(--store-primary);
+    background: #fff;
+}
+
+.store-search svg {
+    width: 18px;
+    height: 18px;
+    color: var(--store-muted);
+    flex-shrink: 0;
+}
+
+.store-search input {
+    border: none;
+    background: transparent;
+    outline: none;
+    font-size: 0.92rem;
+    font-family: inherit;
+    width: 100%;
+    color: var(--store-ink);
+}
+
+.store-search input::placeholder {
+    color: #9aa0ab;
+}
+
+.store-header-icons {
+    display: flex;
+    align-items: center;
+    gap: 1.1rem;
+    flex-shrink: 0;
+}
+
+.store-icon-btn {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    color: var(--store-ink);
+    transition: background 0.15s ease;
+}
+
+.store-icon-btn:hover {
+    background: var(--store-surface);
+}
+
+.store-icon-btn svg {
+    width: 21px;
+    height: 21px;
+}
+
+.store-icon-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 3px;
+    border-radius: 999px;
+    background: var(--store-primary);
+    color: #fff;
+    font-size: 0.62rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+/* ---------- Hero ---------- */
+
+.store-hero {
+    padding: 4rem 0 3rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    gap: 2rem;
+}
+
+.store-hero-eyebrow {
+    display: inline-block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--store-primary);
+    background: var(--store-primary-soft);
+    padding: 0.3rem 0.85rem;
+    border-radius: 999px;
+    margin-bottom: 1.1rem;
+}
+
+.store-hero h1 {
+    font-size: 3.1rem;
+    line-height: 1.08;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin: 0 0 1.1rem;
+    color: var(--store-ink);
+}
+
+.store-hero p {
+    font-size: 1.08rem;
+    color: var(--store-muted);
+    max-width: 30rem;
+    margin: 0 0 1.9rem;
+    line-height: 1.6;
+}
+
+.store-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--store-primary);
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.98rem;
+    padding: 0.9rem 1.8rem;
+    border-radius: 999px;
+    transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.store-btn-primary:hover {
+    background: var(--store-primary-dark);
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+.store-hero-art {
+    position: relative;
+    height: 380px;
+}
+
+.store-hero-art .blob {
+    position: absolute;
+    inset: 8% 6%;
+    background: linear-gradient(135deg, var(--store-primary-soft), #f3f6ff);
+    border-radius: 40% 60% 55% 45% / 50% 45% 55% 50%;
+}
+
+.store-hero-art img {
+    position: absolute;
+    object-fit: contain;
+    filter: drop-shadow(0 18px 30px rgba(20, 24, 31, 0.14));
+}
+
+.store-hero-art .art-main {
+    width: 46%;
+    left: 6%;
+    top: 12%;
+}
+
+.store-hero-art .art-two {
+    width: 30%;
+    right: 4%;
+    top: 6%;
+}
+
+.store-hero-art .art-three {
+    width: 34%;
+    right: 10%;
+    bottom: 4%;
+}
+
+/* ---------- Category strip ---------- */
+
+.store-categories {
+    padding: 2.75rem 0 0.5rem;
+    border-top: 1px solid var(--store-border);
+}
+
+.store-cat-row {
+    display: flex;
+    gap: 2.2rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+    scrollbar-width: none;
+}
+
+.store-cat-row::-webkit-scrollbar {
+    display: none;
+}
+
+.store-cat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.65rem;
+    flex: 0 0 auto;
+    width: 92px;
+    text-align: center;
+}
+
+.store-cat-circle {
+    width: 74px;
+    height: 74px;
+    border-radius: 50%;
+    background: var(--store-surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.9rem;
+    border: 1px solid var(--store-border);
+    transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.store-cat:hover .store-cat-circle {
+    border-color: var(--store-primary);
+    transform: translateY(-2px);
+}
+
+.store-cat.is-active .store-cat-circle {
+    border-color: var(--store-primary);
+    background: var(--store-primary-soft);
+}
+
+.store-cat span {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--store-ink);
+    line-height: 1.25;
+}
+
+/* ---------- Section header ---------- */
+
+.store-section {
+    padding: 3rem 0;
+}
+
+.store-section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 1.6rem;
+}
+
+.store-section-head h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--store-ink);
+}
+
+.store-section-head .store-sub {
+    font-size: 0.88rem;
+    color: var(--store-muted);
+    font-weight: 400;
+    margin-left: 0.6rem;
+}
+
+.store-view-all {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--store-primary);
+}
+
+.store-view-all:hover {
+    text-decoration: underline;
+}
+
+/* ---------- Product grid ---------- */
+
+.store-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+}
+
+.store-card {
+    display: block;
+    background: #fff;
+    border: 1px solid var(--store-border);
+    border-radius: var(--store-radius);
+    overflow: hidden;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.store-card:hover {
+    box-shadow: 0 16px 32px rgba(20, 24, 31, 0.09);
+    transform: translateY(-3px);
+}
+
+.store-card-img {
+    aspect-ratio: 1 / 1;
+    background: var(--store-surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.store-card-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 10px;
+}
+
+.store-card-img .placeholder {
+    font-size: 2.2rem;
+    opacity: 0.35;
+}
+
+.store-card-body {
+    padding: 0.9rem 1rem 1.1rem;
+}
+
+.store-card-name {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--store-ink);
+    line-height: 1.35;
+    margin: 0 0 0.5rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 2.5em;
+}
+
+.store-card-price {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--store-ink);
+}
+
+/* ---------- Filter pills (All Products) ---------- */
+
+.store-filter-row {
+    display: flex;
+    gap: 0.6rem;
+    overflow-x: auto;
+    margin-bottom: 1.6rem;
+    scrollbar-width: none;
+}
+
+.store-filter-row::-webkit-scrollbar {
+    display: none;
+}
+
+.store-pill {
+    flex: 0 0 auto;
+    padding: 0.5rem 1.1rem;
+    border-radius: 999px;
+    border: 1px solid var(--store-border);
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--store-muted);
+    background: #fff;
+    white-space: nowrap;
+}
+
+.store-pill:hover {
+    border-color: var(--store-primary);
+    color: var(--store-ink);
+}
+
+.store-pill.is-active {
+    background: var(--store-ink);
+    border-color: var(--store-ink);
+    color: #fff;
+}
+
+.store-empty {
+    padding: 3rem 0;
+    text-align: center;
+    color: var(--store-muted);
+}
+
+/* ---------- Trust badges ---------- */
+
+.store-trust {
+    border-top: 1px solid var(--store-border);
+    padding: 2.75rem 0;
+}
+
+.store-trust-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+}
+
+.store-trust-item {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.store-trust-item svg {
+    width: 30px;
+    height: 30px;
+    color: var(--store-primary);
+    flex-shrink: 0;
+}
+
+.store-trust-item strong {
+    display: block;
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: var(--store-ink);
+}
+
+.store-trust-item span {
+    font-size: 0.82rem;
+    color: var(--store-muted);
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 992px) {
+    .store-wrap {
+        padding: 0 1.25rem;
+    }
+
+    .store-nav {
+        display: none;
+    }
+
+    .store-hero {
+        grid-template-columns: 1fr;
+        padding-top: 2.5rem;
+    }
+
+    .store-hero h1 {
+        font-size: 2.3rem;
+    }
+
+    .store-hero-art {
+        height: 260px;
+        order: -1;
+    }
+
+    .store-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .store-trust-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 560px) {
+    .store-header-row {
+        flex-wrap: wrap;
+    }
+
+    .store-search {
+        order: 3;
+        max-width: none;
+        width: 100%;
+        margin-left: 0;
+    }
+
+    .store-header-icons {
+        margin-left: auto;
+    }
+
+    .store-hero h1 {
+        font-size: 1.9rem;
+    }
+
+    .store-hero-art {
+        height: 200px;
+    }
+
+    .store-cat {
+        width: 78px;
+    }
+
+    .store-cat-circle {
+        width: 62px;
+        height: 62px;
+        font-size: 1.5rem;
+    }
+
+    .store-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.9rem;
+    }
+
+    .store-card-body {
+        padding: 0.7rem 0.75rem 0.9rem;
+    }
+
+    .store-trust-row {
+        grid-template-columns: 1fr;
+    }
+}
