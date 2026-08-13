@@ -55,6 +55,16 @@
                     <span class="mkt-detail-label">Delivery Address</span>
                     <span class="mkt-detail-val">{{ order.delivery_address }}</span>
                 </div>
+                <div class="mkt-order-detail-row">
+                    <span class="mkt-detail-label">Delivery Pool</span>
+                    <span class="mkt-detail-val">
+                        {% if order.delivery %}
+                            <a href="/admin/delivery_app/delivery/{{ order.delivery.id }}/change/">{{ order.delivery.get_status_display }}{% if order.delivery.rider %} — {{ order.delivery.rider }}{% endif %}</a>
+                        {% else %}
+                            Not yet in delivery pool
+                        {% endif %}
+                    </span>
+                </div>
                 {% if order.notes %}
                 <div class="mkt-order-detail-row">
                     <span class="mkt-detail-label">Notes</span>

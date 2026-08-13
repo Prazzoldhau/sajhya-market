@@ -9,6 +9,7 @@ class User(AbstractUser):
         ('personal', 'Personal Account User'),
         ('clinic', 'Clinic User'),
         ('enterprise', 'Enterprise User'),
+        ('rider', 'Rider'),
     )
     phone = models.CharField(max_length=15)
     license_number = models.CharField(max_length=20, default='temporary')

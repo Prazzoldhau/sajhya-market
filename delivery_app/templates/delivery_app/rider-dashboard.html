@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block title %}My Deliveries{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5" style="max-width: 560px;">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="mb-0">{{ rider.rider_code }}</h4>
+            <small class="text-muted">{{ rider.user.get_full_name|default:rider.user.username }}</small>
+        </div>
+        <form method="post" action="{% url 'rider-toggle-availability' %}">
+            {% csrf_token %}
+            <button type="submit"
+                    class="btn btn-sm {% if rider.status == 'offline' %}btn-outline-secondary{% else %}btn-success{% endif %}">
+                {% if rider.status == 'offline' %}Go Available{% else %}{{ rider.get_status_display }} — Go Offline{% endif %}
+            </button>
+        </form>
+    </div>
+
+    {% if deliveries %}
+        {% for delivery in deliveries %}
+        <div class="card mb-3 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h6 class="card-title mb-0">Order #{{ delivery.order.order_number }}</h6>
+                    <span class="badge bg-secondary">{{ delivery.get_status_display }}</span>
+                </div>
+
+                <p class="mb-1"><strong>Pickup:</strong> {{ delivery.pickup_zone|default:"—" }}</p>
+                <p class="mb-1"><strong>Drop:</strong> {{ delivery.drop_zone|default:"—" }} — {{ delivery.order.delivery_address }}</p>
+                <p class="mb-1"><strong>Customer:</strong> {{ delivery.order.customer_name }} ({{ delivery.order.customer_phone }})</p>
+                <p class="mb-3"><strong>COD to collect:</strong> Rs. {{ delivery.cod_amount }}</p>
+
+                <div class="d-flex flex-wrap gap-2">
+                    {% if delivery.status == 'assigned' %}
+                    <form method="post" action="{% url 'rider-update-delivery-status' delivery.id %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="status" value="picked_up">
+                        <button type="submit" class="btn btn-sm btn-primary">Picked Up</button>
+                    </form>
+                    {% endif %}
+
+                    {% if delivery.status == 'picked_up' %}
+                    <form method="post" action="{% url 'rider-update-delivery-status' delivery.id %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="status" value="in_transit">
+                        <button type="submit" class="btn btn-sm btn-primary">Start Transit</button>
+                    </form>
+                    {% endif %}
+
+                    {% if delivery.status == 'picked_up' or delivery.status == 'in_transit' %}
+                    <form method="post" action="{% url 'rider-update-delivery-status' delivery.id %}" class="d-flex align-items-center gap-1">
+                        {% csrf_token %}
+                        <input type="hidden" name="status" value="delivered">
+                        <div class="form-check form-check-inline m-0">
+                            <input class="form-check-input" type="checkbox" name="cod_collected" id="cod-{{ delivery.id }}">
+                            <label class="form-check-label small" for="cod-{{ delivery.id }}">COD collected</label>
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-success">Delivered</button>
+                    </form>
+
+                    <form method="post" action="{% url 'rider-update-delivery-status' delivery.id %}" class="d-flex align-items-center gap-1">
+                        {% csrf_token %}
+                        <input type="hidden" name="status" value="failed">
+                        <input type="text" name="failure_reason" class="form-control form-control-sm" placeholder="Reason" style="width: 8rem;">
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Failed</button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p class="text-muted">No active deliveries right now.</p>
+    {% endif %}
+</div>
+{% endblock %}
