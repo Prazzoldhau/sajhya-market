@@ -158,6 +158,8 @@ def login_view(request):
                 return redirect('personal-dashboard')
             elif user.user_type == 'enterprise':
                 return redirect('enterprise-dashboard')
+            elif user.user_type == 'rider':
+                return redirect('rider-dashboard')
             else:
                 messages.error(request, 'User type not recognized.')
         else:

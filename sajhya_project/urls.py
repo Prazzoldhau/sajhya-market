@@ -25,6 +25,7 @@ urlpatterns = [
     path ('visit-notes/', include('visit_notes_app.urls')),
     path ('physio-api/', include('physio_api_app.urls')),
     path ('vendor-api/', include('vendor_api_app.urls')),
+    path ('delivery/', include('delivery_app.urls')),
 
 ]
 
