@@ -26,10 +26,17 @@ def plain_static(image_path):
     return f'{settings.STATIC_URL}{quote(str(image_path), safe="/")}'
 
 
-# Cropped from the composite "logo for sajhya.png" the user provided
-# (2026-08-13) -- one oval photo per category, static/categorized_product/
-# category_icons/. Only these 11 exist; categories not in this dict fall
-# back to their `icon` emoji (or the default) in the template.
+# Cropped from composite reference images the user provided -- one photo per
+# category, static/categorized_product/category_icons/. Categories not in
+# this dict fall back to their `icon` emoji (or the default) in the template.
+#
+# 2026-08-13 "logo for sajhya.png": Exercise Equipment, Gels & Lubricants
+# 2026-08-14 "part1.png"/"part2.png": replaced Behavioural Therapy, Bioderma,
+#   Diapers, Electrical Therapy, Fixderma, Hospital Linens & Accessories,
+#   Kleida, Lab Coats, Massage Tools with new versions; added the rest.
+#   (Nurse & Staff Uniforms, Patient Gowns, Scrubs, Surgical Wear,
+#   Slurrp Farm don't exist in every DB yet -- pending category_icons
+#   entries here don't hurt, they're just unused until the category exists.)
 CATEGORY_ICON_IMAGES = {
     'Behavioural Therapy': 'behavioural-therapy.png',
     'Bioderma': 'bioderma.png',
@@ -42,6 +49,17 @@ CATEGORY_ICON_IMAGES = {
     'Kleida': 'kleida.png',
     'Lab Coats': 'lab-coats.png',
     'Massage Tools': 'massage-tools.png',
+    'Nurse & Staff Uniforms': 'nurse-staff-uniforms.png',
+    'Occupational Therapy': 'occupational-therapy.png',
+    'Patient Gowns': 'patient-gowns.png',
+    'Resistance & Bands': 'resistance-bands.png',
+    'Scrubs': 'scrubs.png',
+    'Slurrp Farm': 'slurrp-farm.png',
+    'Speech Therapy': 'speech-therapy.png',
+    'Surgical': 'surgical.png',
+    'Surgical Wear': 'surgical-wear.png',
+    'Taping & Wrapping': 'taping-wrapping.png',
+    'Thermal Therapy': 'thermal-therapy.png',
 }
 
 
