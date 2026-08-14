@@ -24,3 +24,32 @@ def plain_static(image_path):
     if not image_path:
         return ''
     return f'{settings.STATIC_URL}{quote(str(image_path), safe="/")}'
+
+
+# Cropped from the composite "logo for sajhya.png" the user provided
+# (2026-08-13) -- one oval photo per category, static/categorized_product/
+# category_icons/. Only these 11 exist; categories not in this dict fall
+# back to their `icon` emoji (or the default) in the template.
+CATEGORY_ICON_IMAGES = {
+    'Behavioural Therapy': 'behavioural-therapy.png',
+    'Bioderma': 'bioderma.png',
+    'Diapers': 'diapers.png',
+    'Electrical Therapy': 'electrical-therapy.png',
+    'Exercise Equipment': 'exercise-equipment.png',
+    'Fixderma': 'fixderma.png',
+    'Gels & Lubricants': 'gels-lubricants.png',
+    'Hospital Linens & Accessories': 'hospital-linens-accessories.png',
+    'Kleida': 'kleida.png',
+    'Lab Coats': 'lab-coats.png',
+    'Massage Tools': 'massage-tools.png',
+}
+
+
+@register.filter(name='category_icon_image')
+def category_icon_image(category_name):
+    """Static URL for that category's cropped photo, or '' if none exists
+    yet -- template falls back to the emoji icon in that case."""
+    filename = CATEGORY_ICON_IMAGES.get(category_name)
+    if not filename:
+        return ''
+    return f'{settings.STATIC_URL}categorized_product/category_icons/{quote(filename)}'

@@ -62,7 +62,15 @@
         <div class="store-cat-row">
             {% for cat in categories %}
             <a href="?category={{ cat.id }}" class="store-cat {% if selected_category == cat.id|stringformat:'s' %}is-active{% endif %}">
-                <span class="store-cat-circle">{{ cat.icon|default:"🏥" }}</span>
+                <span class="store-cat-circle">
+                    {% with icon_url=cat.name|category_icon_image %}
+                        {% if icon_url %}
+                            <img src="{{ icon_url }}" alt="{{ cat.name }}">
+                        {% else %}
+                            {{ cat.icon|default:"🏥" }}
+                        {% endif %}
+                    {% endwith %}
+                </span>
                 <span>{{ cat.name }}</span>
             </a>
             {% endfor %}
