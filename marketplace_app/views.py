@@ -68,8 +68,21 @@ def marketplace(request):
         products = products.filter(category_id=category_id)
 
     search = request.GET.get('search', '').strip()
+    condition_matches = None
+    condition_label = ''
     if search:
         products = products.filter(name__icontains=search)
+        # A patient searching "knee pain" won't match any product *name*, but
+        # might match a condition we already curate products for (physios
+        # build this list via DiagnosisProductMap) -- surface that as a
+        # distinct "Recommended for X" row, most-purchased first, same
+        # proxy for "most effective" the rest of the catalog already uses
+        # since there's no ratings/reviews data to rank on.
+        condition_products, condition_label = get_recommended_for_diagnosis(search)
+        if condition_label:
+            condition_matches = condition_products.select_related('category')\
+                .annotate(order_count=Count('orderitem'))\
+                .order_by('-order_count', 'name')[:8]
 
     featured = Product.objects.filter(is_featured=True, in_stock=True).exclude(category__name='Pharmacy').select_related('category')[:4]
 
@@ -82,6 +95,8 @@ def marketplace(request):
         'products': page_obj,
         'page_obj': page_obj,
         'featured': featured,
+        'condition_matches': condition_matches,
+        'condition_label': condition_label,
         'selected_category': category_id,
         'search': search,
         'cart_count': get_cart_count(request),

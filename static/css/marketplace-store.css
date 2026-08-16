@@ -296,6 +296,31 @@ body > .container.mt-3:empty {
     margin-left: 0.6rem;
 }
 
+.store-condition-section {
+    background: var(--store-primary-soft);
+    border-radius: var(--store-radius);
+    padding: 1.75rem 2rem 2rem;
+}
+
+.store-condition-section .store-section-head .store-sub {
+    display: block;
+    margin-left: 0;
+    margin-top: 0.2rem;
+}
+
+.store-condition-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 1;
+    background: var(--store-primary);
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.3rem 0.7rem;
+    border-radius: 999px;
+}
+
 .store-view-all {
     font-size: 0.9rem;
     font-weight: 600;
@@ -315,6 +340,7 @@ body > .container.mt-3:empty {
 }
 
 .store-card {
+    position: relative;
     display: block;
     background: #fff;
     border: 1px solid var(--store-border);
