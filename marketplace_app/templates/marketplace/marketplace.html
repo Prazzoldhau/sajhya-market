@@ -74,6 +74,34 @@
         </div>
     </section>
 
+    <!-- Recommended for [condition] -- search matched a known diagnosis/condition -->
+    {% if condition_matches %}
+    <section class="store-wrap store-section store-condition-section">
+        <div class="store-section-head">
+            <h2>Recommended for {{ condition_label }}</h2>
+            <span class="store-sub">Curated by physios for this condition</span>
+        </div>
+        <div class="store-grid">
+            {% for product in condition_matches %}
+            <a href="{% url 'product-detail' product.id %}" class="store-card">
+                {% if forloop.first %}<span class="store-condition-badge">Most recommended</span>{% endif %}
+                <div class="store-card-img">
+                    {% if product.image %}
+                        <img src="{{ product.image|plain_static }}" alt="{{ product.name }}">
+                    {% else %}
+                        <span class="placeholder">{{ product.category.icon|default:"📦" }}</span>
+                    {% endif %}
+                </div>
+                <div class="store-card-body">
+                    <p class="store-card-name">{{ product.name }}</p>
+                    <div class="store-card-price">NPR {{ product.price }}</div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
     <!-- Featured Products -->
     {% if not selected_category and not search and featured %}
     <section class="store-wrap store-section">
