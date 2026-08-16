@@ -2,88 +2,84 @@
 {% load static %}
 {% load marketplace_extras %}
 
-{% block title %}Your Cart — Physio Marketplace{% endblock %}
+{% block title %}Your Cart — Sajhya Marketplace{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ 'css/marketplace-store.css'|plain_static }}">
+{% endblock %}
 
 {% block content %}
-<!-- Navbar -->
-<div class="navbar">
-    <div class="logo">Sa:jhya</div>
-    <div class="mkt-nav-center">
-        <span class="mkt-nav-title">🛒 Your Cart</span>
-    </div>
-    <div class="mkt-nav-right">
-        <a href="{% url 'marketplace' %}" class="mkt-back-btn">← Continue Shopping</a>
-    </div>
-</div>
+<div class="store">
 
-<div class="container mkt-container">
+    {% include 'marketplace/_store_header.html' %}
 
-    {% if cart_items %}
-    <div class="mkt-cart-layout">
+    <div class="store-wrap">
 
-        <!-- Cart Items -->
-        <div class="mkt-cart-items">
-            <h2 class="mkt-cart-heading">Cart Items <span class="mkt-count-tag">{{ cart_count }} item{{ cart_count|pluralize }}</span></h2>
+        {% if cart_items %}
+        <div class="store-layout">
 
-            {% for item in cart_items %}
-            <div class="mkt-cart-row">
-                {% if item.image %}
-                <img src="{{ item.image|plain_static }}" alt="{{ item.name }}" class="mkt-cart-icon-img">
-                {% else %}
-                <div class="mkt-cart-icon">📦</div>
-                {% endif %}
-                <div class="mkt-cart-item-info">
-                    <div class="mkt-cart-item-name">{{ item.name }}</div>
-                    <div class="mkt-cart-item-meta">{{ item.category }}</div>
-                    <div class="mkt-cart-item-price">NPR {{ item.price }} each</div>
-                </div>
-                <div class="mkt-cart-qty-block">
-                    <form method="POST" action="{% url 'update-cart' item.product_id %}" class="mkt-qty-form">
+            <!-- Cart Items -->
+            <div>
+                <h2 class="store-heading">Cart Items <span class="store-count-tag">{{ cart_count }} item{{ cart_count|pluralize }}</span></h2>
+
+                {% for item in cart_items %}
+                <div class="store-cart-row">
+                    {% if item.image %}
+                    <img src="{{ item.image|plain_static }}" alt="{{ item.name }}" class="store-cart-icon-img">
+                    {% else %}
+                    <div class="store-cart-icon">📦</div>
+                    {% endif %}
+                    <div class="store-cart-item-info">
+                        <div class="store-cart-item-name">{{ item.name }}</div>
+                        <div class="store-cart-item-meta">{{ item.category }}</div>
+                        <div class="store-cart-item-price">NPR {{ item.price }} each</div>
+                    </div>
+                    <form method="POST" action="{% url 'update-cart' item.product_id %}" class="store-qty-form">
                         {% csrf_token %}
-                        <button type="submit" name="quantity" value="{{ item.quantity|add:'-1' }}" class="mkt-qty-btn">−</button>
-                        <span class="mkt-qty-val">{{ item.quantity }}</span>
-                        <button type="submit" name="quantity" value="{{ item.quantity|add:'1' }}" class="mkt-qty-btn">+</button>
+                        <button type="submit" name="quantity" value="{{ item.quantity|add:'-1' }}" class="store-qty-btn">−</button>
+                        <span class="store-qty-val">{{ item.quantity }}</span>
+                        <button type="submit" name="quantity" value="{{ item.quantity|add:'1' }}" class="store-qty-btn">+</button>
                     </form>
+                    <div class="store-cart-line-total">NPR {{ item.item_total }}</div>
+                    <a href="{% url 'remove-from-cart' item.product_id %}" class="store-remove-btn" title="Remove">✕</a>
                 </div>
-                <div class="mkt-cart-line-total">NPR {{ item.item_total }}</div>
-                <a href="{% url 'remove-from-cart' item.product_id %}" class="mkt-remove-btn" title="Remove">✕</a>
+                {% endfor %}
             </div>
-            {% endfor %}
-        </div>
 
-        <!-- Order Summary -->
-        <div class="mkt-order-summary">
-            <h3 class="mkt-summary-title">Order Summary</h3>
-            <div class="mkt-summary-row">
-                <span>Subtotal</span>
-                <span>NPR {{ total }}</span>
+            <!-- Order Summary -->
+            <div class="store-summary">
+                <h3 class="store-summary-title">Order Summary</h3>
+                <div class="store-summary-row">
+                    <span>Subtotal</span>
+                    <span>NPR {{ total }}</span>
+                </div>
+                <div class="store-summary-row">
+                    <span>Delivery</span>
+                    <span class="store-free-delivery">To be quoted</span>
+                </div>
+                <div class="store-summary-divider"></div>
+                <div class="store-summary-row store-summary-total">
+                    <span>Total</span>
+                    <span>NPR {{ total }}</span>
+                </div>
+                <a href="{% url 'checkout' %}" class="store-btn-primary store-btn-full" style="margin-top:1.25rem;">
+                    Proceed to Checkout →
+                </a>
+                <a href="{% url 'marketplace' %}" class="store-btn-outline store-btn-full" style="margin-top:0.75rem;">
+                    Continue Shopping
+                </a>
             </div>
-            <div class="mkt-summary-row">
-                <span>Delivery</span>
-                <span class="mkt-free-delivery">To be quoted</span>
-            </div>
-            <div class="mkt-summary-divider"></div>
-            <div class="mkt-summary-row mkt-summary-total">
-                <span>Total</span>
-                <span>NPR {{ total }}</span>
-            </div>
-            <a href="{% url 'checkout' %}" class="mkt-btn-primary mkt-btn-full mkt-btn-lg" style="margin-top:1.5rem;">
-                Proceed to Checkout →
-            </a>
-            <a href="{% url 'marketplace' %}" class="mkt-btn-outline mkt-btn-full" style="margin-top:0.75rem;">
-                Continue Shopping
-            </a>
+
         </div>
+        {% else %}
+        <div class="store-empty">
+            <div style="font-size:3rem; margin-bottom:1rem;">🛒</div>
+            <h3>Your cart is empty</h3>
+            <p>Browse the marketplace and add items to your cart.</p>
+            <a href="{% url 'marketplace' %}" class="store-btn-primary" style="margin-top:1.5rem; display:inline-flex;">Shop Now</a>
+        </div>
+        {% endif %}
 
     </div>
-    {% else %}
-    <div class="empty-state mkt-empty-cart">
-        <div style="font-size:4rem; margin-bottom:1rem;">🛒</div>
-        <h3>Your cart is empty</h3>
-        <p>Browse the marketplace and add items to your cart.</p>
-        <a href="{% url 'marketplace' %}" class="mkt-btn-primary" style="margin-top:1.5rem; display:inline-block;">Shop Now</a>
-    </div>
-    {% endif %}
-
 </div>
 {% endblock %}

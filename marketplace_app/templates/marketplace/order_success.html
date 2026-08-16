@@ -1,68 +1,68 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load marketplace_extras %}
 
-{% block title %}Order Placed — Physio Marketplace{% endblock %}
+{% block title %}Order Placed — Sajhya Marketplace{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ 'css/marketplace-store.css'|plain_static }}">
+{% endblock %}
 
 {% block content %}
-<!-- Navbar -->
-<div class="navbar">
-    <div class="logo">Sa:jhya</div>
-    <div class="mkt-nav-right">
-        <a href="{% url 'marketplace' %}" class="mkt-back-btn">← Marketplace</a>
-    </div>
-</div>
+<div class="store">
 
-<div class="container mkt-container">
-    <div class="mkt-success-card">
-        <div class="mkt-success-icon">✅</div>
-        <h1 class="mkt-success-title">Order Placed Successfully!</h1>
-        <p class="mkt-success-sub">Thank you for your order. Our team will be in touch with you shortly.</p>
+    {% include 'marketplace/_store_header.html' %}
 
-        <div class="mkt-order-details">
-            <div class="mkt-order-detail-row">
-                <span class="mkt-detail-label">Order Number</span>
-                <span class="mkt-detail-val mkt-order-num">#{{ order.order_number }}</span>
+    <div class="store-wrap">
+        <div class="store-success">
+            <div class="store-success-icon">✓</div>
+            <h1 class="store-success-title">Order Placed Successfully!</h1>
+            <p class="store-success-sub">Thank you for your order. Our team will be in touch with you shortly.</p>
+
+            <div class="store-order-details">
+                <div class="store-order-detail-row">
+                    <span class="store-detail-label">Order Number</span>
+                    <span class="store-detail-val store-order-num">#{{ order.order_number }}</span>
+                </div>
+                <div class="store-order-detail-row">
+                    <span class="store-detail-label">Customer</span>
+                    <span class="store-detail-val">{{ order.customer_name }}</span>
+                </div>
+                <div class="store-order-detail-row">
+                    <span class="store-detail-label">Phone</span>
+                    <span class="store-detail-val">{{ order.customer_phone }}</span>
+                </div>
+                <div class="store-order-detail-row">
+                    <span class="store-detail-label">Total</span>
+                    <span class="store-detail-val store-order-num">NPR {{ order.total_amount }}</span>
+                </div>
+                <div class="store-order-detail-row">
+                    <span class="store-detail-label">Delivery To</span>
+                    <span class="store-detail-val">{{ order.delivery_address }}</span>
+                </div>
+                <div class="store-order-detail-row">
+                    <span class="store-detail-label">Status</span>
+                    <span class="store-status-badge">{{ order.get_status_display }}</span>
+                </div>
             </div>
-            <div class="mkt-order-detail-row">
-                <span class="mkt-detail-label">Customer</span>
-                <span class="mkt-detail-val">{{ order.customer_name }}</span>
+
+            <!-- Items Ordered -->
+            <div class="store-ordered-items">
+                <h3>Items Ordered</h3>
+                {% for item in order.items.all %}
+                <div class="store-ordered-row">
+                    <span>{{ item.product_name }} <span class="store-qty-tag">×{{ item.quantity }}</span></span>
+                    <span>NPR {{ item.total_price }}</span>
+                </div>
+                {% endfor %}
             </div>
-            <div class="mkt-order-detail-row">
-                <span class="mkt-detail-label">Phone</span>
-                <span class="mkt-detail-val">{{ order.customer_phone }}</span>
-            </div>
-            <div class="mkt-order-detail-row">
-                <span class="mkt-detail-label">Total</span>
-                <span class="mkt-detail-val mkt-order-total">NPR {{ order.total_amount }}</span>
-            </div>
-            <div class="mkt-order-detail-row">
-                <span class="mkt-detail-label">Delivery To</span>
-                <span class="mkt-detail-val">{{ order.delivery_address }}</span>
-            </div>
-            <div class="mkt-order-detail-row">
-                <span class="mkt-detail-label">Status</span>
-                <span class="mkt-status-badge mkt-status-{{ order.status }}">{{ order.get_status_display }}</span>
-            </div>
+
+            <a href="{% url 'marketplace' %}" class="store-btn-primary">Continue Shopping</a>
+
+            <p class="store-contact-note">
+                Questions? Contact us at <strong>sajhya.com</strong>
+            </p>
         </div>
-
-        <!-- Items Ordered -->
-        <div class="mkt-ordered-items">
-            <h3>Items Ordered</h3>
-            {% for item in order.items.all %}
-            <div class="mkt-ordered-row">
-                <span>{{ item.product_name }} <span class="mkt-qty-tag">×{{ item.quantity }}</span></span>
-                <span>NPR {{ item.total_price }}</span>
-            </div>
-            {% endfor %}
-        </div>
-
-        <div class="mkt-success-actions">
-            <a href="{% url 'marketplace' %}" class="mkt-btn-primary mkt-btn-lg">Continue Shopping</a>
-        </div>
-
-        <p class="mkt-contact-note">
-            📞 Questions? Contact us at <strong>sajhya.com</strong>
-        </p>
     </div>
 </div>
 {% endblock %}
