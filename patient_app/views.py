@@ -4,6 +4,7 @@ from personal_account.models import AddPatient, ActivationCard, PatientPhysioPai
 from exercise_app.models import Prescription, PrescriptionExercise, ExerciseFeedback
 from marketplace_app.models import Category, Product, ProductVariant, Order, OrderItem, Commission, CommissionRate, PatientProductRecommendation
 from marketplace_app.views import get_recommended_for_diagnosis
+from marketplace_app.templatetags.marketplace_extras import CATEGORY_ICON_IMAGES
 from django.http import JsonResponse, HttpResponse
 from django.conf import settings
 from django.db import transaction
@@ -807,6 +808,18 @@ def _image_url(request, image_path):
     return request.build_absolute_uri(f'{settings.STATIC_URL}{encoded}')
 
 
+def _category_icon_url(request, category_name):
+    """Same CATEGORY_ICON_IMAGES lookup the web marketplace template uses
+    (marketplace_app.templatetags.marketplace_extras.category_icon_image),
+    exposed here so the app can show the same logo instead of the icon
+    emoji. None if that category has no photo yet -- app falls back to
+    the emoji, same as the template does."""
+    filename = CATEGORY_ICON_IMAGES.get(category_name)
+    if not filename:
+        return None
+    return _image_url(request, f'categorized_product/category_icons/{filename}')
+
+
 def _variants_prefetch():
     """Shared Prefetch for patient_api_products/patient_api_pharmacy_products --
     one query for all products' variants instead of one per product."""
@@ -861,7 +874,10 @@ def patient_api_categories(request):
     # Pharmacy is a separate section (see patient_api_pharmacy_products) --
     # never listed as a Marketplace category.
     cats = Category.objects.exclude(name='Pharmacy').order_by('id')
-    return JsonResponse({'categories': [{'id': c.id, 'name': c.name, 'icon': c.icon} for c in cats]})
+    return JsonResponse({'categories': [
+        {'id': c.id, 'name': c.name, 'icon': c.icon, 'icon_url': _category_icon_url(request, c.name)}
+        for c in cats
+    ]})
 
 
 def patient_api_products(request):
