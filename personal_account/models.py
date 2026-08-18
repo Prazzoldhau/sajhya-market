@@ -15,12 +15,51 @@ def get_nepal_time():
     return datetime.now(tz)
 
 
+class DiagnosisCode(models.Model):
+    """A curated, physiotherapy-relevant subset of ICD-10 -- not the full
+    ~14,000-code catalogue, which would make picking a code slower than
+    typing free text ever was. Seeded (see seed_diagnosis_codes management
+    command) from what this clinic's real patient population actually
+    presents with.
+
+    IMPORTANT: this starter list was drafted for coverage, not verified
+    against an authoritative terminology server -- a clinician should
+    review/correct entries here before they're relied on for real
+    records, billing, or reporting. Deactivate (is_active=False) rather
+    than delete a code that's wrong or unused, since patients may already
+    reference it.
+    """
+    code = models.CharField(max_length=10, unique=True, help_text='ICD-10 code, e.g. M54.5')
+    label = models.CharField(max_length=200, help_text='e.g. "Low back pain"')
+    chapter = models.CharField(max_length=50, blank=True, help_text='e.g. "Musculoskeletal", "Neurological", "Injury", "Aftercare"')
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['code']
+
+    def __str__(self):
+        return f"{self.code} - {self.label}"
+
+
 class AddPatient(models.Model):
     patient_code = models.CharField(max_length=14, editable=False, unique=True)
     patient_name = models.CharField(max_length=50)
     patient_contact = models.CharField(max_length=50)
     completed_session = models.IntegerField(default=0)
     patient_diagnosis = models.CharField(max_length=100)
+    # Structured code alongside the free-text diagnosis above rather than
+    # replacing it -- patient_diagnosis stays the clinician's own wording
+    # (often more precise: "Ivdp with radiculopathy and foot drop"), this
+    # is what makes the same condition queryable/reportable across
+    # patients and comparable to national HMIS / research data. Optional
+    # and nullable so existing patients aren't forced to backfill one.
+    diagnosis_code = models.ForeignKey(
+        DiagnosisCode,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='patients',
+    )
     qr_code = models.URLField(blank=True, null=True)  # store the image URL
     qr_token = models.CharField(max_length=32,null=True, editable=False, unique=True, blank=True)
     activation_expires_at = models.DateTimeField(null=True, blank=True)

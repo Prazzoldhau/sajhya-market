@@ -1,5 +1,13 @@
 from django.contrib import admin
-from .models import ActivationCard
+from .models import ActivationCard, DiagnosisCode
+
+
+@admin.register(DiagnosisCode)
+class DiagnosisCodeAdmin(admin.ModelAdmin):
+    list_display = ('code', 'label', 'chapter', 'is_active')
+    list_filter = ('chapter', 'is_active')
+    search_fields = ('code', 'label')
+    ordering = ('code',)
 
 
 @admin.register(ActivationCard)

@@ -10,7 +10,7 @@ from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
 
-from personal_account.models import AddPatient, PatientPhysioPairing
+from personal_account.models import AddPatient, PatientPhysioPairing, DiagnosisCode
 from clinic_account.models import Clinic
 from exercise_app.models import Region, SubRegion, ExerciseMain, Prescription, PrescriptionExercise
 from prescription_app.models import TreatmentSession
@@ -159,6 +159,11 @@ def patient_list(request):
         contact = data.get('patient_contact', '').strip()
         diagnosis = data.get('patient_diagnosis', '').strip()
         clinic_id = data.get('clinic_id')
+        # Optional structured code alongside the required free-text
+        # diagnosis above -- e.g. "M54.5". Silently ignored if it doesn't
+        # match an active code rather than rejecting the whole request,
+        # since the free-text diagnosis is still the required field.
+        diagnosis_code_str = data.get('diagnosis_code', '').strip()
 
         if not name or not diagnosis:
             return JsonResponse({'error': 'patient_name and patient_diagnosis are required'}, status=400)
@@ -170,10 +175,15 @@ def patient_list(request):
             except Clinic.DoesNotExist:
                 pass
 
+        diagnosis_code = None
+        if diagnosis_code_str:
+            diagnosis_code = DiagnosisCode.objects.filter(code=diagnosis_code_str, is_active=True).first()
+
         patient = AddPatient.objects.create(
             patient_name=name,
             patient_contact=contact or '0000000000',
             patient_diagnosis=diagnosis,
+            diagnosis_code=diagnosis_code,
             created_by=user,
             origin_clinic=origin_clinic,
         )
@@ -215,6 +225,8 @@ def patient_detail(request, patient_code):
             'patient_name': patient.patient_name,
             'patient_contact': patient.patient_contact,
             'patient_diagnosis': patient.patient_diagnosis,
+            'diagnosis_code': patient.diagnosis_code.code if patient.diagnosis_code else None,
+            'diagnosis_code_label': patient.diagnosis_code.label if patient.diagnosis_code else None,
             'completed_session': patient.completed_session,
             'created_at': patient.created_at.isoformat(),
             'qr_token': patient.qr_token or '',
@@ -647,6 +659,19 @@ def region_list(request):
         for r in regions
     ]
     return JsonResponse({'regions': data})
+
+
+def diagnosis_code_list(request):
+    user, err = _require_physio(request)
+    if err:
+        return err
+
+    codes = DiagnosisCode.objects.filter(is_active=True)
+    data = [
+        {'code': c.code, 'label': c.label, 'chapter': c.chapter}
+        for c in codes
+    ]
+    return JsonResponse({'diagnosis_codes': data})
 
 
 def exercise_list(request):

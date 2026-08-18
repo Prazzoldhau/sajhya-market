@@ -34,6 +34,9 @@ urlpatterns = [
     path('regions/',                             views.region_list,                  name='physio-region-list'),
     path('exercises/',                           views.exercise_list,                name='physio-exercise-list'),
 
+    # diagnosis coding
+    path('diagnosis-codes/',                      views.diagnosis_code_list,          name='physio-diagnosis-code-list'),
+
     # prescriptions
     path('prescriptions/<str:patient_code>/',   views.prescription_list_create,     name='physio-prescriptions'),
     path('prescriptions/exercises/<int:prescription_id>/add/', views.prescription_add_exercises, name='physio-prescription-add-exercises'),
