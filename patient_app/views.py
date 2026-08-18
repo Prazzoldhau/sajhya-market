@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.db.models import Prefetch
+from django.db.models import Prefetch, F
 from personal_account.models import AddPatient, ActivationCard, PatientPhysioPairing, get_nepal_time
 from exercise_app.models import Prescription, PrescriptionExercise, ExerciseFeedback
 from marketplace_app.models import Category, Product, ProductVariant, Order, OrderItem, Commission, CommissionRate, PatientProductRecommendation
@@ -17,7 +17,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.contrib.auth.hashers import make_password, check_password
-from .models import PushSubscription
+from .models import PushSubscription, AppOpenEvent, VideoClickEvent
 
 logger = logging.getLogger(__name__)
 
@@ -567,6 +567,72 @@ def submit_exercise_feedback(request, exercise_id):
         return JsonResponse({'success': False, 'error': 'Exercise not found'}, status=404)
     except json.JSONDecodeError:
         return JsonResponse({'success': False, 'error': 'Invalid JSON'}, status=400)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+# ==================== ENGAGEMENT TRACKING ====================
+# "Completed" adherence data turned out to badly under-report real usage
+# (patients open the app and watch the exercise without ever tapping the
+# done button). These two pings give a second, independent read on actual
+# engagement -- did the app get opened today, did the video get watched --
+# without relying on the patient to self-report anything.
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def patient_api_ping_open(request):
+    """Fire-and-forget: called once when the dashboard loads. Upserts a
+    single row per patient per calendar day, so repeat pings the same day
+    (backgrounding/resuming the app) just bump a counter instead of
+    growing the table -- keeps this a clean daily-active-patient signal."""
+    patient_id = request.session.get('patient_id')
+    if not patient_id:
+        return JsonResponse({'success': False, 'error': 'Not authenticated'}, status=401)
+
+    try:
+        patient = AddPatient.objects.get(id=patient_id, is_deleted=False)
+    except AddPatient.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Not authenticated'}, status=401)
+
+    today = get_nepal_time().date()
+    event, created = AppOpenEvent.objects.get_or_create(
+        patient=patient, opened_on=today,
+    )
+    if not created:
+        event.ping_count = F('ping_count') + 1
+        event.save(update_fields=['ping_count'])
+
+    return JsonResponse({'success': True})
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def submit_video_click(request, exercise_id):
+    """Fire-and-forget: called right before the app opens an exercise's
+    YouTube link. exercise_id is the PrescriptionExercise id, same as the
+    feedback endpoint above -- it's what the patient actually saw, not the
+    library exercise, so it stays meaningful even if the library entry
+    changes later."""
+    patient_id = request.session.get('patient_id')
+    if not patient_id:
+        return JsonResponse({'success': False, 'error': 'Not authenticated'}, status=401)
+
+    try:
+        exercise = PrescriptionExercise.objects.select_related('prescription__patient').get(id=exercise_id)
+
+        if exercise.prescription.patient.id != patient_id:
+            return JsonResponse({'success': False, 'error': 'Forbidden'}, status=403)
+
+        VideoClickEvent.objects.create(
+            prescription_exercise=exercise,
+            exercise_id_in_library=exercise.exercise_id_in_library,
+            exercise_name=exercise.exercise_name,
+        )
+
+        return JsonResponse({'success': True})
+
+    except PrescriptionExercise.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Exercise not found'}, status=404)
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
 

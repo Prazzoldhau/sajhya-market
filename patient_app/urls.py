@@ -32,6 +32,10 @@ urlpatterns = [
 
     # Exercises
     path('api/exercise/<int:exercise_id>/feedback/', views.submit_exercise_feedback, name='submit_exercise_feedback'),
+    path('api/exercise/<int:exercise_id>/video-click/', views.submit_video_click, name='submit_video_click'),
+
+    # Engagement tracking
+    path('api/ping-open/', views.patient_api_ping_open, name='patient_api_ping_open'),
 
     # Marketplace
     path('api/categories/', views.patient_api_categories, name='patient_api_categories'),
