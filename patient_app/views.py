@@ -3,6 +3,7 @@ from django.db.models import Prefetch, F
 from personal_account.models import AddPatient, ActivationCard, PatientPhysioPairing, get_nepal_time
 from exercise_app.models import Prescription, PrescriptionExercise, ExerciseFeedback
 from marketplace_app.models import Category, Product, ProductVariant, Order, OrderItem, Commission, CommissionRate, PatientProductRecommendation
+from lab_app.models import LabTest, LabTestRequest, LabTestRequestItem
 from marketplace_app.views import get_recommended_for_diagnosis
 from marketplace_app.templatetags.marketplace_extras import CATEGORY_ICON_IMAGES
 from django.http import JsonResponse, HttpResponse
@@ -1165,6 +1166,94 @@ def patient_api_orders(request):
         'items_count': o.items.count(),
     } for o in orders]
     return JsonResponse({'orders': data})
+
+
+# ==================== LAB SERVICE (Blood Investigation) ====================
+# First real Services-tab feature -- Physiotherapy/Dental/Dietician/etc. are
+# still "coming soon" placeholders in the app. Mirrors the marketplace
+# order flow (patient submits, clinic processes) rather than adding a new
+# shape of workflow.
+
+@csrf_exempt
+@require_http_methods(["GET"])
+def patient_api_lab_tests(request):
+    patient, err = _patient_required(request)
+    if err:
+        return err
+    tests = LabTest.objects.filter(is_active=True)
+    return JsonResponse({'lab_tests': [
+        {
+            'id': t.id,
+            'name': t.name,
+            'category': t.category,
+            'category_display': t.get_category_display(),
+            'price': str(t.price),
+            'sample_type': t.sample_type,
+            'prep_instructions': t.prep_instructions,
+            'turnaround_time': t.turnaround_time,
+        }
+        for t in tests
+    ]})
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def patient_api_lab_request_create(request):
+    patient, err = _patient_required(request)
+    if err:
+        return err
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+
+    test_ids = data.get('test_ids') or []
+    notes = data.get('notes', '').strip()
+    if not test_ids:
+        return JsonResponse({'error': 'Select at least one test'}, status=400)
+
+    tests = list(LabTest.objects.filter(id__in=test_ids, is_active=True))
+    if not tests:
+        return JsonResponse({'error': 'No valid tests selected'}, status=400)
+
+    total = sum((t.price for t in tests), Decimal('0'))
+
+    lab_request = LabTestRequest.objects.create(
+        patient=patient,
+        notes=notes,
+        total_amount=total,
+    )
+    for t in tests:
+        LabTestRequestItem.objects.create(
+            request=lab_request,
+            lab_test=t,
+            test_name=t.name,
+            price=t.price,
+        )
+
+    return JsonResponse({
+        'success': True,
+        'request_number': lab_request.request_number,
+        'total': str(lab_request.total_amount),
+    }, status=201)
+
+
+@csrf_exempt
+@require_http_methods(["GET"])
+def patient_api_lab_requests(request):
+    patient, err = _patient_required(request)
+    if err:
+        return err
+    requests_qs = LabTestRequest.objects.filter(patient=patient).prefetch_related('items').order_by('-created_at')[:20]
+    data = [{
+        'request_number': r.request_number,
+        'status': r.status,
+        'status_display': r.get_status_display(),
+        'total': str(r.total_amount),
+        'created_at': r.created_at.strftime('%d %b %Y'),
+        'tests': [i.test_name for i in r.items.all()],
+    } for r in requests_qs]
+    return JsonResponse({'lab_requests': data})
 
 
 def patient_api_physio(request):

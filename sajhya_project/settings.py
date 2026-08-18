@@ -65,6 +65,7 @@ INSTALLED_APPS = [
     'physio_api_app',
     'vendor_api_app',
     'delivery_app',
+    'lab_app',
 
 ]
 

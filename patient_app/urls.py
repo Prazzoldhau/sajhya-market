@@ -49,4 +49,9 @@ urlpatterns = [
     path('api/physio/', views.patient_api_physio, name='patient_api_physio'),
     path('api/recommended/', views.patient_api_recommended, name='patient_api_recommended'),
     path('add-recs-to-cart/', views.add_recs_to_cart, name='add-recs-to-cart'),
+
+    # Lab service (Blood Investigation)
+    path('api/lab/tests/', views.patient_api_lab_tests, name='patient_api_lab_tests'),
+    path('api/lab/request/', views.patient_api_lab_request_create, name='patient_api_lab_request_create'),
+    path('api/lab/requests/', views.patient_api_lab_requests, name='patient_api_lab_requests'),
 ]
