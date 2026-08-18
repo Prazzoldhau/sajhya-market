@@ -12,9 +12,11 @@ class CustomUserAdmin(UserAdmin):
     change_password_form = AdminPasswordChangeForm  # now it's defined
 
     # Define which fields are shown in the user list and detail page
-    list_display = ['username', 'email', 'phone', 'user_type', 'is_staff']
+    list_display = ['username', 'email', 'phone', 'user_type', 'license_number', 'license_verified', 'is_staff']
+    list_filter = UserAdmin.list_filter + ('license_verified',)
     fieldsets = UserAdmin.fieldsets + (
         (None, {'fields': ('phone', 'user_type')}),
+        ('Professional credential', {'fields': ('license_number', 'license_verified')}),
     )
 
     # CRITICAL: Override add_fieldsets to remove 'usable_password'

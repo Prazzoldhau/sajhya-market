@@ -128,8 +128,16 @@ class Prescription(models.Model):
 
     # Prescription details
     prescription_date = models.DateTimeField(auto_now_add=True)
-    # start_date = models.DateField()
-    # end_date = models.DateField()
+
+    # Optional validity window. Nullable/optional because no physio-facing
+    # UI sets these yet -- is_active_prescription() below falls back to
+    # just checking status when they're unset, which is every prescription
+    # today. Added so the two methods below (already relied on by
+    # detail_app.views.latest_prescription) stop crashing with
+    # AttributeError, and so a real expiry/renewal workflow has somewhere
+    # to land later without another migration.
+    start_date = models.DateField(null=True, blank=True)
+    end_date = models.DateField(null=True, blank=True)
     # prescription_notes = models.TextField(blank=True, null=True)
     
     # Status and tracking
@@ -163,14 +171,21 @@ class Prescription(models.Model):
         return round((completed / total) * 100, 1)
     
     def is_active_prescription(self):
-        """Check if prescription is currently active"""
-        today = date.today()
-        return (self.status == 'active' and 
-                self.start_date <= today <= self.end_date)
-    
+        """Check if prescription is currently active. Falls back to just
+        the status field when no validity window is set (the common case
+        today) instead of requiring start_date/end_date to be present."""
+        if self.status != 'active':
+            return False
+        if self.start_date and self.end_date:
+            today = date.today()
+            return self.start_date <= today <= self.end_date
+        return True
+
     def get_duration_days(self):
-        """Get prescription duration in days"""
-        return (self.end_date - self.start_date).days
+        """Prescription duration in days, or None if no validity window is set."""
+        if self.start_date and self.end_date:
+            return (self.end_date - self.start_date).days
+        return None
 
 class PrescriptionExercise(models.Model):
     """Model to store individual exercises within a prescription"""

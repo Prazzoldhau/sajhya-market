@@ -13,6 +13,14 @@ class User(AbstractUser):
     )
     phone = models.CharField(max_length=15)
     license_number = models.CharField(max_length=20, default='temporary')
+    # Self-entered at signup (see account_app.forms.CustomUserCreationForm)
+    # and never checked against the actual Nepal Health Professional
+    # Council registry -- this flag is that check. Admin-only, off by
+    # default: a physio isn't "verified" just for having typed something
+    # into a required field. Shown to patients (patient_api_physio) so
+    # they can see whether their physio's credential has actually been
+    # confirmed, not just collected.
+    license_verified = models.BooleanField(default=False)
     user_type = models.CharField(
         max_length=10,
         choices=USER_TYPE_CHOICES,

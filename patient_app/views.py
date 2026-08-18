@@ -1183,6 +1183,11 @@ def patient_api_physio(request):
         'name': physio.get_full_name() or physio.username,
         'email': physio.email,
         'username': physio.username,
+        # Surfaced so a patient can see their physio actually holds a
+        # checked professional credential, not just a self-entered field --
+        # see account_app.models.User.license_verified.
+        'license_number': physio.license_number if physio.license_number != 'temporary' else None,
+        'license_verified': physio.license_verified,
     }})
 
 

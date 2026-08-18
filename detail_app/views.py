@@ -123,8 +123,8 @@ def latest_prescription(request, patient_id):
     return JsonResponse({
         'prescription_id': latest_prescription.id,
         'status': latest_prescription.status,
-        'start_date': latest_prescription.start_date.isoformat(),
-        'end_date': latest_prescription.end_date.isoformat(),
+        'start_date': latest_prescription.start_date.isoformat() if latest_prescription.start_date else None,
+        'end_date': latest_prescription.end_date.isoformat() if latest_prescription.end_date else None,
         'exercises': exercises_list,
     })
 
