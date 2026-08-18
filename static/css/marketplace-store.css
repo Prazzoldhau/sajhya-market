@@ -380,22 +380,26 @@ body > .container.mt-3:empty {
 }
 
 .store-card-name {
-    font-size: 0.92rem;
+    font-size: 0.95rem;
     font-weight: 600;
     color: var(--store-ink);
-    line-height: 1.35;
+    line-height: 1.4;
     margin: 0 0 0.5rem;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    min-height: 2.5em;
+    min-height: 2.6em;
 }
 
 .store-card-price {
-    font-size: 1rem;
+    /* Distinct from the name above (was the same --store-ink as the
+       title, so nothing on the card actually stood out) -- price is the
+       one thing a shopper scans a grid for first, so it gets the accent
+       color and the largest text on the card, same as most storefronts. */
+    font-size: 1.15rem;
     font-weight: 700;
-    color: var(--store-ink);
+    color: var(--store-primary);
 }
 
 .store-empty {
