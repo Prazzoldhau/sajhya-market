@@ -37,6 +37,23 @@ class Product(models.Model):
         return self.name
 
 
+class ProductImage(models.Model):
+    """Additional photos for a product's detail-page gallery, beyond the
+    single required Product.image -- swipeable/zoomable in the app.
+    Mirrors exercise_app.ExerciseStepImage's shape (ordered rows, not
+    columns): a product can have zero extra photos or many, with no
+    fixed column count to outgrow."""
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='gallery_images')
+    order = models.PositiveSmallIntegerField(default=0, help_text='Display order, after the main product photo')
+    image = models.CharField(max_length=200, help_text='Same path convention as Product.image')
+
+    class Meta:
+        ordering = ['order', 'id']
+
+    def __str__(self):
+        return f"{self.product.name} — image {self.order}"
+
+
 class ProductVariant(models.Model):
     """A purchasable option of a Product with its own price/stock/photo -- e.g.
     a resistance band's strength, a brace's size. Optional: most products have

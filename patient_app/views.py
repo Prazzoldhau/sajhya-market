@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Prefetch, F
 from personal_account.models import AddPatient, ActivationCard, PatientPhysioPairing, get_nepal_time
 from exercise_app.models import Prescription, PrescriptionExercise, ExerciseFeedback
-from marketplace_app.models import Category, Product, ProductVariant, Order, OrderItem, Commission, CommissionRate, PatientProductRecommendation
+from marketplace_app.models import Category, Product, ProductImage, ProductVariant, Order, OrderItem, Commission, CommissionRate, PatientProductRecommendation
 from lab_app.models import LabTest, LabTestRequest, LabTestRequestItem
 from marketplace_app.views import get_recommended_for_diagnosis
 from marketplace_app.templatetags.marketplace_extras import CATEGORY_ICON_IMAGES
@@ -917,6 +917,31 @@ def _product_variants(request, product):
     ]
 
 
+def _gallery_prefetch():
+    """Shared Prefetch for patient_api_products/patient_api_pharmacy_products --
+    one query for all products' gallery images instead of one per product."""
+    return Prefetch(
+        'gallery_images',
+        queryset=ProductImage.objects.order_by('order', 'id'),
+        to_attr='gallery_images_list',
+    )
+
+
+def _product_images(request, product):
+    """Ordered list of image URLs for the detail-page gallery: the main
+    product photo first (always present, even if there are zero extra
+    gallery photos), then ProductImage rows in order. Expects
+    `gallery_images_list` to be prefetched via _gallery_prefetch(); falls
+    back to a fresh query if it wasn't."""
+    main = _image_url(request, product.image)
+    urls = [main] if main else []
+    extra = getattr(product, 'gallery_images_list', None)
+    if extra is None:
+        extra = product.gallery_images.order_by('order', 'id')
+    urls.extend(_image_url(request, img.image) for img in extra)
+    return urls
+
+
 def _get_patient_cart(request):
     return request.session.get('patient_cart', {})
 
@@ -953,7 +978,7 @@ def patient_api_products(request):
         return err
     # Excluded unconditionally so this endpoint never returns Pharmacy
     # items, even if a caller passes its category id directly.
-    qs = Product.objects.filter(in_stock=True).exclude(category__name='Pharmacy').select_related('category').prefetch_related(_variants_prefetch())
+    qs = Product.objects.filter(in_stock=True).exclude(category__name='Pharmacy').select_related('category').prefetch_related(_variants_prefetch(), _gallery_prefetch())
     cat_id = request.GET.get('category', '').strip()
     if cat_id:
         qs = qs.filter(category_id=cat_id)
@@ -967,6 +992,7 @@ def patient_api_products(request):
         'unit': p.unit,
         'category': p.category.name if p.category else '',
         'image_url': _image_url(request, p.image),
+        'images': _product_images(request, p),
         'description': p.description,
         'variants': _product_variants(request, p),
     } for p in qs]
@@ -977,7 +1003,7 @@ def patient_api_pharmacy_products(request):
     patient, err = _patient_required(request)
     if err:
         return err
-    qs = Product.objects.filter(in_stock=True, category__name='Pharmacy').select_related('category').prefetch_related(_variants_prefetch())
+    qs = Product.objects.filter(in_stock=True, category__name='Pharmacy').select_related('category').prefetch_related(_variants_prefetch(), _gallery_prefetch())
     search = request.GET.get('search', '').strip()
     if search:
         qs = qs.filter(name__icontains=search)
@@ -988,6 +1014,7 @@ def patient_api_pharmacy_products(request):
         'unit': p.unit,
         'category': p.category.name if p.category else '',
         'image_url': _image_url(request, p.image),
+        'images': _product_images(request, p),
         'description': p.description,
         'variants': _product_variants(request, p),
     } for p in qs]
