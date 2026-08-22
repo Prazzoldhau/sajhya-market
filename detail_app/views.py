@@ -18,8 +18,12 @@ def patient_detail(request, patient_id):
     sessions = TreatmentSession.objects.filter(patient_id=patient_id).only(
         'session_date', 'session_number', 'treatment_response'
     )
+    # Excludes Pharmacy same as every other Marketplace listing; nothing
+    # stops a physio from picking a Pharmacy product here otherwise, which
+    # would leak it out of its own tab.
     manual_recs = (
         PatientProductRecommendation.objects.filter(patient=patient)
+        .exclude(product__category__name='Pharmacy')
         .select_related('product', 'product__category')
     )
     manual_ids = list(manual_recs.values_list('product_id', flat=True))

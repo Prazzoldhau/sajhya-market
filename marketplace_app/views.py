@@ -303,7 +303,12 @@ def vendor_order_detail(request, order_number):
 
 
 def get_recommended_for_diagnosis(diagnosis_text):
-    """Return Product queryset matching the patient's diagnosis keywords."""
+    """Return Product queryset matching the patient's diagnosis keywords.
+
+    Excludes Pharmacy the same as every other Marketplace listing query --
+    a DiagnosisProductMap could in principle map a keyword to a Pharmacy
+    product, which would otherwise leak it into the general Marketplace's
+    "Recommended for X" row. Pharmacy stays reachable only via its own tab."""
     if not diagnosis_text:
         return Product.objects.none()
     diagnosis_lower = diagnosis_text.lower()
@@ -314,16 +319,19 @@ def get_recommended_for_diagnosis(diagnosis_text):
             matched_pks.extend(dmap.products.filter(in_stock=True).values_list('id', flat=True))
             if not matched_label:
                 matched_label = dmap.label or dmap.keyword.title()
-    return Product.objects.filter(id__in=matched_pks, in_stock=True).distinct(), matched_label
+    return Product.objects.filter(id__in=matched_pks, in_stock=True).exclude(category__name='Pharmacy').distinct(), matched_label
 
 
 def patient_marketplace(request, patient_id):
     from personal_account.models import AddPatient
     patient = get_object_or_404(AddPatient, id=patient_id)
 
-    # Manual recs from physio (shown first)
+    # Manual recs from physio (shown first) -- excludes Pharmacy same as
+    # every other Marketplace query; nothing stops a physio from picking a
+    # Pharmacy product here otherwise, which would leak it out of its tab.
     manual_recs = (
         PatientProductRecommendation.objects.filter(patient=patient)
+        .exclude(product__category__name='Pharmacy')
         .select_related('product', 'product__category')
     )
     manual_ids = list(manual_recs.values_list('product_id', flat=True))
@@ -394,7 +402,10 @@ def add_picks_to_cart(request, patient_id):
     """Add all physio-picked products for a patient into the current session cart."""
     from personal_account.models import AddPatient
     patient = get_object_or_404(AddPatient, id=patient_id)
-    recs = PatientProductRecommendation.objects.filter(patient=patient).select_related('product', 'product__category')
+    # Excludes Pharmacy -- this adds straight to the cart, so a Pharmacy
+    # item here wouldn't just be a display leak, it'd actually bypass the
+    # Pharmacy tab and land in the general cart.
+    recs = PatientProductRecommendation.objects.filter(patient=patient).exclude(product__category__name='Pharmacy').select_related('product', 'product__category')
     cart = _get_cart(request)
     for rec in recs:
         p = rec.product

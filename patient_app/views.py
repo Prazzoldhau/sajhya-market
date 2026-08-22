@@ -153,9 +153,12 @@ def patient_dashboard(request):
     if latest_prescription:
         exercises = latest_prescription.exercises.all().order_by('order')
     # print (exercises)
-    # Physio hand-picked products
+    # Physio hand-picked products -- excludes Pharmacy same as every other
+    # Marketplace listing; nothing stops a physio from picking a Pharmacy
+    # product here otherwise, which would leak it out of its own tab.
     manual_recs = (
         PatientProductRecommendation.objects.filter(patient=patient)
+        .exclude(product__category__name='Pharmacy')
         .select_related('product', 'product__category')
     )
     manual_ids = list(manual_recs.values_list('product_id', flat=True))
@@ -186,7 +189,10 @@ def add_recs_to_cart(request):
     from marketplace_app.views import _get_cart, _save_cart
     cart = _get_cart(request)
 
-    manual_recs = PatientProductRecommendation.objects.filter(patient=patient).select_related('product', 'product__category')
+    # Excludes Pharmacy -- this adds straight to the cart, so a Pharmacy
+    # item here wouldn't just be a display leak, it'd actually bypass the
+    # Pharmacy tab and land in the general cart.
+    manual_recs = PatientProductRecommendation.objects.filter(patient=patient).exclude(product__category__name='Pharmacy').select_related('product', 'product__category')
     manual_ids = []
     for rec in manual_recs:
         p = rec.product
@@ -1312,9 +1318,12 @@ def patient_api_recommended(request):
     if err:
         return err
 
-    # Physio hand-picked products
+    # Physio hand-picked products -- excludes Pharmacy same as every other
+    # Marketplace listing; nothing stops a physio from picking a Pharmacy
+    # product here otherwise, which would leak it out of its own tab.
     manual_recs = (
         PatientProductRecommendation.objects.filter(patient=patient)
+        .exclude(product__category__name='Pharmacy')
         .select_related('product', 'product__category')
     )
     manual_ids = list(manual_recs.values_list('product_id', flat=True))
