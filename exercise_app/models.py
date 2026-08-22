@@ -110,6 +110,12 @@ class Prescription(models.Model):
         ('completed', 'Completed'),
         ('cancelled', 'Cancelled'),
         ('expired', 'Expired'),
+        # Auto-set on a patient's older prescriptions whenever a new one is
+        # created for them (see save() below) -- distinct from 'completed'/
+        # 'cancelled' since neither of those actually happened; this one
+        # just got replaced. Kept (not deleted) so history/audit stays
+        # intact -- only hidden from the "current prescription" views.
+        ('superseded', 'Superseded'),
     ]
     
     # Relationship with Patient (from sajhya_app)
@@ -156,8 +162,26 @@ class Prescription(models.Model):
     
     def __str__(self):
         return f"Prescription #{self.id} - {self.patient}"
-    
-    
+
+    def save(self, *args, **kwargs):
+        """A patient should only ever have one *current* prescription --
+        creating a new one supersedes whatever came before it, so old
+        treatments don't keep cluttering the physio app's prescription/
+        Track views. Runs for every creation path (physio_api_app's
+        prescription_list_create, exercise_app's add_edit_exercise and
+        reassign_exercise) since they all go through Prescription.objects
+        .create() -> this save(), rather than duplicating this in each
+        view. Kept, not deleted -- just marked 'superseded' -- so history
+        stays intact and reversible (see STATUS_CHOICES above). This is a
+        secondary/audit-trail signal; the views that list prescriptions
+        also query for just the latest directly, so a patient's older
+        prescriptions from *before* this existed are hidden immediately
+        too, without needing a backfill here."""
+        is_new = self.pk is None
+        super().save(*args, **kwargs)
+        if is_new:
+            Prescription.objects.filter(patient_id=self.patient_id).exclude(pk=self.pk).update(status='superseded')
+
     def get_total_exercises(self):
         """Get total number of exercises in this prescription"""
         return self.exercises.count()

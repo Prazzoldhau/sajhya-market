@@ -214,7 +214,8 @@ def patient_detail(request, patient_code):
     except AddPatient.DoesNotExist:
         return JsonResponse({'error': 'Patient not found'}, status=404)
 
-    prescriptions = Prescription.objects.filter(patient=patient).order_by('-created_at')
+    # Only the current prescription -- see prescription_list_create for why.
+    prescriptions = Prescription.objects.filter(patient=patient).order_by('-created_at')[:1]
     sessions = TreatmentSession.objects.filter(patient=patient).order_by('-session_date')
     pairing = PatientPhysioPairing.objects.filter(patient=patient, physio=user).first()
     source = pairing.source if pairing else ''
@@ -754,7 +755,12 @@ def prescription_list_create(request, patient_code):
         return JsonResponse({'error': 'Patient not found'}, status=404)
 
     if request.method == 'GET':
-        prescriptions = Prescription.objects.filter(patient=patient).order_by('-created_at')
+        # Only the current prescription -- a new one supersedes whatever
+        # came before it (see Prescription.save()), so older ones don't
+        # clutter this list. Query-level (not status-filtered) so this is
+        # correct even for prescriptions predating that behavior, with no
+        # backfill needed.
+        prescriptions = Prescription.objects.filter(patient=patient).order_by('-created_at')[:1]
         data = []
         for p in prescriptions:
             exercises = p.exercises.select_related('exercise').all()
