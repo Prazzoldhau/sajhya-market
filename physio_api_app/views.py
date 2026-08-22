@@ -1234,8 +1234,15 @@ def dashboard_stats(request):
     if err:
         return err
 
-    total_patients = AddPatient.objects.filter(created_by=user).count()
-    total_sessions = TreatmentSession.objects.filter(patient__created_by=user).count()
+    # Same patient set as patient_list/patient_detail: created directly by
+    # this physio, plus anyone paired with them (self-registered via QR,
+    # referral acceptance, etc). Previously this used a separate
+    # created_by-only query, so self-registered/paired patients never
+    # showed up in the "Patients" total or Recent Patients here even
+    # though they already appeared in the full Patients list.
+    patients = get_patients_for_physio(user)
+    total_patients = patients.count()
+    total_sessions = TreatmentSession.objects.filter(patient__in=patients).count()
 
     # Pending referrals directed to this user OR open (no assigned physio)
     pending_to_me = Referral.objects.filter(referred_to=user, status='pending').count()
@@ -1244,7 +1251,7 @@ def dashboard_stats(request):
 
     sent_referrals = Referral.objects.filter(referred_by=user).count()
 
-    recent_patients = AddPatient.objects.filter(created_by=user).order_by('-created_at')[:5]
+    recent_patients = patients[:5]
 
     return JsonResponse({
         'total_patients': total_patients,
@@ -1259,6 +1266,7 @@ def dashboard_stats(request):
                 'patient_diagnosis': p.patient_diagnosis,
                 'completed_session': p.completed_session,
                 'created_at': p.created_at.isoformat(),
+                'source': getattr(p, '_pairing_source', ''),
             }
             for p in recent_patients
         ],
