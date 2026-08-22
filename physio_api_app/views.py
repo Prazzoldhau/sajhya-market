@@ -16,7 +16,8 @@ from exercise_app.models import Region, SubRegion, ExerciseMain, Prescription, P
 from prescription_app.models import TreatmentSession
 from referral_app.models import Referral
 from find_physio_app.models import BookingRequest
-from marketplace_app.models import Category, Product, ProductVariant, Order, OrderItem
+from marketplace_app.models import Category, Product, ProductVariant, ProductImage, Order, OrderItem
+from marketplace_app.templatetags.marketplace_extras import CATEGORY_ICON_IMAGES
 
 
 # ─── helpers ──────────────────────────────────────────────────────────────────
@@ -439,6 +440,18 @@ def _product_image_url(request, obj):
     return request.build_absolute_uri(quote(path, safe='/'))
 
 
+def _category_icon_url(request, category_name):
+    """Same CATEGORY_ICON_IMAGES lookup the web marketplace template and
+    patient_app use, exposed here so this app shows the same category logos
+    instead of just the icon emoji. None if that category has no photo yet
+    -- client falls back to the emoji."""
+    filename = CATEGORY_ICON_IMAGES.get(category_name)
+    if not filename:
+        return None
+    path = f'{settings.STATIC_URL}categorized_product/category_icons/{filename}'
+    return request.build_absolute_uri(quote(path, safe='/'))
+
+
 def _variants_prefetch():
     """Shared Prefetch for shop_product_list/pharmacy_product_list -- one query
     for all products' variants instead of one per product."""
@@ -447,6 +460,30 @@ def _variants_prefetch():
         queryset=ProductVariant.objects.filter(in_stock=True).order_by('sort_order', 'id'),
         to_attr='in_stock_variants',
     )
+
+
+def _gallery_prefetch():
+    """Shared Prefetch for shop_product_list/pharmacy_product_list -- one
+    query for all products' gallery images instead of one per product."""
+    return Prefetch(
+        'gallery_images',
+        queryset=ProductImage.objects.order_by('order', 'id'),
+        to_attr='gallery_images_list',
+    )
+
+
+def _product_images(request, product):
+    """Ordered list of image URLs for the detail-page gallery: the main
+    product photo first, then ProductImage rows in order. Expects
+    `gallery_images_list` to be prefetched via _gallery_prefetch(); falls
+    back to a fresh query if it wasn't."""
+    main = _product_image_url(request, product)
+    urls = [main] if main else []
+    extra = getattr(product, 'gallery_images_list', None)
+    if extra is None:
+        extra = product.gallery_images.order_by('order', 'id')
+    urls.extend(_product_image_url(request, img) for img in extra)
+    return urls
 
 
 def _product_variants(request, product):
@@ -481,7 +518,7 @@ def shop_category_list(request):
     # Pharmacy is a separate section (see pharmacy_product_list) -- never
     # listed as a Marketplace category.
     categories = Category.objects.exclude(name='Pharmacy')
-    data = [{'id': c.id, 'name': c.name, 'icon': c.icon} for c in categories]
+    data = [{'id': c.id, 'name': c.name, 'icon': c.icon, 'icon_url': _category_icon_url(request, c.name)} for c in categories]
     return JsonResponse({'categories': data})
 
 
@@ -493,7 +530,7 @@ def shop_product_list(request):
     # Excluded unconditionally (not just when no category filter is given)
     # so the Marketplace endpoint never returns Pharmacy items even if a
     # caller passes its category id directly.
-    qs = Product.objects.filter(in_stock=True).exclude(category__name='Pharmacy').select_related('category').prefetch_related(_variants_prefetch())
+    qs = Product.objects.filter(in_stock=True).exclude(category__name='Pharmacy').select_related('category').prefetch_related(_variants_prefetch(), _gallery_prefetch())
 
     category_id = request.GET.get('category', '').strip()
     if category_id:
@@ -514,6 +551,7 @@ def shop_product_list(request):
             'price': str(p.price),
             'unit': p.unit,
             'image': _product_image_url(request, p),
+            'images': _product_images(request, p),
             'is_featured': p.is_featured,
             'variants': _product_variants(request, p),
         }
@@ -527,7 +565,7 @@ def pharmacy_product_list(request):
     if err:
         return err
 
-    qs = Product.objects.filter(in_stock=True, category__name='Pharmacy').select_related('category').prefetch_related(_variants_prefetch())
+    qs = Product.objects.filter(in_stock=True, category__name='Pharmacy').select_related('category').prefetch_related(_variants_prefetch(), _gallery_prefetch())
 
     search = request.GET.get('search', '').strip()
     if search:
@@ -544,6 +582,7 @@ def pharmacy_product_list(request):
             'price': str(p.price),
             'unit': p.unit,
             'image': _product_image_url(request, p),
+            'images': _product_images(request, p),
             'is_featured': p.is_featured,
             'variants': _product_variants(request, p),
         }
