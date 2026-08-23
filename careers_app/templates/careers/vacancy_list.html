@@ -15,12 +15,11 @@
     {% include 'careers/_careers_header.html' %}
 
     <div class="store-wrap">
-        <section class="store-section vacancy-intro">
+        <section class="store-section" style="padding-bottom:0.5rem">
             <div class="store-section-head">
-                <h1>Careers at Sajhya</h1>
+                <h1>Careers</h1>
                 <span class="store-sub">{{ vacancies|length }} open role{{ vacancies|length|pluralize }}</span>
             </div>
-            <p class="vacancy-intro-text">We're building Nepal's healthcare platform -- tools for physios, clinics, pharmacies and patients across the country. Here's where we're currently hiring.</p>
         </section>
 
         <section class="store-section">
@@ -28,17 +27,17 @@
             <div class="vacancy-list">
                 {% for v in vacancies %}
                 <a href="{% url 'vacancy-detail' v.id %}" class="vacancy-card">
-                    <div class="vacancy-card-main">
-                        <h3>{{ v.title }}</h3>
-                        <div class="vacancy-org">{{ v.organization }}</div>
-                        <div class="vacancy-meta">
-                            {% if v.department %}<span>{{ v.department }}</span>{% endif %}
-                            <span>{{ v.location }}</span>
-                            <span>{{ v.get_employment_type_display }}</span>
-                            {% if v.closing_date %}<span>Apply by {{ v.closing_date|date:"M j" }}</span>{% endif %}
-                        </div>
+                    <h3>{{ v.title }}</h3>
+                    <div class="vacancy-org">{{ v.organization }}</div>
+                    <div class="vacancy-tags">
+                        {% if v.department %}<span class="vacancy-tag">{{ v.department }}</span>{% endif %}
+                        <span class="vacancy-tag">{{ v.location }}</span>
+                        <span class="vacancy-tag">{{ v.get_employment_type_display }}</span>
                     </div>
-                    <span class="vacancy-apply-cta">View &amp; Apply →</span>
+                    <div class="vacancy-card-footer">
+                        {% if v.closing_date %}<span class="vacancy-closing">Apply by {{ v.closing_date|date:"M j" }}</span>{% else %}<span></span>{% endif %}
+                        <span class="vacancy-apply-cta">View &amp; Apply →</span>
+                    </div>
                 </a>
                 {% endfor %}
             </div>

@@ -1147,14 +1147,6 @@ body > .container.mt-3:empty {
    shapes (the vacancy list row and its meta/requirements bits) get their
    own rules below. */
 
-.vacancy-intro-text {
-    color: var(--store-muted);
-    font-size: 0.95rem;
-    max-width: 640px;
-    line-height: 1.7;
-    margin-top: -0.5rem;
-}
-
 .vacancy-list {
     display: flex;
     flex-direction: column;
@@ -1162,10 +1154,7 @@ body > .container.mt-3:empty {
 }
 
 .vacancy-card {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1.5rem;
+    display: block;
     background: #fff;
     border: 1px solid var(--store-border);
     border-radius: var(--store-radius);
@@ -1181,40 +1170,56 @@ body > .container.mt-3:empty {
     transform: translateY(-2px);
 }
 
-.vacancy-card-main h3 {
-    font-size: 1.15rem;
+.vacancy-card h3 {
+    font-size: 1.2rem;
     font-weight: 700;
     color: var(--store-ink);
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.3rem;
 }
 
 .vacancy-org {
     font-size: 0.9rem;
     font-weight: 600;
     color: var(--store-primary);
-    margin-bottom: 0.6rem;
+    margin-bottom: 1rem;
 }
 
-.vacancy-meta {
+.vacancy-tags {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
-    font-size: 0.85rem;
-    color: var(--store-muted);
 }
 
-.vacancy-meta span:not(:last-child)::after {
-    content: '·';
-    margin-left: 0.5rem;
-    color: var(--store-border);
+.vacancy-tag {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--store-muted);
+    background: var(--store-surface);
+    border: 1px solid var(--store-border);
+    border-radius: 999px;
+    padding: 0.3rem 0.85rem;
+}
+
+.vacancy-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 1.25rem;
+    padding-top: 1.1rem;
+    border-top: 1px solid var(--store-border);
+}
+
+.vacancy-closing {
+    font-size: 0.8rem;
+    color: var(--store-muted);
 }
 
 .vacancy-apply-cta {
     font-size: 0.9rem;
-    font-weight: 600;
+    font-weight: 700;
     color: var(--store-primary);
     white-space: nowrap;
-    flex-shrink: 0;
 }
 
 .vacancy-requirements {
@@ -1240,12 +1245,4 @@ body > .container.mt-3:empty {
     left: 0;
     color: var(--store-primary);
     font-weight: 700;
-}
-
-@media (max-width: 560px) {
-    .vacancy-card {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.75rem;
-    }
 }
