@@ -26,12 +26,12 @@
             <div>
                 <h1 class="store-detail-title">{{ vacancy.title }}</h1>
                 <div class="vacancy-org">{{ vacancy.organization }}</div>
-                <div class="vacancy-meta">
-                    {% if vacancy.department %}<span>{{ vacancy.department }}</span>{% endif %}
-                    <span>{{ vacancy.location }}</span>
-                    <span>{{ vacancy.get_employment_type_display }}</span>
-                    {% if vacancy.closing_date %}<span>Apply by {{ vacancy.closing_date|date:"M j, Y" }}</span>{% endif %}
+                <div class="vacancy-tags">
+                    {% if vacancy.department %}<span class="vacancy-tag">{{ vacancy.department }}</span>{% endif %}
+                    <span class="vacancy-tag">{{ vacancy.location }}</span>
+                    <span class="vacancy-tag">{{ vacancy.get_employment_type_display }}</span>
                 </div>
+                {% if vacancy.closing_date %}<p class="vacancy-closing">Apply by {{ vacancy.closing_date|date:"M j, Y" }}</p>{% endif %}
 
                 <div class="store-detail-desc">
                     <h4>About the role</h4>
@@ -65,7 +65,7 @@
 
                     <div class="store-form-group">
                         <label class="store-label">WhatsApp Number</label>
-                        <input type="tel" name="whatsapp_number" class="store-input" placeholder="+9779812345678">
+                        <input type="tel" name="whatsapp_number" class="store-input">
                     </div>
 
                     <div class="store-form-group">
