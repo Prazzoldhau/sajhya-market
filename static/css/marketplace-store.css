@@ -1222,6 +1222,18 @@ body > .container.mt-3:empty {
     white-space: nowrap;
 }
 
+@media (max-width: 560px) {
+    /* plain colored text read as non-interactive on mobile -- an actual
+       filled pill makes it obviously tappable */
+    .vacancy-apply-cta {
+        background: var(--store-primary);
+        color: #fff;
+        padding: 0.55rem 1.05rem;
+        border-radius: 999px;
+        font-size: 0.82rem;
+    }
+}
+
 .vacancy-requirements {
     list-style: none;
     padding: 0;
