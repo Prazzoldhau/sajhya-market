@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.db.models import Count
+from django.http import HttpResponse
 
 # Create your views here.
 def landing_page(request):
@@ -21,3 +22,44 @@ def landing_page(request):
         .order_by('-is_featured', '-order_count', '-id')[:8]
 
     return render(request, 'index.html', {'marketplace_preview': marketplace_preview})
+
+
+def robots_txt(request):
+    """Blocks the login-gated dashboard/account apps and transactional
+    marketplace actions (cart, checkout, vendor tools, patient-specific
+    picks) -- everything else public (marketplace listing/products,
+    pharmacy, the find-a-physio directory and profiles) stays crawlable.
+    Not a security boundary, just crawl-budget/index hygiene."""
+    lines = [
+        "User-agent: *",
+        "Disallow: /admin/",
+        "Disallow: /acc/",
+        "Disallow: /personal-acc/",
+        "Disallow: /clinic-acc/",
+        "Disallow: /enterprise-acc/",
+        "Disallow: /physio-api/",
+        "Disallow: /vendor-api/",
+        "Disallow: /delivery/",
+        "Disallow: /patient-app/",
+        "Disallow: /visit-notes/",
+        "Disallow: /upload-app/",
+        "Disallow: /prescription-app/",
+        "Disallow: /video-app/",
+        "Disallow: /detail-app/",
+        "Disallow: /exercise-app/",
+        "Disallow: /summit/",
+        "Disallow: /marketplace/patient/",
+        "Disallow: /marketplace/cart/",
+        "Disallow: /marketplace/checkout/",
+        "Disallow: /marketplace/add-to-cart/",
+        "Disallow: /marketplace/remove-from-cart/",
+        "Disallow: /marketplace/update-cart/",
+        "Disallow: /marketplace/order-success/",
+        "Disallow: /marketplace/vendor/",
+        "Disallow: /find-physio/manage/",
+        "Disallow: /find-physio/booking/",
+        "Disallow: /find-physio/*/book/",
+        "",
+        "Sitemap: https://sajhya.com/sitemap.xml",
+    ]
+    return HttpResponse("\n".join(lines), content_type="text/plain")

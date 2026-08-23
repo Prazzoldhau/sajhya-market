@@ -3,6 +3,7 @@
 {% load marketplace_extras %}
 
 {% block title %}{{ product.name }} — Sajhya Marketplace{% endblock %}
+{% block meta_description %}{% if product.description %}{{ product.description|truncatewords:30 }}{% else %}Buy {{ product.name }}{% if product.category %} from the {{ product.category.name }} range{% endif %} on the Sajhya Marketplace — NPR {{ product.price }}, delivered across Nepal.{% endif %}{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ 'css/marketplace-store.css'|plain_static }}">

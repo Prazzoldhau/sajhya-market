@@ -2,10 +2,19 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from main.views import landing_page
+from django.contrib.sitemaps.views import sitemap
+from main.views import landing_page, robots_txt
+from main.sitemaps import StaticViewSitemap, ProductSitemap
+
+sitemaps = {
+    'static': StaticViewSitemap,
+    'products': ProductSitemap,
+}
 
 urlpatterns = [
     path ('', landing_page, name='landing'),
+    path ('robots.txt', robots_txt, name='robots-txt'),
+    path ('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='sitemap'),
     path ('admin/', admin.site.urls),
     path ('', include('main.urls')),
     path ('acc/', include ('account_app.urls')),
