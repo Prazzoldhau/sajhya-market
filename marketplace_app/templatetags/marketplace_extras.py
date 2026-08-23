@@ -37,16 +37,29 @@ def plain_static(image_path):
 #   (Nurse & Staff Uniforms, Patient Gowns, Scrubs, Surgical Wear,
 #   Slurrp Farm don't exist in every DB yet -- pending category_icons
 #   entries here don't hurt, they're just unused until the category exists.)
+# 2026-08-23 "ChatGPT Image Aug 23 07_56_54 AM.png": UM Orthotics + Zuvara
+#   categories -- Adult Diapers and Baby Wipes & Tissue are from the pending
+#   Zuvara import (see zuvara_catalog_import memory), unused until that SQL
+#   is actually run.
 CATEGORY_ICON_IMAGES = {
+    'Adult Diapers': 'adult-diapers.png',
+    'Baby Wipes & Tissue': 'baby-wipes-tissue.png',
     'Behavioural Therapy': 'behavioural-therapy.png',
     'Bioderma': 'bioderma.png',
+    'Body Belts & Supports': 'body-belts-supports.png',
+    'Cervical Supports': 'cervical-supports.png',
     'Diapers': 'diapers.png',
     'Electrical Therapy': 'electrical-therapy.png',
     'Exercise Equipment': 'exercise-equipment.png',
+    'Finger Splints': 'finger-splints.png',
     'Fixderma': 'fixderma.png',
+    'Foot & Ankle Support': 'foot-ankle-support.png',
+    'Fracture Braces': 'fracture-braces.png',
     'Gels & Lubricants': 'gels-lubricants.png',
     'Hospital Linens & Accessories': 'hospital-linens-accessories.png',
+    'Kids Range': 'kids-range.png',
     'Kleida': 'kleida.png',
+    'Knee Braces': 'knee-braces.png',
     'Lab Coats': 'lab-coats.png',
     'Massage Tools': 'massage-tools.png',
     'Nurse & Staff Uniforms': 'nurse-staff-uniforms.png',
@@ -54,12 +67,15 @@ CATEGORY_ICON_IMAGES = {
     'Patient Gowns': 'patient-gowns.png',
     'Resistance & Bands': 'resistance-bands.png',
     'Scrubs': 'scrubs.png',
+    'Silicone & Allied Products': 'silicone-allied-products.png',
     'Slurrp Farm': 'slurrp-farm.png',
     'Speech Therapy': 'speech-therapy.png',
     'Surgical': 'surgical.png',
     'Surgical Wear': 'surgical-wear.png',
     'Taping & Wrapping': 'taping-wrapping.png',
     'Thermal Therapy': 'thermal-therapy.png',
+    'Traction Kits': 'traction-kits.png',
+    'Wrist & Forearm Braces': 'wrist-forearm-braces.png',
 }
 
 
