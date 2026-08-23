@@ -1055,8 +1055,13 @@ body > .container.mt-3:empty {
 
     .store-search {
         order: 3;
+        /* flex-basis (set to 0% by the base rule's `flex: 1`) wins over a
+           plain `width` for sizing a flex item -- `width: 100%` alone never
+           actually took effect, so the search bar was staying squeezed down
+           to ~content-size next to the logo/icons instead of wrapping onto
+           its own full-width row. flex-basis: 100% forces that wrap. */
+        flex: 1 1 100%;
         max-width: none;
-        width: 100%;
         margin-left: 0;
     }
 
