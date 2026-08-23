@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load marketplace_extras %}
+
+{% block title %}{{ vacancy.title }} — Careers at Sajhya{% endblock %}
+{% block meta_description %}{{ vacancy.description|truncatewords:30 }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ 'css/marketplace-store.css'|plain_static }}">
+{% endblock %}
+
+{% block content %}
+<div class="store">
+
+    {% include 'careers/_careers_header.html' %}
+
+    <div class="store-wrap">
+
+        <div class="store-breadcrumb">
+            <a href="{% url 'vacancy-list' %}">Careers</a>
+            <span>›</span>
+            <span>{{ vacancy.title }}</span>
+        </div>
+
+        <div class="store-layout">
+            <div>
+                <h1 class="store-detail-title">{{ vacancy.title }}</h1>
+                <div class="vacancy-meta">
+                    {% if vacancy.department %}<span>{{ vacancy.department }}</span>{% endif %}
+                    <span>{{ vacancy.location }}</span>
+                    <span>{{ vacancy.get_employment_type_display }}</span>
+                    {% if vacancy.closing_date %}<span>Apply by {{ vacancy.closing_date|date:"M j, Y" }}</span>{% endif %}
+                </div>
+
+                <div class="store-detail-desc">
+                    <h4>About the role</h4>
+                    <p>{{ vacancy.description|linebreaksbr }}</p>
+                </div>
+
+                {% if vacancy.requirements_list %}
+                <div class="store-detail-desc">
+                    <h4>What we're looking for</h4>
+                    <ul class="vacancy-requirements">
+                        {% for r in vacancy.requirements_list %}<li>{{ r }}</li>{% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="store-summary">
+                <h3 class="store-summary-title">Apply for this role</h3>
+                <form method="POST" enctype="multipart/form-data" action="">
+                    {% csrf_token %}
+
+                    <div class="store-form-group">
+                        <label class="store-label">Full Name <span class="store-required">*</span></label>
+                        <input type="text" name="full_name" class="store-input" placeholder="Your full name" required>
+                    </div>
+
+                    <div class="store-form-group">
+                        <label class="store-label">Email <span class="store-required">*</span></label>
+                        <input type="email" name="email" class="store-input" placeholder="your@email.com" required>
+                    </div>
+
+                    <div class="store-form-group">
+                        <label class="store-label">WhatsApp Number</label>
+                        <input type="tel" name="whatsapp_number" class="store-input" placeholder="+9779812345678">
+                    </div>
+
+                    <div class="store-form-group">
+                        <label class="store-label">Resume / CV</label>
+                        <input type="file" name="resume" class="store-input" accept=".pdf,.doc,.docx">
+                    </div>
+
+                    <div class="store-form-group">
+                        <label class="store-label">Cover Note</label>
+                        <textarea name="cover_note" class="store-input store-textarea" rows="4" placeholder="Tell us why you're a good fit..."></textarea>
+                    </div>
+
+                    <button type="submit" class="store-btn-primary store-btn-full">
+                        Submit Application
+                    </button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
