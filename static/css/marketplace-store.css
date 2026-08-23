@@ -1185,7 +1185,14 @@ body > .container.mt-3:empty {
     font-size: 1.15rem;
     font-weight: 700;
     color: var(--store-ink);
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.vacancy-org {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--store-primary);
+    margin-bottom: 0.6rem;
 }
 
 .vacancy-meta {

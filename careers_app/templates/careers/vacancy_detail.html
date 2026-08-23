@@ -2,7 +2,7 @@
 {% load static %}
 {% load marketplace_extras %}
 
-{% block title %}{{ vacancy.title }} — Careers at Sajhya{% endblock %}
+{% block title %}{{ vacancy.title }} at {{ vacancy.organization }} — Sajhya Careers{% endblock %}
 {% block meta_description %}{{ vacancy.description|truncatewords:30 }}{% endblock %}
 
 {% block extra_css %}
@@ -25,6 +25,7 @@
         <div class="store-layout">
             <div>
                 <h1 class="store-detail-title">{{ vacancy.title }}</h1>
+                <div class="vacancy-org">{{ vacancy.organization }}</div>
                 <div class="vacancy-meta">
                     {% if vacancy.department %}<span>{{ vacancy.department }}</span>{% endif %}
                     <span>{{ vacancy.location }}</span>

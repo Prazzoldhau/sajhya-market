@@ -5,10 +5,11 @@ from .models import Vacancy, VacancyApplication
 
 @admin.register(Vacancy)
 class VacancyAdmin(admin.ModelAdmin):
-    list_display = ['title', 'department', 'location', 'employment_type', 'is_active', 'closing_date', 'posted_at', 'application_count']
-    list_filter = ['is_active', 'employment_type', 'department']
-    search_fields = ['title', 'department', 'location']
+    list_display = ['title', 'organization', 'department', 'location', 'employment_type', 'is_active', 'closing_date', 'posted_at', 'application_count']
+    list_filter = ['is_active', 'employment_type', 'organization', 'department']
+    search_fields = ['title', 'organization', 'department', 'location']
     list_editable = ['is_active']
+    fields = ['title', 'organization', 'department', 'location', 'employment_type', 'description', 'requirements', 'is_active', 'closing_date']
 
     def application_count(self, obj):
         return obj.applications.count()

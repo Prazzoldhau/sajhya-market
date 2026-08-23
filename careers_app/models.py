@@ -10,7 +10,8 @@ class Vacancy(models.Model):
     ]
 
     title = models.CharField(max_length=200)
-    department = models.CharField(max_length=100, blank=True)
+    organization = models.CharField(max_length=150, default='Sajhya', help_text="Who's actually hiring -- 'Sajhya' for in-house roles, or the partner clinic/institute's name (e.g. 'Pinnacle Rehab Clinic') if posted on their behalf.")
+    department = models.CharField(max_length=100, blank=True, help_text="Team/function within that organization, e.g. 'Physiotherapy', 'Engineering'.")
     location = models.CharField(max_length=150, default='Kathmandu, Nepal')
     employment_type = models.CharField(max_length=20, choices=EMPLOYMENT_TYPES, default='full_time')
     description = models.TextField(help_text='What the role involves.')

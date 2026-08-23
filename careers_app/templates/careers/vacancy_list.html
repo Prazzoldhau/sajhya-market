@@ -30,6 +30,7 @@
                 <a href="{% url 'vacancy-detail' v.id %}" class="vacancy-card">
                     <div class="vacancy-card-main">
                         <h3>{{ v.title }}</h3>
+                        <div class="vacancy-org">{{ v.organization }}</div>
                         <div class="vacancy-meta">
                             {% if v.department %}<span>{{ v.department }}</span>{% endif %}
                             <span>{{ v.location }}</span>
