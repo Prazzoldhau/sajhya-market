@@ -67,6 +67,7 @@ INSTALLED_APPS = [
     'vendor_api_app',
     'delivery_app',
     'lab_app',
+    'careers_app',
 
 ]
 
@@ -204,3 +205,25 @@ VAPID_CLAIM_EMAIL = env('VAPID_CLAIM_EMAIL')
 # requests. Google Play requires a working contact on the policy it checks, so
 # this must be a mailbox that is actually monitored.
 PRIVACY_CONTACT_EMAIL = env('PRIVACY_CONTACT_EMAIL', default='aestheticphysiox@gmail.com')
+
+# Email (careers_app application confirmations + HR new-application alerts).
+# Not configured yet -- EMAIL_HOST/EMAIL_HOST_USER/EMAIL_HOST_PASSWORD are
+# all empty by default, e.g. Gmail SMTP with an App Password, or a
+# transactional service (SendGrid/Mailgun/etc). Until real values are added
+# to .env, send_mail just fails -- caught in
+# careers_app.views._send_application_emails, so a missing/broken mail
+# server never blocks an application from saving, only the email goes out.
+EMAIL_BACKEND = env('EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
+EMAIL_HOST = env('EMAIL_HOST', default='')
+EMAIL_PORT = env.int('EMAIL_PORT', default=587)
+EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=True)
+EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
+DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default=EMAIL_HOST_USER)
+
+# Who gets emailed when a new vacancy application comes in.
+HR_NOTIFICATION_EMAIL = env('HR_NOTIFICATION_EMAIL', default='aestheticphysiox@gmail.com')
+
+# Used to build the "review this application" admin link in the HR
+# notification email -- update if/when a fixed production domain is settled.
+SITE_URL = env('SITE_URL', default='https://sajhya.com')

@@ -12,7 +12,7 @@ class StaticViewSitemap(Sitemap):
     protocol = 'https'
 
     def items(self):
-        return ['landing', 'marketplace', 'pharmacy', 'find-physio']
+        return ['landing', 'marketplace', 'pharmacy', 'find-physio', 'vacancy-list']
 
     def location(self, item):
         return reverse(item)
@@ -31,3 +31,18 @@ class ProductSitemap(Sitemap):
 
     def location(self, obj):
         return reverse('product-detail', args=[obj.id])
+
+
+class VacancySitemap(Sitemap):
+    """One entry per open vacancy -- job listings are worth indexing on
+    their own."""
+    changefreq = 'daily'
+    priority = 0.6
+    protocol = 'https'
+
+    def items(self):
+        from careers_app.models import Vacancy
+        return Vacancy.objects.filter(is_active=True)
+
+    def location(self, obj):
+        return reverse('vacancy-detail', args=[obj.id])

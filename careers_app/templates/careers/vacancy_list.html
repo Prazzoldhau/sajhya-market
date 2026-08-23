@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load marketplace_extras %}
+
+{% block title %}Careers — Sajhya{% endblock %}
+{% block meta_description %}Open roles at Sajhya, Nepal's healthcare platform -- browse vacancies and apply online.{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ 'css/marketplace-store.css'|plain_static }}">
+{% endblock %}
+
+{% block content %}
+<div class="store">
+
+    {% include 'careers/_careers_header.html' %}
+
+    <div class="store-wrap">
+        <section class="store-section vacancy-intro">
+            <div class="store-section-head">
+                <h1>Careers at Sajhya</h1>
+                <span class="store-sub">{{ vacancies|length }} open role{{ vacancies|length|pluralize }}</span>
+            </div>
+            <p class="vacancy-intro-text">We're building Nepal's healthcare platform -- tools for physios, clinics, pharmacies and patients across the country. Here's where we're currently hiring.</p>
+        </section>
+
+        <section class="store-section">
+            {% if vacancies %}
+            <div class="vacancy-list">
+                {% for v in vacancies %}
+                <a href="{% url 'vacancy-detail' v.id %}" class="vacancy-card">
+                    <div class="vacancy-card-main">
+                        <h3>{{ v.title }}</h3>
+                        <div class="vacancy-meta">
+                            {% if v.department %}<span>{{ v.department }}</span>{% endif %}
+                            <span>{{ v.location }}</span>
+                            <span>{{ v.get_employment_type_display }}</span>
+                            {% if v.closing_date %}<span>Apply by {{ v.closing_date|date:"M j" }}</span>{% endif %}
+                        </div>
+                    </div>
+                    <span class="vacancy-apply-cta">View &amp; Apply →</span>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="store-empty">
+                <p>No open roles right now{% if search %} matching "{{ search }}"{% endif %}. Check back soon.</p>
+            </div>
+            {% endif %}
+        </section>
+    </div>
+</div>
+{% endblock %}

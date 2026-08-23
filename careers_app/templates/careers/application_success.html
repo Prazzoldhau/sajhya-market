@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load marketplace_extras %}
+
+{% block title %}Application Received — Sajhya Careers{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ 'css/marketplace-store.css'|plain_static }}">
+{% endblock %}
+
+{% block content %}
+<div class="store">
+
+    {% include 'careers/_careers_header.html' %}
+
+    <div class="store-wrap">
+        <div class="store-success">
+            <div class="store-success-icon">✓</div>
+            <h1 class="store-success-title">Application Received!</h1>
+            <p class="store-success-sub">
+                Thanks, {{ application.full_name }} — we've received your application for
+                <strong>{{ application.vacancy.title }}</strong>. We'll follow up by email{% if application.whatsapp_number %} or WhatsApp{% endif %}
+                if you're shortlisted.
+            </p>
+
+            <a href="{% url 'vacancy-list' %}" class="store-btn-primary">View Other Openings</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

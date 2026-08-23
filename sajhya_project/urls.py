@@ -4,11 +4,12 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.sitemaps.views import sitemap
 from main.views import landing_page, robots_txt
-from main.sitemaps import StaticViewSitemap, ProductSitemap
+from main.sitemaps import StaticViewSitemap, ProductSitemap, VacancySitemap
 
 sitemaps = {
     'static': StaticViewSitemap,
     'products': ProductSitemap,
+    'vacancies': VacancySitemap,
 }
 
 urlpatterns = [
@@ -29,6 +30,7 @@ urlpatterns = [
     path ('upload-app/', include('upload_app.urls')),
     path ('referral/', include('referral_app.urls')),
     path ('marketplace/', include('marketplace_app.urls')),
+    path ('careers/', include('careers_app.urls')),
     path ('find-physio/', include('find_physio_app.urls')),
     path ('summit/', include('summit_app.urls')),
     path ('visit-notes/', include('visit_notes_app.urls')),
