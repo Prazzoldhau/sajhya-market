@@ -8,6 +8,7 @@ from django.db.models import Sum, Count
 from .models import Category, Product, Order, OrderItem, DiagnosisProductMap, PatientProductRecommendation
 from decimal import Decimal
 from functools import wraps
+import random
 
 
 def staff_required(view_func):
@@ -37,6 +38,29 @@ def get_cart_count(request):
     return sum(item['quantity'] for item in _get_cart(request).values())
 
 
+def _get_shuffled_products(request, products, category_id, search, reshuffle):
+    """Random order for the Marketplace "All Products" grid, re-rolled on
+    every fresh page load but held stable (in the session) across the
+    infinite-scroll AJAX batches of that same visit -- otherwise each batch
+    request would get its own fresh shuffle and products would repeat or
+    get skipped as you scroll. Keyed to category+search so switching filters
+    gets its own shuffle instead of reusing a stale one from a different
+    filter combo."""
+    filter_key = f'{category_id}|{search}'
+    session_key = 'marketplace_shuffle'
+    stored = request.session.get(session_key)
+
+    if reshuffle or not stored or stored.get('key') != filter_key:
+        ids = list(products.values_list('id', flat=True))
+        random.shuffle(ids)
+        stored = {'key': filter_key, 'ids': ids}
+        request.session[session_key] = stored
+        request.session.modified = True
+
+    by_id = {p.id: p for p in products}
+    return [by_id[pid] for pid in stored['ids'] if pid in by_id]
+
+
 def _build_cart_lines(cart):
     lines = []
     total = Decimal('0.00')
@@ -60,9 +84,7 @@ def marketplace(request):
     # Pharmacy is a separate section (see `pharmacy` view below) -- never
     # listed or searchable from the general Marketplace page.
     categories = Category.objects.exclude(name='Pharmacy')
-    products = Product.objects.filter(in_stock=True).exclude(category__name='Pharmacy').select_related('category')\
-        .annotate(order_count=Count('orderitem'))\
-        .order_by('-is_featured', '-order_count', 'name')
+    products = Product.objects.filter(in_stock=True).exclude(category__name='Pharmacy').select_related('category')
 
     category_id = request.GET.get('category', '').strip()
     if category_id:
@@ -87,14 +109,23 @@ def marketplace(request):
 
     featured = Product.objects.filter(is_featured=True, in_stock=True).exclude(category__name='Pharmacy').select_related('category')[:4]
 
+    # Shuffled, not alphabetical/best-seller order -- reshuffled on every
+    # fresh visit to this filter combo (category+search), but held stable in
+    # the session across infinite-scroll batches of that same visit, since
+    # re-randomizing on every AJAX page fetch would repeat/skip products as
+    # you scroll. _get_shuffled_products below does the actual reorder.
+    page_param = request.GET.get('page')
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+    ordered_products = _get_shuffled_products(request, products, category_id, search, reshuffle=not is_ajax and page_param in (None, '', '1'))
+
     # 259+ products rendered in one page was slow and image-heavy -- page it.
     # The page renders batch 1 server-side; the infinite-scroll JS on
     # marketplace.html re-requests this same view for batch 2+ with
     # X-Requested-With set and just wants the new cards back, not a full page.
-    paginator = Paginator(products, 24)
-    page_obj = paginator.get_page(request.GET.get('page'))
+    paginator = Paginator(ordered_products, 24)
+    page_obj = paginator.get_page(page_param)
 
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+    if is_ajax:
         html = render_to_string('marketplace/_product_cards.html', {'products': page_obj}, request=request)
         return JsonResponse({
             'html': html,
