@@ -1,0 +1,16 @@
+{% load marketplace_extras %}
+{% for product in products %}
+<a href="{% url 'product-detail' product.id %}" class="store-card">
+    <div class="store-card-img">
+        {% if product.image %}
+            <img src="{{ product.image|plain_static }}" alt="{{ product.name }}" loading="lazy" decoding="async">
+        {% else %}
+            <span class="placeholder">{{ product.category.icon|default:"📦" }}</span>
+        {% endif %}
+    </div>
+    <div class="store-card-body">
+        <p class="store-card-name">{{ product.name }}</p>
+        <div class="store-card-price">NPR {{ product.price }}</div>
+    </div>
+</a>
+{% endfor %}

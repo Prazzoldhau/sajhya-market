@@ -3,6 +3,7 @@ from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.http import JsonResponse
+from django.template.loader import render_to_string
 from django.db.models import Sum, Count
 from .models import Category, Product, Order, OrderItem, DiagnosisProductMap, PatientProductRecommendation
 from decimal import Decimal
@@ -87,8 +88,19 @@ def marketplace(request):
     featured = Product.objects.filter(is_featured=True, in_stock=True).exclude(category__name='Pharmacy').select_related('category')[:4]
 
     # 259+ products rendered in one page was slow and image-heavy -- page it.
+    # The page renders batch 1 server-side; the infinite-scroll JS on
+    # marketplace.html re-requests this same view for batch 2+ with
+    # X-Requested-With set and just wants the new cards back, not a full page.
     paginator = Paginator(products, 24)
     page_obj = paginator.get_page(request.GET.get('page'))
+
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        html = render_to_string('marketplace/_product_cards.html', {'products': page_obj}, request=request)
+        return JsonResponse({
+            'html': html,
+            'has_next': page_obj.has_next(),
+            'next_page': page_obj.next_page_number() if page_obj.has_next() else None,
+        })
 
     context = {
         'categories': categories,

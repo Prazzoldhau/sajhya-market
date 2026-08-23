@@ -101,22 +101,8 @@
         </div>
 
         {% if products %}
-        <div class="store-grid">
-            {% for product in products %}
-            <a href="{% url 'product-detail' product.id %}" class="store-card">
-                <div class="store-card-img">
-                    {% if product.image %}
-                        <img src="{{ product.image|plain_static }}" alt="{{ product.name }}">
-                    {% else %}
-                        <span class="placeholder">{{ product.category.icon|default:"📦" }}</span>
-                    {% endif %}
-                </div>
-                <div class="store-card-body">
-                    <p class="store-card-name">{{ product.name }}</p>
-                    <div class="store-card-price">NPR {{ product.price }}</div>
-                </div>
-            </a>
-            {% endfor %}
+        <div class="store-grid" id="product-grid">
+            {% include 'marketplace/_product_cards.html' %}
         </div>
         {% else %}
         <div class="store-empty">
@@ -124,15 +110,9 @@
         </div>
         {% endif %}
 
-        {% if page_obj.paginator.num_pages > 1 %}
-        <div class="store-pagination">
-            {% if page_obj.has_previous %}
-            <a href="?{% if selected_category %}category={{ selected_category }}&{% endif %}{% if search %}search={{ search }}&{% endif %}page={{ page_obj.previous_page_number }}" class="store-page-link">← Prev</a>
-            {% endif %}
-            <span class="store-page-status">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
-            {% if page_obj.has_next %}
-            <a href="?{% if selected_category %}category={{ selected_category }}&{% endif %}{% if search %}search={{ search }}&{% endif %}page={{ page_obj.next_page_number }}" class="store-page-link">Next →</a>
-            {% endif %}
+        {% if page_obj.has_next %}
+        <div id="scroll-sentinel" class="store-scroll-sentinel" data-next-page="{{ page_obj.next_page_number }}">
+            <span class="store-loading-spinner" aria-hidden="true"></span>
         </div>
         {% endif %}
     </section>
@@ -160,4 +140,52 @@
     </section>
 
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    var sentinel = document.getElementById('scroll-sentinel');
+    if (!sentinel) return;
+    var grid = document.getElementById('product-grid');
+    var loading = false;
+
+    var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+            if (entry.isIntersecting && !loading) loadNextBatch();
+        });
+    }, { rootMargin: '600px 0px' }); // start fetching before the sentinel is actually on screen
+
+    observer.observe(sentinel);
+
+    function loadNextBatch() {
+        var page = sentinel.dataset.nextPage;
+        if (!page) return;
+        loading = true;
+        sentinel.classList.add('is-loading');
+
+        var params = new URLSearchParams(window.location.search);
+        params.set('page', page);
+
+        fetch('?' + params.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                grid.insertAdjacentHTML('beforeend', data.html);
+                if (data.has_next) {
+                    sentinel.dataset.nextPage = data.next_page;
+                } else {
+                    observer.unobserve(sentinel);
+                    sentinel.remove();
+                }
+            })
+            .catch(function () {
+                // leave next_page as-is so scrolling back into view retries
+            })
+            .finally(function () {
+                loading = false;
+                sentinel.classList.remove('is-loading');
+            });
+    }
+}());
+</script>
 {% endblock %}
