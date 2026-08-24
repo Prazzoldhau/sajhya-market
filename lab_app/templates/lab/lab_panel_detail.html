@@ -22,82 +22,77 @@
             <span>{{ panel.name }}</span>
         </div>
 
-        <div class="store-lab-detail">
-            <span class="store-detail-cat">Test Panel</span>
+        <div class="store-layout">
+            <div>
+                <span class="store-detail-cat">Test Panel</span>
 
-            <h1 class="store-detail-title">{{ panel.name }}</h1>
+                <h1 class="store-detail-title">{{ panel.name }}</h1>
 
-            <div class="store-detail-price">
-                NPR {{ panel.price }}
-                {% if panel.savings > 0 %}<span class="store-lab-savings-inline">Save NPR {{ panel.savings }} vs. individually</span>{% endif %}
-            </div>
+                <div class="store-detail-price">
+                    NPR {{ panel.price }}
+                    {% if panel.savings > 0 %}<span class="store-lab-savings-inline">Save NPR {{ panel.savings }} vs. individually</span>{% endif %}
+                </div>
 
-            {% if panel.description %}
-            <div class="store-detail-desc">
-                <p>{{ panel.description }}</p>
-            </div>
-            {% endif %}
+                {% if panel.description %}
+                <div class="store-detail-desc">
+                    <p>{{ panel.description }}</p>
+                </div>
+                {% endif %}
 
-            <div class="store-detail-desc">
-                <h4>{{ panel.tests.count }} Tests Included</h4>
-                <ul class="vacancy-requirements">
-                    {% for t in panel.tests.all %}<li>{{ t.name }} <span class="store-lab-line-price">NPR {{ t.price }}</span></li>{% endfor %}
-                </ul>
-            </div>
+                <div class="store-detail-desc">
+                    <h4>{{ panel.tests.count }} Tests Included</h4>
+                    <ul class="vacancy-requirements">
+                        {% for t in panel.tests.all %}<li>{{ t.name }} <span class="store-lab-line-price">NPR {{ t.price }}</span></li>{% endfor %}
+                    </ul>
+                </div>
 
-            <div class="store-detail-actions">
-                <a href="{% url 'lab-add-to-cart' 'panel' panel.id %}" class="store-btn-primary store-btn-add" data-goto="{% url 'lab-view-cart' %}">
-                    Add Panel to Cart
-                </a>
                 <a href="{% url 'lab-tests' %}" class="store-btn-outline">
                     Browse More Tests
                 </a>
+            </div>
+
+            <div class="store-summary">
+                <h3 class="store-summary-title">Request This Panel</h3>
+                <form method="POST" action="">
+                    {% csrf_token %}
+
+                    <div class="store-form-group">
+                        <label class="store-label">Full Name <span class="store-required">*</span></label>
+                        <input type="text" name="customer_name" class="store-input" placeholder="Your full name" required
+                               value="{{ request.user.get_full_name|default:'' }}">
+                    </div>
+
+                    <div class="store-form-group">
+                        <label class="store-label">Phone Number <span class="store-required">*</span></label>
+                        <input type="tel" name="customer_phone" class="store-input" placeholder="98XXXXXXXX" required
+                               value="{{ request.user.phone|default:'' }}">
+                    </div>
+
+                    <div class="store-form-group">
+                        <label class="store-label">Email Address <span class="store-required">*</span></label>
+                        <input type="email" name="customer_email" class="store-input" placeholder="your@email.com" required
+                               value="{{ request.user.email|default:'' }}">
+                    </div>
+
+                    <div class="store-form-group">
+                        <label class="store-label">Sample Collection Address <span class="store-required">*</span></label>
+                        <textarea name="delivery_address" class="store-input store-textarea" rows="2"
+                                  placeholder="Where should our phlebotomist collect your sample?" required></textarea>
+                    </div>
+
+                    <div class="store-form-group">
+                        <label class="store-label">Notes</label>
+                        <textarea name="notes" class="store-input store-textarea" rows="2"
+                                  placeholder="Preferred time, existing conditions, etc."></textarea>
+                    </div>
+
+                    <button type="submit" class="store-btn-primary store-btn-full">
+                        Request This Panel — NPR {{ panel.price }}
+                    </button>
+                </form>
             </div>
         </div>
 
     </div>
 </div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-(function () {
-    function updateBadge(count) {
-        var cartBtn = document.querySelector('.store-icon-btn[title="Cart"]');
-        if (!cartBtn) return;
-        var badge = cartBtn.querySelector('.store-icon-badge');
-        if (count > 0) {
-            if (!badge) {
-                badge = document.createElement('span');
-                badge.className = 'store-icon-badge';
-                cartBtn.appendChild(badge);
-            }
-            badge.textContent = count;
-        } else if (badge) {
-            badge.remove();
-        }
-    }
-
-    document.addEventListener('click', function (e) {
-        var btn = e.target.closest('.store-btn-add');
-        if (!btn) return;
-        e.preventDefault();
-        var goto = btn.dataset.goto || null;
-
-        fetch(btn.href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-            .then(function (r) { return r.json(); })
-            .then(function (data) {
-                if (!data.success) return;
-                updateBadge(data.cart_count);
-                if (goto) {
-                    window.location.href = goto;
-                } else {
-                    var orig = btn.textContent;
-                    btn.textContent = '✓ Added';
-                    setTimeout(function () { btn.textContent = orig; }, 1000);
-                }
-            });
-    });
-}());
-</script>
 {% endblock %}

@@ -22,7 +22,8 @@
         </form>
 
         <div class="store-header-icons">
-            <a href="{% if active == 'pharmacy' %}{% url 'pharmacy-view-cart' %}{% elif active == 'lab' %}{% url 'lab-view-cart' %}{% else %}{% url 'view-cart' %}{% endif %}" class="store-icon-btn" title="Cart">
+            {% if active != 'lab' %}
+            <a href="{% if active == 'pharmacy' %}{% url 'pharmacy-view-cart' %}{% else %}{% url 'view-cart' %}{% endif %}" class="store-icon-btn" title="Cart">
                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M6 6h15l-1.5 9h-12L6 6z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
                     <path d="M6 6L4.5 3H2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
@@ -31,6 +32,7 @@
                 </svg>
                 {% if cart_count > 0 %}<span class="store-icon-badge">{{ cart_count }}</span>{% endif %}
             </a>
+            {% endif %}
             <a href="{% url 'login' %}" class="store-icon-btn" title="Account">
                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <circle cx="12" cy="8" r="3.4" stroke="currentColor" stroke-width="1.8"/>
