@@ -19,18 +19,32 @@ class StaticViewSitemap(Sitemap):
 
 
 class ProductSitemap(Sitemap):
-    """One entry per in-stock, publicly listed product (Pharmacy excluded,
-    same as every other public Marketplace query in marketplace_app.views)."""
+    """One entry per in-stock Marketplace product -- Pharmacy has its own
+    PharmacyProductSitemap below now that it's a separate catalog/table."""
     changefreq = 'weekly'
     priority = 0.6
     protocol = 'https'
 
     def items(self):
         from marketplace_app.models import Product
-        return Product.objects.filter(in_stock=True).exclude(category__name='Pharmacy')
+        return Product.objects.filter(in_stock=True)
 
     def location(self, obj):
         return reverse('product-detail', args=[obj.id])
+
+
+class PharmacyProductSitemap(Sitemap):
+    """One entry per in-stock Pharmacy product."""
+    changefreq = 'weekly'
+    priority = 0.6
+    protocol = 'https'
+
+    def items(self):
+        from marketplace_app.models import PharmacyProduct
+        return PharmacyProduct.objects.filter(in_stock=True)
+
+    def location(self, obj):
+        return reverse('pharmacy-product-detail', args=[obj.id])
 
 
 class VacancySitemap(Sitemap):

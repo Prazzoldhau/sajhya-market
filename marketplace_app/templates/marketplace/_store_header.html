@@ -7,22 +7,22 @@
         </a>
 
         <nav class="store-nav">
-            <a href="{% url 'marketplace' %}" class="is-active">Store</a>
+            <a href="{% url 'marketplace' %}" class="{% if active != 'pharmacy' %}is-active{% endif %}">Store</a>
             <a href="{% url 'marketplace' %}#categories">Categories</a>
             <a href="{% url 'marketplace' %}">Brands</a>
-            <a href="{% url 'pharmacy' %}">For Professionals</a>
+            <a href="{% url 'pharmacy' %}" class="{% if active == 'pharmacy' %}is-active{% endif %}">For Professionals</a>
         </nav>
 
-        <form class="store-search" method="GET" action="{% url 'marketplace' %}">
+        <form class="store-search" method="GET" action="{% if active == 'pharmacy' %}{% url 'pharmacy' %}{% else %}{% url 'marketplace' %}{% endif %}">
             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
                 <path d="M21 21l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
             </svg>
-            <input type="text" name="search" value="{{ search }}" placeholder="Search for products...">
+            <input type="text" name="search" value="{{ search }}" placeholder="{% if active == 'pharmacy' %}Search medicines...{% else %}Search for products...{% endif %}">
         </form>
 
         <div class="store-header-icons">
-            <a href="{% url 'view-cart' %}" class="store-icon-btn" title="Cart">
+            <a href="{% if active == 'pharmacy' %}{% url 'pharmacy-view-cart' %}{% else %}{% url 'view-cart' %}{% endif %}" class="store-icon-btn" title="Cart">
                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M6 6h15l-1.5 9h-12L6 6z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
                     <path d="M6 6L4.5 3H2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
