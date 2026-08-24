@@ -22,44 +22,36 @@
             <span>{{ panel.name }}</span>
         </div>
 
-        <div class="store-detail">
-            <div class="store-detail-img">
-                <div class="placeholder">
-                    <span>📋</span>
-                </div>
+        <div class="store-lab-detail">
+            <span class="store-detail-cat">Test Panel</span>
+
+            <h1 class="store-detail-title">{{ panel.name }}</h1>
+
+            <div class="store-detail-price">
+                NPR {{ panel.price }}
+                {% if panel.savings > 0 %}<span class="store-lab-savings-inline">Save NPR {{ panel.savings }} vs. individually</span>{% endif %}
             </div>
 
-            <div>
-                <span class="store-detail-cat">Test Panel</span>
+            {% if panel.description %}
+            <div class="store-detail-desc">
+                <p>{{ panel.description }}</p>
+            </div>
+            {% endif %}
 
-                <h1 class="store-detail-title">{{ panel.name }}</h1>
+            <div class="store-detail-desc">
+                <h4>{{ panel.tests.count }} Tests Included</h4>
+                <ul class="vacancy-requirements">
+                    {% for t in panel.tests.all %}<li>{{ t.name }} <span class="store-lab-line-price">NPR {{ t.price }}</span></li>{% endfor %}
+                </ul>
+            </div>
 
-                <div class="store-detail-price">
-                    NPR {{ panel.price }}
-                    {% if panel.savings > 0 %}<span class="store-lab-savings-inline">Save NPR {{ panel.savings }} vs. individually</span>{% endif %}
-                </div>
-
-                {% if panel.description %}
-                <div class="store-detail-desc">
-                    <p>{{ panel.description }}</p>
-                </div>
-                {% endif %}
-
-                <div class="store-detail-desc">
-                    <h4>{{ panel.tests.count }} Tests Included</h4>
-                    <ul class="vacancy-requirements">
-                        {% for t in panel.tests.all %}<li>{{ t.name }} <span class="store-lab-line-price">NPR {{ t.price }}</span></li>{% endfor %}
-                    </ul>
-                </div>
-
-                <div class="store-detail-actions">
-                    <a href="{% url 'lab-add-to-cart' 'panel' panel.id %}" class="store-btn-primary store-btn-add" data-goto="{% url 'lab-view-cart' %}">
-                        Add Panel to Cart
-                    </a>
-                    <a href="{% url 'lab-tests' %}" class="store-btn-outline">
-                        Browse More Tests
-                    </a>
-                </div>
+            <div class="store-detail-actions">
+                <a href="{% url 'lab-add-to-cart' 'panel' panel.id %}" class="store-btn-primary store-btn-add" data-goto="{% url 'lab-view-cart' %}">
+                    Add Panel to Cart
+                </a>
+                <a href="{% url 'lab-tests' %}" class="store-btn-outline">
+                    Browse More Tests
+                </a>
             </div>
         </div>
 
