@@ -1297,33 +1297,11 @@ body > .container.mt-3:empty {
    plain text, and the detail pages drop .store-detail's image column
    entirely in favor of a single readable content column. */
 
-.store-lab-search {
-    margin-top: 1.25rem;
-    max-width: 520px;
-}
-
-.store-lab-search-btn {
-    background: var(--store-primary);
-    color: #fff;
-    border: none;
-    border-radius: 999px;
-    padding: 0.5rem 1.1rem;
-    font-size: 0.85rem;
-    font-weight: 600;
-    cursor: pointer;
-    flex-shrink: 0;
-}
-
 .store-lab-panel-desc {
     font-size: 0.85rem;
     color: var(--store-muted);
     line-height: 1.5;
     margin: 0.4rem 0 0.9rem;
-}
-
-.store-lab-detail {
-    max-width: 640px;
-    padding: 2rem 0 3rem;
 }
 
 .store-lab-grid {
@@ -1379,10 +1357,6 @@ body > .container.mt-3:empty {
     .store-lab-grid {
         grid-template-columns: repeat(2, 1fr);
         gap: 0.75rem;
-    }
-
-    .store-lab-search {
-        max-width: none;
     }
 }
 

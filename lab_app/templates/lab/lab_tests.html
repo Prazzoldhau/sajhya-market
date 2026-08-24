@@ -12,7 +12,7 @@
 {% block content %}
 <div class="store">
 
-    {% include 'marketplace/_store_header.html' with active='lab' %}
+    {% include 'lab/_lab_header.html' %}
 
     <div class="store-wrap">
         <section class="store-section" style="padding-bottom:0.5rem">
@@ -21,16 +21,7 @@
                 <span class="store-sub">Home sample collection available</span>
             </div>
 
-            <form class="store-search store-lab-search" method="GET" action="{% url 'lab-tests' %}">
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
-                    <path d="M21 21l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                </svg>
-                <input type="text" name="search" value="{{ search }}" placeholder="Search tests & panels — e.g. thyroid, diabetes, CBC...">
-                <button type="submit" class="store-lab-search-btn">Search</button>
-            </form>
-
-            {% if search %}<p class="store-sub" style="margin-top:0.75rem">Results for "{{ search }}"</p>{% endif %}
+            {% if search %}<p class="store-sub">Results for "{{ search }}"</p>{% endif %}
         </section>
 
         <!-- Panels -->
