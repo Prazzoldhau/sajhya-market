@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
 
@@ -9,14 +11,18 @@ from .models import LabTest, LabTestPanel
 # (/lab-tests/, mounted in sajhya_project.urls -- not nested under
 # /marketplace/ the way Pharmacy is), own templates.
 #
-# No cart here (unlike Marketplace/Pharmacy) -- each test/panel detail page
-# has its own inline "Request This Test" booking form, same one-item,
-# no-cart pattern as careers_app's vacancy apply form. One request in, one
-# Order out, immediately.
+# No cart/checkout pages -- multi-select happens with plain checkboxes
+# directly on the browse page (lab_tests.html), same one-page pick-then-
+# submit pattern as exercise_app's "Prescribe Selected Exercises" (pick
+# several, one submit, no per-item page hops). One POST here books
+# everything checked as a single Order with one OrderItem per test/panel.
 from marketplace_app.models import Order, OrderItem
 
 
 def lab_tests(request):
+    if request.method == 'POST':
+        return _handle_bulk_booking(request)
+
     search = request.GET.get('search', '').strip()
 
     panels = LabTestPanel.objects.filter(is_active=True).prefetch_related('tests').order_by('-is_featured', 'name')
@@ -43,20 +49,39 @@ def lab_tests(request):
     return render(request, 'lab/lab_tests.html', context)
 
 
-def _book(request, *, lab_test=None, lab_panel=None):
-    """Shared booking logic for a single test or panel -- creates one Order
-    (order_type='lab_test') + one OrderItem and returns the redirect, or
-    None if this wasn't a valid submit (caller re-renders the form)."""
-    obj = lab_test or lab_panel
+def _handle_bulk_booking(request):
+    selected_keys = request.POST.getlist('items')
     customer_name = request.POST.get('customer_name', '').strip()
     customer_email = request.POST.get('customer_email', '').strip()
     customer_phone = request.POST.get('customer_phone', '').strip()
     delivery_address = request.POST.get('delivery_address', '').strip()
     notes = request.POST.get('notes', '').strip()
 
+    if not selected_keys:
+        messages.error(request, 'Select at least one test or panel first.')
+        return redirect('lab-tests')
+
     if not all([customer_name, customer_email, customer_phone, delivery_address]):
         messages.error(request, 'Please fill in all required fields.')
-        return None
+        return redirect('lab-tests')
+
+    items = []  # (lab_test_or_None, lab_panel_or_None, name, price)
+    for key in selected_keys:
+        item_type, _, item_id = key.partition('-')
+        if item_type == 'test':
+            obj = LabTest.objects.filter(id=item_id, is_active=True).first()
+            if obj:
+                items.append((obj, None, obj.name, obj.price))
+        elif item_type == 'panel':
+            obj = LabTestPanel.objects.filter(id=item_id, is_active=True).first()
+            if obj:
+                items.append((None, obj, obj.name, obj.price))
+
+    if not items:
+        messages.error(request, 'Your selected tests are no longer available -- please pick again.')
+        return redirect('lab-tests')
+
+    total = sum((price for _, _, _, price in items), Decimal('0.00'))
 
     order = Order.objects.create(
         order_type='lab_test',
@@ -66,34 +91,28 @@ def _book(request, *, lab_test=None, lab_panel=None):
         customer_phone=customer_phone,
         delivery_address=delivery_address,
         notes=notes,
-        total_amount=obj.price,
+        total_amount=total,
     )
-    OrderItem.objects.create(
-        order=order,
-        lab_test=lab_test,
-        lab_panel=lab_panel,
-        product_name=obj.name,
-        quantity=1,
-        unit_price=obj.price,
-    )
+    for lab_test, lab_panel, name, price in items:
+        OrderItem.objects.create(
+            order=order,
+            lab_test=lab_test,
+            lab_panel=lab_panel,
+            product_name=name,
+            quantity=1,
+            unit_price=price,
+        )
+
     return redirect('lab-order-success', order_number=order.order_number)
 
 
 def lab_test_detail(request, test_id):
     test = get_object_or_404(LabTest, id=test_id, is_active=True)
-    if request.method == 'POST':
-        result = _book(request, lab_test=test)
-        if result:
-            return result
     return render(request, 'lab/lab_test_detail.html', {'test': test})
 
 
 def lab_panel_detail(request, panel_id):
     panel = get_object_or_404(LabTestPanel, id=panel_id, is_active=True)
-    if request.method == 'POST':
-        result = _book(request, lab_panel=panel)
-        if result:
-            return result
     return render(request, 'lab/lab_panel_detail.html', {'panel': panel})
 
 
