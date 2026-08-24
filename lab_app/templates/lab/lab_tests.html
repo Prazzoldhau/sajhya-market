@@ -20,13 +20,18 @@
                 <h1>Lab Tests</h1>
                 <span class="store-sub">Home sample collection available</span>
             </div>
-        </section>
 
-        {% if search %}
-        <section class="store-section" style="padding-top:0">
-            <p class="store-sub">Results for "{{ search }}"</p>
+            <form class="store-search store-lab-search" method="GET" action="{% url 'lab-tests' %}">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
+                    <path d="M21 21l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <input type="text" name="search" value="{{ search }}" placeholder="Search tests & panels — e.g. thyroid, diabetes, CBC...">
+                <button type="submit" class="store-lab-search-btn">Search</button>
+            </form>
+
+            {% if search %}<p class="store-sub" style="margin-top:0.75rem">Results for "{{ search }}"</p>{% endif %}
         </section>
-        {% endif %}
 
         <!-- Panels -->
         {% if panels %}
@@ -35,18 +40,18 @@
                 <h2>Test Panels</h2>
                 <span class="store-sub">Bundled tests at a discount</span>
             </div>
-            <div class="store-grid">
+            <div class="vacancy-list">
                 {% for panel in panels %}
-                <a href="{% url 'lab-panel-detail' panel.id %}" class="store-card">
-                    <div class="store-card-img">
-                        {% if panel.is_featured %}<span class="store-condition-badge">Popular</span>{% endif %}
-                        <span class="placeholder">📋</span>
+                <a href="{% url 'lab-panel-detail' panel.id %}" class="vacancy-card">
+                    <h3>{{ panel.name }}</h3>
+                    {% if panel.description %}<p class="store-lab-panel-desc">{{ panel.description }}</p>{% endif %}
+                    <div class="vacancy-tags">
+                        <span class="vacancy-tag">{{ panel.tests.count }} tests included</span>
+                        {% if panel.is_featured %}<span class="vacancy-tag">Popular</span>{% endif %}
                     </div>
-                    <div class="store-card-body">
-                        <p class="store-card-name">{{ panel.name }}</p>
-                        <p class="store-lab-includes">{{ panel.tests.count }} tests included</p>
-                        <div class="store-card-price">NPR {{ panel.price }}</div>
-                        {% if panel.savings > 0 %}<div class="store-lab-savings">Save NPR {{ panel.savings }}</div>{% endif %}
+                    <div class="vacancy-card-footer">
+                        {% if panel.savings > 0 %}<span class="store-lab-savings">Save NPR {{ panel.savings }}</span>{% else %}<span></span>{% endif %}
+                        <span class="vacancy-apply-cta">NPR {{ panel.price }} — View →</span>
                     </div>
                 </a>
                 {% endfor %}
@@ -63,17 +68,12 @@
             {% for category_label, tests in categorized_tests %}
             <div class="store-lab-category">
                 <h3 class="store-lab-category-title">{{ category_label }}</h3>
-                <div class="store-grid">
+                <div class="store-lab-grid">
                     {% for test in tests %}
-                    <a href="{% url 'lab-test-detail' test.id %}" class="store-card">
-                        <div class="store-card-img">
-                            <span class="placeholder">🧪</span>
-                        </div>
-                        <div class="store-card-body">
-                            <p class="store-card-name">{{ test.name }}</p>
-                            {% if test.turnaround_time %}<p class="store-lab-includes">{{ test.turnaround_time }}</p>{% endif %}
-                            <div class="store-card-price">NPR {{ test.price }}</div>
-                        </div>
+                    <a href="{% url 'lab-test-detail' test.id %}" class="store-lab-card">
+                        <p class="store-lab-card-name">{{ test.name }}</p>
+                        {% if test.turnaround_time %}<p class="store-lab-card-meta">{{ test.turnaround_time }}</p>{% endif %}
+                        <div class="store-lab-card-price">NPR {{ test.price }}</div>
                     </a>
                     {% endfor %}
                 </div>
