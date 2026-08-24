@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load marketplace_extras %}
+
+{% block title %}{{ panel.name }} — Sajhya Lab Tests{% endblock %}
+{% block meta_description %}{{ panel.description|default:panel.name }} — NPR {{ panel.price }} at Sajhya.{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ 'css/marketplace-store.css'|plain_static }}">
+{% endblock %}
+
+{% block content %}
+<div class="store">
+
+    {% include 'marketplace/_store_header.html' with active='lab' %}
+
+    <div class="store-wrap">
+
+        <div class="store-breadcrumb">
+            <a href="{% url 'lab-tests' %}">Lab Tests</a>
+            <span>›</span>
+            <span>{{ panel.name }}</span>
+        </div>
+
+        <div class="store-detail">
+            <div class="store-detail-img">
+                <div class="placeholder">
+                    <span>📋</span>
+                </div>
+            </div>
+
+            <div>
+                <span class="store-detail-cat">Test Panel</span>
+
+                <h1 class="store-detail-title">{{ panel.name }}</h1>
+
+                <div class="store-detail-price">
+                    NPR {{ panel.price }}
+                    {% if panel.savings > 0 %}<span class="store-lab-savings-inline">Save NPR {{ panel.savings }} vs. individually</span>{% endif %}
+                </div>
+
+                {% if panel.description %}
+                <div class="store-detail-desc">
+                    <p>{{ panel.description }}</p>
+                </div>
+                {% endif %}
+
+                <div class="store-detail-desc">
+                    <h4>{{ panel.tests.count }} Tests Included</h4>
+                    <ul class="vacancy-requirements">
+                        {% for t in panel.tests.all %}<li>{{ t.name }} <span class="store-lab-line-price">NPR {{ t.price }}</span></li>{% endfor %}
+                    </ul>
+                </div>
+
+                <div class="store-detail-actions">
+                    <a href="{% url 'lab-add-to-cart' 'panel' panel.id %}" class="store-btn-primary store-btn-add" data-goto="{% url 'lab-view-cart' %}">
+                        Add Panel to Cart
+                    </a>
+                    <a href="{% url 'lab-tests' %}" class="store-btn-outline">
+                        Browse More Tests
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    function updateBadge(count) {
+        var cartBtn = document.querySelector('.store-icon-btn[title="Cart"]');
+        if (!cartBtn) return;
+        var badge = cartBtn.querySelector('.store-icon-badge');
+        if (count > 0) {
+            if (!badge) {
+                badge = document.createElement('span');
+                badge.className = 'store-icon-badge';
+                cartBtn.appendChild(badge);
+            }
+            badge.textContent = count;
+        } else if (badge) {
+            badge.remove();
+        }
+    }
+
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest('.store-btn-add');
+        if (!btn) return;
+        e.preventDefault();
+        var goto = btn.dataset.goto || null;
+
+        fetch(btn.href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (!data.success) return;
+                updateBadge(data.cart_count);
+                if (goto) {
+                    window.location.href = goto;
+                } else {
+                    var orig = btn.textContent;
+                    btn.textContent = '✓ Added';
+                    setTimeout(function () { btn.textContent = orig; }, 1000);
+                }
+            });
+    });
+}());
+</script>
+{% endblock %}

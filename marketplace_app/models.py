@@ -110,6 +110,7 @@ class Order(models.Model):
     ORDER_TYPE_CHOICES = [
         ('marketplace', 'Marketplace'),
         ('pharmacy', 'Pharmacy'),
+        ('lab_test', 'Lab Test'),
     ]
 
     order_number = models.CharField(max_length=20, unique=True, editable=False)
@@ -189,6 +190,8 @@ class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
     pharmacy_product = models.ForeignKey(PharmacyProduct, on_delete=models.SET_NULL, null=True, blank=True)
+    lab_test = models.ForeignKey('lab_app.LabTest', on_delete=models.SET_NULL, null=True, blank=True)
+    lab_panel = models.ForeignKey('lab_app.LabTestPanel', on_delete=models.SET_NULL, null=True, blank=True)
     variant = models.ForeignKey(ProductVariant, on_delete=models.SET_NULL, null=True, blank=True)
     product_name = models.CharField(max_length=200)
     quantity = models.PositiveIntegerField(default=1)

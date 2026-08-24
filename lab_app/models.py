@@ -1,4 +1,5 @@
 import uuid
+from decimal import Decimal
 from django.db import models
 
 
@@ -34,6 +35,35 @@ class LabTest(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class LabTestPanel(models.Model):
+    """A bundled group of LabTests sold together at one price -- e.g.
+    'Diabetes Panel', 'Fever Panel' (the same panels real Nepali diagnostic
+    labs market as fixed-price packages). `price` is set by admin, normally
+    at a discount vs buying each included test separately -- a_la_carte_total
+    and savings below are computed for "you save Rs X" messaging on the
+    storefront, not stored."""
+    name = models.CharField(max_length=150, unique=True)
+    description = models.TextField(blank=True)
+    tests = models.ManyToManyField(LabTest, related_name='panels')
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    is_featured = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def a_la_carte_total(self):
+        return sum((t.price for t in self.tests.all()), Decimal('0.00'))
+
+    @property
+    def savings(self):
+        return self.a_la_carte_total - self.price
 
 
 class LabTestRequest(models.Model):

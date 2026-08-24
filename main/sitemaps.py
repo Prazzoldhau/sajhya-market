@@ -12,7 +12,7 @@ class StaticViewSitemap(Sitemap):
     protocol = 'https'
 
     def items(self):
-        return ['landing', 'marketplace', 'pharmacy', 'find-physio', 'vacancy-list']
+        return ['landing', 'marketplace', 'pharmacy', 'lab-tests', 'find-physio', 'vacancy-list']
 
     def location(self, item):
         return reverse(item)
@@ -45,6 +45,35 @@ class PharmacyProductSitemap(Sitemap):
 
     def location(self, obj):
         return reverse('pharmacy-product-detail', args=[obj.id])
+
+
+class LabTestSitemap(Sitemap):
+    """One entry per active individual lab test."""
+    changefreq = 'monthly'
+    priority = 0.5
+    protocol = 'https'
+
+    def items(self):
+        from lab_app.models import LabTest
+        return LabTest.objects.filter(is_active=True)
+
+    def location(self, obj):
+        return reverse('lab-test-detail', args=[obj.id])
+
+
+class LabTestPanelSitemap(Sitemap):
+    """One entry per active lab test panel -- higher priority than individual
+    tests since these are the bundles actively marketed."""
+    changefreq = 'monthly'
+    priority = 0.6
+    protocol = 'https'
+
+    def items(self):
+        from lab_app.models import LabTestPanel
+        return LabTestPanel.objects.filter(is_active=True)
+
+    def location(self, obj):
+        return reverse('lab-panel-detail', args=[obj.id])
 
 
 class VacancySitemap(Sitemap):

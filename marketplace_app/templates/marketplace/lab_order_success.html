@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load marketplace_extras %}
+
+{% block title %}Booking Confirmed — Sajhya Lab Tests{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ 'css/marketplace-store.css'|plain_static }}">
+{% endblock %}
+
+{% block content %}
+<div class="store">
+
+    {% include 'marketplace/_store_header.html' with active='lab' %}
+
+    <div class="store-wrap">
+        <div class="store-success">
+            <div class="store-success-icon">✓</div>
+            <h1 class="store-success-title">Booking Confirmed!</h1>
+            <p class="store-success-sub">Thank you. Our team will call you within 24 hours to schedule your sample collection.</p>
+
+            <div class="store-order-details">
+                <div class="store-order-detail-row">
+                    <span class="store-detail-label">Booking Number</span>
+                    <span class="store-detail-val store-order-num">#{{ order.order_number }}</span>
+                </div>
+                <div class="store-order-detail-row">
+                    <span class="store-detail-label">Customer</span>
+                    <span class="store-detail-val">{{ order.customer_name }}</span>
+                </div>
+                <div class="store-order-detail-row">
+                    <span class="store-detail-label">Phone</span>
+                    <span class="store-detail-val">{{ order.customer_phone }}</span>
+                </div>
+                <div class="store-order-detail-row">
+                    <span class="store-detail-label">Total</span>
+                    <span class="store-detail-val store-order-num">NPR {{ order.total_amount }}</span>
+                </div>
+                <div class="store-order-detail-row">
+                    <span class="store-detail-label">Collection Address</span>
+                    <span class="store-detail-val">{{ order.delivery_address }}</span>
+                </div>
+                <div class="store-order-detail-row">
+                    <span class="store-detail-label">Status</span>
+                    <span class="store-status-badge">{{ order.get_status_display }}</span>
+                </div>
+            </div>
+
+            <!-- Items Ordered -->
+            <div class="store-ordered-items">
+                <h3>Tests Booked</h3>
+                {% for item in order.items.all %}
+                <div class="store-ordered-row">
+                    <span>{{ item.product_name }}</span>
+                    <span>NPR {{ item.total_price }}</span>
+                </div>
+                {% endfor %}
+            </div>
+
+            <a href="{% url 'lab-tests' %}" class="store-btn-primary">Browse More Tests</a>
+
+            <p class="store-contact-note">
+                Questions? Contact us at <strong>sajhya.com</strong>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

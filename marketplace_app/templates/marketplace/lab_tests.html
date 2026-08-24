@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load marketplace_extras %}
+
+{% block title %}Lab Tests — Sajhya{% endblock %}
+{% block meta_description %}Book blood tests and lab panels from Sajhya — individual tests or bundled packages like the Diabetes Panel, Fever Panel and Master Health Checkup.{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ 'css/marketplace-store.css'|plain_static }}">
+{% endblock %}
+
+{% block content %}
+<div class="store">
+
+    {% include 'marketplace/_store_header.html' with active='lab' %}
+
+    <div class="store-wrap">
+        <section class="store-section" style="padding-bottom:0.5rem">
+            <div class="store-section-head">
+                <h1>Lab Tests</h1>
+                <span class="store-sub">Home sample collection available</span>
+            </div>
+        </section>
+
+        {% if search %}
+        <section class="store-section" style="padding-top:0">
+            <p class="store-sub">Results for "{{ search }}"</p>
+        </section>
+        {% endif %}
+
+        <!-- Panels -->
+        {% if panels %}
+        <section class="store-section" id="panels">
+            <div class="store-section-head">
+                <h2>Test Panels</h2>
+                <span class="store-sub">Bundled tests at a discount</span>
+            </div>
+            <div class="store-grid">
+                {% for panel in panels %}
+                <a href="{% url 'lab-panel-detail' panel.id %}" class="store-card">
+                    <div class="store-card-img">
+                        {% if panel.is_featured %}<span class="store-condition-badge">Popular</span>{% endif %}
+                        <span class="placeholder">📋</span>
+                    </div>
+                    <div class="store-card-body">
+                        <p class="store-card-name">{{ panel.name }}</p>
+                        <p class="store-lab-includes">{{ panel.tests.count }} tests included</p>
+                        <div class="store-card-price">NPR {{ panel.price }}</div>
+                        {% if panel.savings > 0 %}<div class="store-lab-savings">Save NPR {{ panel.savings }}</div>{% endif %}
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- Individual tests, grouped by category -->
+        {% if categorized_tests %}
+        <section class="store-section" id="all-tests">
+            <div class="store-section-head">
+                <h2>Individual Tests</h2>
+            </div>
+            {% for category_label, tests in categorized_tests %}
+            <div class="store-lab-category">
+                <h3 class="store-lab-category-title">{{ category_label }}</h3>
+                <div class="store-grid">
+                    {% for test in tests %}
+                    <a href="{% url 'lab-test-detail' test.id %}" class="store-card">
+                        <div class="store-card-img">
+                            <span class="placeholder">🧪</span>
+                        </div>
+                        <div class="store-card-body">
+                            <p class="store-card-name">{{ test.name }}</p>
+                            {% if test.turnaround_time %}<p class="store-lab-includes">{{ test.turnaround_time }}</p>{% endif %}
+                            <div class="store-card-price">NPR {{ test.price }}</div>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </section>
+        {% endif %}
+
+        {% if not panels and not categorized_tests %}
+        <section class="store-section">
+            <div class="store-empty">
+                <p>No tests found{% if search %} matching "{{ search }}"{% endif %}. Try a different search.</p>
+            </div>
+        </section>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
