@@ -4,12 +4,14 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.sitemaps.views import sitemap
 from main.views import landing_page, robots_txt
-from main.sitemaps import StaticViewSitemap, ProductSitemap, PharmacyProductSitemap, VacancySitemap
+from main.sitemaps import StaticViewSitemap, ProductSitemap, PharmacyProductSitemap, LabTestSitemap, LabTestPanelSitemap, VacancySitemap
 
 sitemaps = {
     'static': StaticViewSitemap,
     'products': ProductSitemap,
     'pharmacy-products': PharmacyProductSitemap,
+    'lab-tests': LabTestSitemap,
+    'lab-panels': LabTestPanelSitemap,
     'vacancies': VacancySitemap,
 }
 

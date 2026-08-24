@@ -1291,3 +1291,76 @@ body > .container.mt-3:empty {
     padding: 0.6rem 0.9rem;
     margin: 0.75rem 0;
 }
+
+/* ---------- Lab Tests ---------- */
+
+.store-lab-includes {
+    font-size: 0.78rem;
+    color: var(--store-muted);
+    margin-bottom: 0.3rem;
+}
+
+.store-lab-savings {
+    display: inline-block;
+    margin-top: 0.35rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #047857;
+    background: #ecfdf5;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+}
+
+.store-lab-savings-inline {
+    display: inline-block;
+    margin-left: 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #047857;
+    vertical-align: middle;
+}
+
+.store-lab-meta {
+    border-top: 1px solid var(--store-border);
+    padding-top: 1.25rem;
+    margin: 1rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.store-lab-meta div {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    font-size: 0.88rem;
+}
+
+.store-lab-meta strong {
+    color: var(--store-ink);
+    flex-shrink: 0;
+}
+
+.store-lab-meta span {
+    color: var(--store-muted);
+    text-align: right;
+}
+
+.store-lab-category {
+    margin-bottom: 2rem;
+}
+
+.store-lab-category-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--store-ink);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--store-border);
+}
+
+.store-lab-line-price {
+    float: right;
+    color: var(--store-ink);
+    font-weight: 600;
+}

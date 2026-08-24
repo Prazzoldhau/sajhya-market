@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import LabTest, LabTestRequest, LabTestRequestItem
+from .models import LabTest, LabTestPanel, LabTestRequest, LabTestRequestItem
 
 
 @admin.register(LabTest)
@@ -8,6 +8,14 @@ class LabTestAdmin(admin.ModelAdmin):
     list_filter = ('category', 'is_active')
     search_fields = ('name',)
     ordering = ('category', 'name')
+
+
+@admin.register(LabTestPanel)
+class LabTestPanelAdmin(admin.ModelAdmin):
+    list_display = ('name', 'price', 'a_la_carte_total', 'savings', 'is_featured', 'is_active')
+    list_filter = ('is_featured', 'is_active')
+    search_fields = ('name',)
+    filter_horizontal = ('tests',)
 
 
 class LabTestRequestItemInline(admin.TabularInline):
