@@ -14,72 +14,195 @@
 
     {% include 'lab/_lab_header.html' %}
 
-    <div class="store-wrap">
-        <section class="store-section" style="padding-bottom:0.5rem">
-            <div class="store-section-head">
-                <h1>Lab Tests</h1>
-                <span class="store-sub">Home sample collection available</span>
-            </div>
+    <form method="POST" action="" id="lab-select-form">
+        {% csrf_token %}
 
-            {% if search %}<p class="store-sub">Results for "{{ search }}"</p>{% endif %}
-        </section>
+        <div class="store-wrap">
+            <section class="store-section" style="padding-bottom:0.5rem">
+                <div class="store-section-head">
+                    <h1>Lab Tests</h1>
+                    <span class="store-sub">Home sample collection available — pick as many as you need</span>
+                </div>
 
-        <!-- Panels -->
-        {% if panels %}
-        <section class="store-section" id="panels">
-            <div class="store-section-head">
-                <h2>Test Panels</h2>
-                <span class="store-sub">Bundled tests at a discount</span>
-            </div>
-            <div class="vacancy-list">
-                {% for panel in panels %}
-                <a href="{% url 'lab-panel-detail' panel.id %}" class="vacancy-card">
-                    <h3>{{ panel.name }}</h3>
-                    {% if panel.description %}<p class="store-lab-panel-desc">{{ panel.description }}</p>{% endif %}
-                    <div class="vacancy-tags">
-                        <span class="vacancy-tag">{{ panel.tests.count }} tests included</span>
-                        {% if panel.is_featured %}<span class="vacancy-tag">Popular</span>{% endif %}
+                {% if search %}<p class="store-sub">Results for "{{ search }}"</p>{% endif %}
+            </section>
+
+            <!-- Panels -->
+            {% if panels %}
+            <section class="store-section" id="panels">
+                <div class="store-section-head">
+                    <h2>Test Panels</h2>
+                    <span class="store-sub">Bundled tests at a discount</span>
+                </div>
+                <div class="vacancy-list">
+                    {% for panel in panels %}
+                    <div class="vacancy-card store-lab-selectable">
+                        <label class="store-lab-check">
+                            <input type="checkbox" name="items" value="panel-{{ panel.id }}" data-name="{{ panel.name }}" data-price="{{ panel.price }}">
+                            <span></span>
+                        </label>
+                        <a href="{% url 'lab-panel-detail' panel.id %}" class="store-lab-card-link">
+                            <h3>{{ panel.name }}</h3>
+                            {% if panel.description %}<p class="store-lab-panel-desc">{{ panel.description }}</p>{% endif %}
+                            <div class="vacancy-tags">
+                                <span class="vacancy-tag">{{ panel.tests.count }} tests included</span>
+                                {% if panel.is_featured %}<span class="vacancy-tag">Popular</span>{% endif %}
+                            </div>
+                        </a>
+                        <div class="vacancy-card-footer">
+                            {% if panel.savings > 0 %}<span class="store-lab-savings">Save NPR {{ panel.savings }}</span>{% else %}<span></span>{% endif %}
+                            <span class="vacancy-apply-cta">NPR {{ panel.price }}</span>
+                        </div>
                     </div>
-                    <div class="vacancy-card-footer">
-                        {% if panel.savings > 0 %}<span class="store-lab-savings">Save NPR {{ panel.savings }}</span>{% else %}<span></span>{% endif %}
-                        <span class="vacancy-apply-cta">NPR {{ panel.price }} — View →</span>
-                    </div>
-                </a>
-                {% endfor %}
-            </div>
-        </section>
-        {% endif %}
-
-        <!-- Individual tests, grouped by category -->
-        {% if categorized_tests %}
-        <section class="store-section" id="all-tests">
-            <div class="store-section-head">
-                <h2>Individual Tests</h2>
-            </div>
-            {% for category_label, tests in categorized_tests %}
-            <div class="store-lab-category">
-                <h3 class="store-lab-category-title">{{ category_label }}</h3>
-                <div class="store-lab-grid">
-                    {% for test in tests %}
-                    <a href="{% url 'lab-test-detail' test.id %}" class="store-lab-card">
-                        <p class="store-lab-card-name">{{ test.name }}</p>
-                        {% if test.turnaround_time %}<p class="store-lab-card-meta">{{ test.turnaround_time }}</p>{% endif %}
-                        <div class="store-lab-card-price">NPR {{ test.price }}</div>
-                    </a>
                     {% endfor %}
                 </div>
-            </div>
-            {% endfor %}
-        </section>
-        {% endif %}
+            </section>
+            {% endif %}
 
-        {% if not panels and not categorized_tests %}
-        <section class="store-section">
-            <div class="store-empty">
-                <p>No tests found{% if search %} matching "{{ search }}"{% endif %}. Try a different search.</p>
-            </div>
-        </section>
-        {% endif %}
-    </div>
+            <!-- Individual tests, grouped by category -->
+            {% if categorized_tests %}
+            <section class="store-section" id="all-tests">
+                <div class="store-section-head">
+                    <h2>Individual Tests</h2>
+                </div>
+                {% for category_label, tests in categorized_tests %}
+                <div class="store-lab-category">
+                    <h3 class="store-lab-category-title">{{ category_label }}</h3>
+                    <div class="store-lab-grid">
+                        {% for test in tests %}
+                        <div class="store-lab-card store-lab-selectable">
+                            <label class="store-lab-check">
+                                <input type="checkbox" name="items" value="test-{{ test.id }}" data-name="{{ test.name }}" data-price="{{ test.price }}">
+                                <span></span>
+                            </label>
+                            <a href="{% url 'lab-test-detail' test.id %}" class="store-lab-card-link">
+                                <p class="store-lab-card-name">{{ test.name }}</p>
+                                {% if test.turnaround_time %}<p class="store-lab-card-meta">{{ test.turnaround_time }}</p>{% endif %}
+                            </a>
+                            <div class="store-lab-card-price">NPR {{ test.price }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </section>
+            {% endif %}
+
+            {% if not panels and not categorized_tests %}
+            <section class="store-section">
+                <div class="store-empty">
+                    <p>No tests found{% if search %} matching "{{ search }}"{% endif %}. Try a different search.</p>
+                </div>
+            </section>
+            {% endif %}
+
+            <!-- Request form -->
+            <section class="store-section" id="request">
+                <div class="store-summary" style="max-width:480px;margin:0 auto">
+                    <h3 class="store-summary-title">Request Selected Tests</h3>
+
+                    <div id="lab-empty-msg" class="store-sub" style="margin-bottom:1rem">Nothing selected yet — tick the tests or panels above you'd like to book.</div>
+                    <div id="lab-selected-list" class="store-lab-selected-list"></div>
+
+                    <div class="store-form-group">
+                        <label class="store-label">Full Name <span class="store-required">*</span></label>
+                        <input type="text" name="customer_name" class="store-input" placeholder="Your full name" required
+                               value="{{ request.user.get_full_name|default:'' }}">
+                    </div>
+
+                    <div class="store-form-group">
+                        <label class="store-label">Phone Number <span class="store-required">*</span></label>
+                        <input type="tel" name="customer_phone" class="store-input" placeholder="98XXXXXXXX" required
+                               value="{{ request.user.phone|default:'' }}">
+                    </div>
+
+                    <div class="store-form-group">
+                        <label class="store-label">Email Address <span class="store-required">*</span></label>
+                        <input type="email" name="customer_email" class="store-input" placeholder="your@email.com" required
+                               value="{{ request.user.email|default:'' }}">
+                    </div>
+
+                    <div class="store-form-group">
+                        <label class="store-label">Sample Collection Address <span class="store-required">*</span></label>
+                        <textarea name="delivery_address" class="store-input store-textarea" rows="2"
+                                  placeholder="Where should our phlebotomist collect your sample?" required></textarea>
+                    </div>
+
+                    <div class="store-form-group">
+                        <label class="store-label">Notes</label>
+                        <textarea name="notes" class="store-input store-textarea" rows="2"
+                                  placeholder="Preferred time, existing conditions, etc."></textarea>
+                    </div>
+
+                    <button type="submit" class="store-btn-primary store-btn-full" id="lab-submit-btn" disabled>
+                        Select tests to continue
+                    </button>
+                </div>
+            </section>
+        </div>
+
+        <!-- Sticky running total while scrolling -->
+        <div class="store-lab-sticky-bar" id="lab-sticky-bar">
+            <span><strong id="lab-count">0</strong> selected — NPR <strong id="lab-total">0</strong></span>
+            <a href="#request" class="store-lab-sticky-cta">Review &amp; Request →</a>
+        </div>
+    </form>
+
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    var checkboxes = Array.prototype.slice.call(document.querySelectorAll('input[name="items"]'));
+    var countEl = document.getElementById('lab-count');
+    var totalEl = document.getElementById('lab-total');
+    var listEl = document.getElementById('lab-selected-list');
+    var emptyMsg = document.getElementById('lab-empty-msg');
+    var submitBtn = document.getElementById('lab-submit-btn');
+    var stickyBar = document.getElementById('lab-sticky-bar');
+
+    function update() {
+        var selected = checkboxes.filter(function (cb) { return cb.checked; });
+        var total = 0;
+        listEl.innerHTML = '';
+
+        selected.forEach(function (cb) {
+            total += parseFloat(cb.dataset.price) || 0;
+            var row = document.createElement('div');
+            row.className = 'store-lab-selected-row';
+            row.innerHTML = '<span>' + cb.dataset.name + '</span><span>NPR ' + cb.dataset.price + '</span>';
+            listEl.appendChild(row);
+        });
+
+        countEl.textContent = selected.length;
+        totalEl.textContent = total.toFixed(2);
+        emptyMsg.style.display = selected.length ? 'none' : '';
+        stickyBar.classList.toggle('is-visible', selected.length > 0);
+
+        if (selected.length > 0) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Request ' + selected.length + ' Selected Test' + (selected.length === 1 ? '' : 's') + ' — NPR ' + total.toFixed(2);
+        } else {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Select tests to continue';
+        }
+    }
+
+    checkboxes.forEach(function (cb) {
+        cb.addEventListener('change', update);
+    });
+
+    // Coming from a test/panel detail page's "Select This Test" link --
+    // pre-check it here so it's not lost, since selection state only lives
+    // in this page's checkboxes (there's no cart to carry it across pages).
+    var preselect = new URLSearchParams(window.location.search).get('add');
+    if (preselect) {
+        var match = checkboxes.filter(function (cb) { return cb.value === preselect; })[0];
+        if (match) match.checked = true;
+    }
+
+    update();
+}());
+</script>
 {% endblock %}
