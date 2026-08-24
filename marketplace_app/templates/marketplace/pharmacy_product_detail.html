@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load marketplace_extras %}
+
+{% block title %}{{ product.name }} — Sajhya Pharmacy{% endblock %}
+{% block meta_description %}{% if product.description %}{{ product.description|truncatewords:30 }}{% else %}Buy {{ product.name }} from the Sajhya Pharmacy — NPR {{ product.price }}, delivered across Nepal.{% endif %}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ 'css/marketplace-store.css'|plain_static }}">
+{% endblock %}
+
+{% block content %}
+<div class="store">
+
+    {% include 'marketplace/_store_header.html' with active='pharmacy' %}
+
+    <div class="store-wrap">
+
+        <!-- Breadcrumb -->
+        <div class="store-breadcrumb">
+            <a href="{% url 'pharmacy' %}">Pharmacy</a>
+            <span>›</span>
+            <span>{{ product.name }}</span>
+        </div>
+
+        <!-- Product Detail -->
+        <div class="store-detail">
+            <div class="store-detail-img">
+                {% if product.requires_prescription %}<span class="store-rx-badge">Rx</span>{% endif %}
+                {% if product.image %}
+                    <img src="{{ product.image|plain_static }}" alt="{{ product.name }}">
+                {% else %}
+                    <div class="placeholder">
+                        <span>💊</span>
+                        <p>No image available</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div>
+                {% if product.category %}
+                <span class="store-detail-cat">{{ product.category }}</span>
+                {% endif %}
+
+                <h1 class="store-detail-title">{{ product.name }}</h1>
+
+                <div class="store-detail-price">NPR {{ product.price }}</div>
+
+                <div class="store-stock {% if product.in_stock %}in-stock{% else %}out-stock{% endif %}">
+                    {% if product.in_stock %}✓ In Stock{% else %}✕ Out of Stock{% endif %}
+                </div>
+
+                {% if product.requires_prescription %}
+                <p class="store-rx-note">⚕️ Requires a valid prescription — our team will confirm this with you before delivery.</p>
+                {% endif %}
+
+                {% if product.description %}
+                <div class="store-detail-desc">
+                    <h4>Description</h4>
+                    <p>{{ product.description }}</p>
+                </div>
+                {% endif %}
+
+                {% if product.in_stock %}
+                <div class="store-detail-actions">
+                    <a href="{% url 'pharmacy-add-to-cart' product.id %}" class="store-btn-primary store-btn-add" data-goto="{% url 'pharmacy-view-cart' %}">
+                        Add to Cart
+                    </a>
+                    <a href="{% url 'pharmacy' %}" class="store-btn-outline">
+                        Continue Shopping
+                    </a>
+                </div>
+                {% else %}
+                <p class="store-out-of-stock-msg">This item is currently out of stock. Check back soon!</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Related Products -->
+        {% if related %}
+        <section class="store-section">
+            <div class="store-section-head">
+                <h2>You May Also Need</h2>
+            </div>
+            <div class="store-grid">
+                {% for rp in related %}
+                <a href="{% url 'pharmacy-product-detail' rp.id %}" class="store-card">
+                    <div class="store-card-img">
+                        {% if rp.requires_prescription %}<span class="store-rx-badge">Rx</span>{% endif %}
+                        {% if rp.image %}
+                            <img src="{{ rp.image|plain_static }}" alt="{{ rp.name }}">
+                        {% else %}
+                            <span class="placeholder">💊</span>
+                        {% endif %}
+                    </div>
+                    <div class="store-card-body">
+                        <p class="store-card-name">{{ rp.name }}</p>
+                        <div class="store-card-price">NPR {{ rp.price }}</div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    function updateBadge(count) {
+        var cartBtn = document.querySelector('.store-icon-btn[title="Cart"]');
+        if (!cartBtn) return;
+        var badge = cartBtn.querySelector('.store-icon-badge');
+        if (count > 0) {
+            if (!badge) {
+                badge = document.createElement('span');
+                badge.className = 'store-icon-badge';
+                cartBtn.appendChild(badge);
+            }
+            badge.textContent = count;
+        } else if (badge) {
+            badge.remove();
+        }
+    }
+
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest('.store-btn-add');
+        if (!btn) return;
+        e.preventDefault();
+        var goto = btn.dataset.goto || null;
+
+        fetch(btn.href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (!data.success) return;
+                updateBadge(data.cart_count);
+                if (goto) {
+                    window.location.href = goto;
+                } else {
+                    var orig = btn.textContent;
+                    btn.textContent = '✓ Added';
+                    setTimeout(function () { btn.textContent = orig; }, 1000);
+                }
+            });
+    });
+}());
+</script>
+{% endblock %}

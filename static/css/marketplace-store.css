@@ -1034,7 +1034,12 @@ body > .container.mt-3:empty {
     }
 
     .store-detail-img {
-        position: static;
+        /* was position:static -- dropped its containing-block context for
+           absolutely-positioned children (the Rx badge), which then
+           anchored to the nearest positioned ancestor instead and floated
+           up over the header. relative keeps the sticky behavior off
+           (mobile doesn't need it) without losing that context. */
+        position: relative;
         max-width: 420px;
         margin: 0 auto;
     }
@@ -1257,4 +1262,32 @@ body > .container.mt-3:empty {
     left: 0;
     color: var(--store-primary);
     font-weight: 700;
+}
+
+/* ---------- Pharmacy ----------
+   Everything else on Pharmacy's pages reuses the plain .store-* vocabulary
+   above (same grid/card/detail/cart/checkout classes as Marketplace) --
+   these are the only pharmacy-specific additions: the prescription-required
+   badge and note. */
+
+.store-rx-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 1;
+    background: #fef3c7;
+    color: #b45309;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+}
+
+.store-rx-note {
+    font-size: 0.85rem;
+    color: #b45309;
+    background: #fef3c7;
+    border-radius: 10px;
+    padding: 0.6rem 0.9rem;
+    margin: 0.75rem 0;
 }

@@ -74,6 +74,30 @@ class ProductVariant(models.Model):
         return f"{self.product.name} — {self.label}"
 
 
+class PharmacyProduct(models.Model):
+    """Pharmacy's own catalog -- deliberately a separate table from Product
+    (used to just be Product rows tagged category='Pharmacy'). Flat list, no
+    category FK yet: the old Pharmacy listing never had real sub-categories
+    either, so there's no existing data to back a taxonomy -- add one later
+    if/when real categories are assigned."""
+    name = models.CharField(max_length=200)
+    category = models.CharField(max_length=100, blank=True, help_text='Optional free-text grouping, e.g. "Pain Relief" -- shown on the product page, not filterable yet.')
+    description = models.TextField(blank=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    unit = models.CharField(max_length=50, default='per piece')
+    image = models.CharField(max_length=200, blank=True, default='')
+    in_stock = models.BooleanField(default=True)
+    is_featured = models.BooleanField(default=False)
+    requires_prescription = models.BooleanField(default=False, help_text='Shows an Rx-required badge on the storefront.')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-is_featured', 'name']
+
+    def __str__(self):
+        return self.name
+
+
 class Order(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Pending'),
@@ -83,8 +107,13 @@ class Order(models.Model):
         ('delivered', 'Delivered'),
         ('cancelled', 'Cancelled'),
     ]
+    ORDER_TYPE_CHOICES = [
+        ('marketplace', 'Marketplace'),
+        ('pharmacy', 'Pharmacy'),
+    ]
 
     order_number = models.CharField(max_length=20, unique=True, editable=False)
+    order_type = models.CharField(max_length=20, choices=ORDER_TYPE_CHOICES, default='marketplace')
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True
     )
@@ -159,6 +188,7 @@ class Commission(models.Model):
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
+    pharmacy_product = models.ForeignKey(PharmacyProduct, on_delete=models.SET_NULL, null=True, blank=True)
     variant = models.ForeignKey(ProductVariant, on_delete=models.SET_NULL, null=True, blank=True)
     product_name = models.CharField(max_length=200)
     quantity = models.PositiveIntegerField(default=1)
