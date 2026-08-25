@@ -1478,12 +1478,68 @@ body > .container.mt-3:empty {
 .store-lab-sticky-cta {
     background: var(--store-primary);
     color: #fff;
+    border: none;
+    font-family: inherit;
     text-decoration: none;
     font-weight: 600;
     font-size: 0.85rem;
     padding: 0.5rem 1.1rem;
     border-radius: 999px;
     white-space: nowrap;
+    cursor: pointer;
+}
+
+/* Request popup -- #request is the plain in-page section above by default
+   (no JS needed to reach or submit it). This class, toggled by "Review &
+   Request", promotes that same section into a full-screen overlay instead
+   of scrolling down to it -- an ID selector so it wins over .store-section/
+   .store-summary's own rules regardless of source order. */
+#request.store-lab-modal-open {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    background: rgba(15, 23, 42, 0.55);
+    padding: 3rem 1rem;
+    overflow-y: auto;
+}
+
+#request.store-lab-modal-open .store-summary {
+    position: relative;
+    top: 0;
+    margin: 0 auto;
+    width: 100%;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+}
+
+.store-lab-modal-close {
+    display: none;
+    position: absolute;
+    top: 0.9rem;
+    right: 0.9rem;
+    width: 2rem;
+    height: 2rem;
+    border: none;
+    border-radius: 50%;
+    background: var(--store-border);
+    color: var(--store-muted);
+    font-size: 1.3rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+#request.store-lab-modal-open .store-lab-modal-close {
+    display: block;
+}
+
+.store-lab-modal-close:hover {
+    color: var(--store-ink);
+}
+
+body.store-lab-modal-lock {
+    overflow: hidden;
 }
 
 @media (max-width: 992px) {
@@ -1501,6 +1557,10 @@ body > .container.mt-3:empty {
     .store-lab-sticky-bar {
         padding: 0.8rem 1.25rem;
         font-size: 0.82rem;
+    }
+
+    #request.store-lab-modal-open {
+        padding: 1.25rem 0.75rem;
     }
 }
 

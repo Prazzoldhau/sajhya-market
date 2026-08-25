@@ -96,9 +96,13 @@
             </section>
             {% endif %}
 
-            <!-- Request form -->
+            <!-- Request form -- a normal in-page section by default (so it
+                 still works with JS off, exactly as if this modal styling
+                 didn't exist), promoted to a popup via .store-lab-modal-open
+                 when "Review & Request" is clicked (see extra_js below). -->
             <section class="store-section" id="request">
                 <div class="store-summary" style="max-width:480px;margin:0 auto">
+                    <button type="button" class="store-lab-modal-close" id="lab-modal-close" aria-label="Close">&times;</button>
                     <h3 class="store-summary-title">Request Selected Tests</h3>
 
                     <div id="lab-empty-msg" class="store-sub" style="margin-bottom:1rem">Nothing selected yet — tick the tests or panels above you'd like to book.</div>
@@ -144,7 +148,7 @@
         <!-- Sticky running total while scrolling -->
         <div class="store-lab-sticky-bar" id="lab-sticky-bar">
             <span><strong id="lab-count">0</strong> selected — NPR <strong id="lab-total">0</strong></span>
-            <a href="#request" class="store-lab-sticky-cta">Review &amp; Request →</a>
+            <button type="button" class="store-lab-sticky-cta" id="lab-review-btn">Review &amp; Request →</button>
         </div>
     </form>
 
@@ -161,6 +165,36 @@
     var emptyMsg = document.getElementById('lab-empty-msg');
     var submitBtn = document.getElementById('lab-submit-btn');
     var stickyBar = document.getElementById('lab-sticky-bar');
+    var requestSection = document.getElementById('request');
+    var reviewBtn = document.getElementById('lab-review-btn');
+    var closeBtn = document.getElementById('lab-modal-close');
+
+    // #request is a normal in-page section by default (works with JS off,
+    // exactly as before) -- this class promotes it to a full-screen popup.
+    // Toggled here rather than always-on so nothing regresses without JS.
+    function openRequestModal() {
+        requestSection.classList.add('store-lab-modal-open');
+        document.body.classList.add('store-lab-modal-lock');
+    }
+
+    function closeRequestModal() {
+        requestSection.classList.remove('store-lab-modal-open');
+        document.body.classList.remove('store-lab-modal-lock');
+    }
+
+    reviewBtn.addEventListener('click', openRequestModal);
+    closeBtn.addEventListener('click', closeRequestModal);
+
+    // Click on the dimmed backdrop itself (not the white card) closes it.
+    requestSection.addEventListener('click', function (e) {
+        if (e.target === requestSection) closeRequestModal();
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && requestSection.classList.contains('store-lab-modal-open')) {
+            closeRequestModal();
+        }
+    });
 
     function update() {
         var selected = checkboxes.filter(function (cb) { return cb.checked; });
@@ -199,7 +233,10 @@
     var preselect = new URLSearchParams(window.location.search).get('add');
     if (preselect) {
         var match = checkboxes.filter(function (cb) { return cb.value === preselect; })[0];
-        if (match) match.checked = true;
+        if (match) {
+            match.checked = true;
+            openRequestModal();
+        }
     }
 
     update();
