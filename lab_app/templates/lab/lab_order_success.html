@@ -22,37 +22,37 @@
             <div class="store-order-details">
                 <div class="store-order-detail-row">
                     <span class="store-detail-label">Booking Number</span>
-                    <span class="store-detail-val store-order-num">#{{ order.order_number }}</span>
+                    <span class="store-detail-val store-order-num">#{{ lab_request.request_number }}</span>
                 </div>
                 <div class="store-order-detail-row">
                     <span class="store-detail-label">Customer</span>
-                    <span class="store-detail-val">{{ order.customer_name }}</span>
+                    <span class="store-detail-val">{{ lab_request.customer_name }}</span>
                 </div>
                 <div class="store-order-detail-row">
                     <span class="store-detail-label">Phone</span>
-                    <span class="store-detail-val">{{ order.customer_phone }}</span>
+                    <span class="store-detail-val">{{ lab_request.customer_phone }}</span>
                 </div>
                 <div class="store-order-detail-row">
                     <span class="store-detail-label">Total</span>
-                    <span class="store-detail-val store-order-num">NPR {{ order.total_amount }}</span>
+                    <span class="store-detail-val store-order-num">NPR {{ lab_request.total_amount }}</span>
                 </div>
                 <div class="store-order-detail-row">
                     <span class="store-detail-label">Collection Address</span>
-                    <span class="store-detail-val">{{ order.delivery_address }}</span>
+                    <span class="store-detail-val">{{ lab_request.collection_address }}</span>
                 </div>
                 <div class="store-order-detail-row">
                     <span class="store-detail-label">Status</span>
-                    <span class="store-status-badge">{{ order.get_status_display }}</span>
+                    <span class="store-status-badge">{{ lab_request.get_status_display }}</span>
                 </div>
             </div>
 
-            <!-- Items Ordered -->
+            <!-- Items Requested -->
             <div class="store-ordered-items">
                 <h3>Tests Booked</h3>
-                {% for item in order.items.all %}
+                {% for item in lab_request.items.all %}
                 <div class="store-ordered-row">
-                    <span>{{ item.product_name }}</span>
-                    <span>NPR {{ item.total_price }}</span>
+                    <span>{{ item.test_name }}</span>
+                    <span>NPR {{ item.price }}</span>
                 </div>
                 {% endfor %}
             </div>

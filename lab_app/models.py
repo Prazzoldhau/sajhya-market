@@ -67,10 +67,21 @@ class LabTestPanel(models.Model):
 
 
 class LabTestRequest(models.Model):
-    """A patient's submitted request for one or more blood tests --
-    mirrors marketplace_app.Order's shape (order_number pattern, status
-    workflow, snapshot line items) since it's the same kind of
-    patient-submits/clinic-processes flow."""
+    """A submitted request for one or more blood tests -- mirrors
+    marketplace_app.Order's shape (request_number pattern, status workflow,
+    snapshot line items) since it's the same kind of submit/clinic-processes
+    flow, but with a lab-appropriate status list (Sample Collected/
+    Completed rather than e-commerce Shipped/Delivered).
+
+    Two ways a request gets created here, both landing in this one table:
+      - the patient mobile app (patient_app.patient_api_lab_request_create),
+        where `patient` is a known logged-in personal_account.AddPatient and
+        the customer_* fields below are left blank (name/phone already live
+        on that patient record).
+      - the public website's /lab-tests/ storefront (lab_app.views), which
+        has no login of its own -- `patient` is null and customer_name/
+        customer_phone/etc are filled in from the request form instead.
+    `patient` is therefore optional, not required."""
     STATUS_CHOICES = [
         ('pending', 'Pending'),
         ('sample_collected', 'Sample Collected'),
@@ -80,8 +91,14 @@ class LabTestRequest(models.Model):
 
     request_number = models.CharField(max_length=20, unique=True, editable=False)
     patient = models.ForeignKey(
-        'personal_account.AddPatient', on_delete=models.CASCADE, related_name='lab_requests'
+        'personal_account.AddPatient', on_delete=models.CASCADE, related_name='lab_requests',
+        null=True, blank=True,
     )
+    # Only set for website (non-patient-app) bookings -- see class docstring.
+    customer_name = models.CharField(max_length=200, blank=True)
+    customer_email = models.EmailField(blank=True)
+    customer_phone = models.CharField(max_length=20, blank=True)
+    collection_address = models.TextField(blank=True, help_text='Where the sample should be collected from')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     notes = models.TextField(blank=True)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
@@ -92,7 +109,8 @@ class LabTestRequest(models.Model):
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"Lab Request #{self.request_number} — {self.patient.patient_name}"
+        who = self.patient.patient_name if self.patient else (self.customer_name or 'Guest')
+        return f"Lab Request #{self.request_number} — {who}"
 
     def save(self, *args, **kwargs):
         if not self.request_number:
@@ -101,11 +119,12 @@ class LabTestRequest(models.Model):
 
 
 class LabTestRequestItem(models.Model):
-    """One test within a request. Snapshots name/price at request time
-    (like marketplace_app.OrderItem) so a later catalog price change
-    doesn't rewrite the history of what a patient actually requested."""
+    """One test or panel within a request. Snapshots name/price at request
+    time (like marketplace_app.OrderItem) so a later catalog price change
+    doesn't rewrite the history of what was actually requested."""
     request = models.ForeignKey(LabTestRequest, on_delete=models.CASCADE, related_name='items')
     lab_test = models.ForeignKey(LabTest, on_delete=models.SET_NULL, null=True, blank=True)
+    lab_panel = models.ForeignKey(LabTestPanel, on_delete=models.SET_NULL, null=True, blank=True)
     test_name = models.CharField(max_length=150)
     price = models.DecimalField(max_digits=10, decimal_places=2)
 

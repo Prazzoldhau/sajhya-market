@@ -3,20 +3,22 @@ from decimal import Decimal
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
 
-from .models import LabTest, LabTestPanel
+from .models import LabTest, LabTestPanel, LabTestRequest, LabTestRequestItem
 
-# Order/OrderItem live in marketplace_app -- reused rather than forking a
-# fourth order system, same as Pharmacy's OrderItem.pharmacy_product. Lab
-# Tests is otherwise a fully independent storefront/app: own top-level URL
-# (/lab-tests/, mounted in sajhya_project.urls -- not nested under
-# /marketplace/ the way Pharmacy is), own templates.
+# LabTestRequest/LabTestRequestItem, not marketplace_app.Order -- this is
+# the same request model the patient mobile app already books through
+# (patient_app.patient_api_lab_request_create), just with `patient` left
+# null and the customer_* fields filled in instead, since the website has
+# no login of its own for this flow. Keeps exactly one place lab bookings
+# land regardless of which surface they came from, with lab-appropriate
+# statuses (Sample Collected/Completed) instead of e-commerce ones.
 #
 # No cart/checkout pages -- multi-select happens with plain checkboxes
 # directly on the browse page (lab_tests.html), same one-page pick-then-
 # submit pattern as exercise_app's "Prescribe Selected Exercises" (pick
 # several, one submit, no per-item page hops). One POST here books
-# everything checked as a single Order with one OrderItem per test/panel.
-from marketplace_app.models import Order, OrderItem
+# everything checked as a single LabTestRequest with one LabTestRequestItem
+# per test/panel.
 
 
 def lab_tests(request):
@@ -83,27 +85,24 @@ def _handle_bulk_booking(request):
 
     total = sum((price for _, _, _, price in items), Decimal('0.00'))
 
-    order = Order.objects.create(
-        order_type='lab_test',
-        user=request.user if request.user.is_authenticated else None,
+    lab_request = LabTestRequest.objects.create(
         customer_name=customer_name,
         customer_email=customer_email,
         customer_phone=customer_phone,
-        delivery_address=delivery_address,
+        collection_address=delivery_address,
         notes=notes,
         total_amount=total,
     )
     for lab_test, lab_panel, name, price in items:
-        OrderItem.objects.create(
-            order=order,
+        LabTestRequestItem.objects.create(
+            request=lab_request,
             lab_test=lab_test,
             lab_panel=lab_panel,
-            product_name=name,
-            quantity=1,
-            unit_price=price,
+            test_name=name,
+            price=price,
         )
 
-    return redirect('lab-order-success', order_number=order.order_number)
+    return redirect('lab-order-success', request_number=lab_request.request_number)
 
 
 def lab_test_detail(request, test_id):
@@ -116,6 +115,6 @@ def lab_panel_detail(request, panel_id):
     return render(request, 'lab/lab_panel_detail.html', {'panel': panel})
 
 
-def lab_order_success(request, order_number):
-    order = get_object_or_404(Order, order_number=order_number)
-    return render(request, 'lab/lab_order_success.html', {'order': order})
+def lab_order_success(request, request_number):
+    lab_request = get_object_or_404(LabTestRequest, request_number=request_number)
+    return render(request, 'lab/lab_order_success.html', {'lab_request': lab_request})
