@@ -21,14 +21,19 @@ class LabTestPanelAdmin(admin.ModelAdmin):
 class LabTestRequestItemInline(admin.TabularInline):
     model = LabTestRequestItem
     extra = 0
-    readonly_fields = ('lab_test', 'test_name', 'price')
+    readonly_fields = ('lab_test', 'lab_panel', 'test_name', 'price')
     can_delete = False
 
 
 @admin.register(LabTestRequest)
 class LabTestRequestAdmin(admin.ModelAdmin):
-    list_display = ('request_number', 'patient', 'status', 'total_amount', 'created_at')
+    # patient is set for mobile-app bookings, customer_name/customer_phone
+    # for website bookings (the two ways a request gets created -- see
+    # LabTestRequest's docstring) -- both shown so either kind is easy to
+    # spot in one list.
+    list_display = ('request_number', 'patient', 'customer_name', 'customer_phone', 'status', 'total_amount', 'created_at')
     list_filter = ('status', 'created_at')
-    search_fields = ('request_number', 'patient__patient_name', 'patient__patient_code')
+    list_editable = ('status',)
+    search_fields = ('request_number', 'patient__patient_name', 'patient__patient_code', 'customer_name', 'customer_phone', 'customer_email')
     readonly_fields = ('request_number', 'patient', 'total_amount', 'created_at', 'updated_at')
     inlines = [LabTestRequestItemInline]
