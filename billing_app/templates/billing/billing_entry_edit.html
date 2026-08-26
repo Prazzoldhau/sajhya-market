@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Edit Entry — Daily Billing{% endblock %}
+
+{% block extra_css %}
+<style>
+    .bill-wrap { max-width: 640px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+    .bill-back { font-size: 0.85rem; color: #2f5fdb; text-decoration: none; }
+    .bill-form { background: #fff; border: 1px solid #e4e6ec; border-radius: 12px; padding: 1.25rem; margin-top: 1rem; }
+    .bill-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.9rem; }
+    .bill-form-group { display: flex; flex-direction: column; gap: 0.3rem; }
+    .bill-form-group.full { grid-column: 1 / -1; }
+    .bill-form-group label { font-size: 0.78rem; color: #5a5f72; font-weight: 600; }
+    .form-control { width: 100%; padding: 0.5rem 0.65rem; border: 1px solid #d7dbe3; border-radius: 8px; font-size: 0.9rem; font-family: inherit; box-sizing: border-box; }
+    .bill-errorlist { color: #b3261e; font-size: 0.78rem; margin: 0.2rem 0 0; padding: 0; list-style: none; }
+    .bill-btn { padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid #d7dbe3; background: #fff; cursor: pointer; font-size: 0.9rem; text-decoration: none; color: #1a1d29; display: inline-block; }
+    .bill-btn-primary { background: #2f5fdb; color: #fff; border-color: #2f5fdb; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bill-wrap">
+    <a href="{% url 'billing-list' %}?date={{ entry.entry_date|date:'Y-m-d' }}" class="bill-back">← Back to {{ entry.entry_date|date:'d M Y' }}</a>
+
+    <div class="bill-form">
+        <h3>Edit Entry — {{ entry.invoice_number }}</h3>
+        <form method="POST">
+            {% csrf_token %}
+            <div class="bill-form-grid">
+                <div class="bill-form-group">
+                    <label>Date</label>
+                    {{ form.entry_date }}
+                    {{ form.entry_date.errors }}
+                </div>
+                <div class="bill-form-group">
+                    <label>Patient Name *</label>
+                    {{ form.patient_name }}
+                    {{ form.patient_name.errors }}
+                </div>
+                <div class="bill-form-group">
+                    <label>Age</label>
+                    {{ form.age }}
+                </div>
+                <div class="bill-form-group">
+                    <label>Sex</label>
+                    {{ form.sex }}
+                </div>
+                <div class="bill-form-group">
+                    <label>Contact</label>
+                    {{ form.contact_number }}
+                </div>
+                <div class="bill-form-group">
+                    <label>Service</label>
+                    {{ form.service }}
+                </div>
+                <div class="bill-form-group">
+                    <label>Amount (NPR) *</label>
+                    {{ form.rate }}
+                    {{ form.rate.errors }}
+                </div>
+                <div class="bill-form-group">
+                    <label>Payment Mode</label>
+                    {{ form.payment_mode }}
+                </div>
+                <div class="bill-form-group full">
+                    <label>Notes</label>
+                    {{ form.notes }}
+                </div>
+            </div>
+            <br>
+            <button type="submit" class="bill-btn bill-btn-primary">Save Changes</button>
+            <a href="{% url 'billing-list' %}?date={{ entry.entry_date|date:'Y-m-d' }}" class="bill-btn">Cancel</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

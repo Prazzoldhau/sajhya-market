@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Daily Billing — Sajhya{% endblock %}
+
+{% block extra_css %}
+<style>
+    .bill-wrap { max-width: 960px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+    .bill-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; }
+    .bill-header h1 { font-size: 1.5rem; margin: 0; }
+    .bill-back { font-size: 0.85rem; color: #2f5fdb; text-decoration: none; }
+    .bill-date-bar { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+    .bill-date-bar input[type="date"] { padding: 0.45rem 0.6rem; border: 1px solid #d7dbe3; border-radius: 8px; font-size: 0.9rem; }
+    .bill-btn { padding: 0.45rem 0.9rem; border-radius: 8px; border: 1px solid #d7dbe3; background: #fff; cursor: pointer; font-size: 0.85rem; text-decoration: none; color: #1a1d29; display: inline-block; }
+    .bill-btn:hover { background: #f4f5f7; }
+    .bill-btn-primary { background: #2f5fdb; color: #fff; border-color: #2f5fdb; }
+    .bill-btn-primary:hover { background: #274cb3; }
+    .bill-btn-danger { color: #b3261e; border-color: #f0c9c6; }
+    .bill-total-card { background: #f4f7ff; border: 1px solid #dde5fb; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; }
+    .bill-total-card .label { color: #5a5f72; font-size: 0.85rem; }
+    .bill-total-card .amount { font-size: 1.5rem; font-weight: 700; color: #1a1d29; }
+    .bill-form { background: #fff; border: 1px solid #e4e6ec; border-radius: 12px; padding: 1.25rem; margin-bottom: 2rem; }
+    .bill-form h3 { margin: 0 0 1rem; font-size: 1.05rem; }
+    .bill-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.9rem; }
+    .bill-form-group { display: flex; flex-direction: column; gap: 0.3rem; }
+    .bill-form-group.full { grid-column: 1 / -1; }
+    .bill-form-group label { font-size: 0.78rem; color: #5a5f72; font-weight: 600; }
+    .form-control { width: 100%; padding: 0.5rem 0.65rem; border: 1px solid #d7dbe3; border-radius: 8px; font-size: 0.9rem; font-family: inherit; box-sizing: border-box; }
+    .bill-errorlist { color: #b3261e; font-size: 0.78rem; margin: 0.2rem 0 0; padding: 0; list-style: none; }
+    .bill-table-wrap { overflow-x: auto; }
+    table.bill-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    table.bill-table th, table.bill-table td { padding: 0.65rem 0.5rem; border-bottom: 1px solid #eceef2; text-align: left; }
+    table.bill-table td.bill-actions-cell { white-space: nowrap; }
+    table.bill-table th { color: #5a5f72; font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em; }
+    .bill-empty { text-align: center; color: #5a5f72; padding: 2.5rem 0; }
+    .bill-actions-cell { display: flex; gap: 0.5rem; }
+    .bill-actions-cell form { display: inline; }
+    .bill-messages { margin-bottom: 1rem; }
+    .bill-messages .msg { padding: 0.6rem 0.9rem; border-radius: 8px; font-size: 0.85rem; margin-bottom: 0.5rem; }
+    .bill-messages .msg.success { background: #ecfdf5; color: #047857; }
+    .bill-messages .msg.error { background: #fef2f2; color: #b3261e; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bill-wrap">
+    <div class="bill-header">
+        <h1>💰 Daily Billing</h1>
+        <a href="{% url 'personal-dashboard' %}" class="bill-back">← Back to Dashboard</a>
+    </div>
+
+    {% if messages %}
+    <div class="bill-messages">
+        {% for message in messages %}
+        <div class="msg {{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="GET" class="bill-date-bar">
+        <input type="date" name="date" value="{{ selected_date|date:'Y-m-d' }}" onchange="this.form.submit()">
+        <button type="submit" class="bill-btn">View</button>
+        <a href="?date={{ today|date:'Y-m-d' }}" class="bill-btn">Today</a>
+    </form>
+
+    <div class="bill-total-card">
+        <div>
+            <div class="label">Total for {{ selected_date|date:'d M Y' }} ({{ entries.count }} {{ entries.count|pluralize:"entry,entries" }})</div>
+            <div class="amount">NPR {{ total }}</div>
+        </div>
+    </div>
+
+    <div class="bill-form">
+        <h3>Add Entry</h3>
+        <form method="POST">
+            {% csrf_token %}
+            <div class="bill-form-grid">
+                <div class="bill-form-group">
+                    <label>Date</label>
+                    {{ form.entry_date }}
+                    {{ form.entry_date.errors }}
+                </div>
+                <div class="bill-form-group">
+                    <label>Patient Name *</label>
+                    {{ form.patient_name }}
+                    {{ form.patient_name.errors }}
+                </div>
+                <div class="bill-form-group">
+                    <label>Age</label>
+                    {{ form.age }}
+                </div>
+                <div class="bill-form-group">
+                    <label>Sex</label>
+                    {{ form.sex }}
+                </div>
+                <div class="bill-form-group">
+                    <label>Contact</label>
+                    {{ form.contact_number }}
+                </div>
+                <div class="bill-form-group">
+                    <label>Service</label>
+                    {{ form.service }}
+                </div>
+                <div class="bill-form-group">
+                    <label>Amount (NPR) *</label>
+                    {{ form.rate }}
+                    {{ form.rate.errors }}
+                </div>
+                <div class="bill-form-group">
+                    <label>Payment Mode</label>
+                    {{ form.payment_mode }}
+                </div>
+                <div class="bill-form-group full">
+                    <label>Notes</label>
+                    {{ form.notes }}
+                </div>
+            </div>
+            <br>
+            <button type="submit" class="bill-btn bill-btn-primary">Save Entry</button>
+        </form>
+    </div>
+
+    <div class="bill-table-wrap">
+        {% if entries %}
+        <table class="bill-table">
+            <thead>
+                <tr>
+                    <th>Invoice #</th>
+                    <th>Patient</th>
+                    <th>Age/Sex</th>
+                    <th>Contact</th>
+                    <th>Service</th>
+                    <th>Amount</th>
+                    <th>Payment</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in entries %}
+                <tr>
+                    <td>{{ entry.invoice_number }}</td>
+                    <td>{{ entry.patient_name }}</td>
+                    <td>{{ entry.age|default:"—" }}{% if entry.sex %} / {{ entry.get_sex_display }}{% endif %}</td>
+                    <td>{{ entry.contact_number|default:"—" }}</td>
+                    <td>{{ entry.service }}</td>
+                    <td>NPR {{ entry.rate }}</td>
+                    <td>{{ entry.get_payment_mode_display }}</td>
+                    <td class="bill-actions-cell">
+                        <a href="{% url 'billing-entry-edit' entry.id %}" class="bill-btn">Edit</a>
+                        <form method="POST" action="{% url 'billing-entry-delete' entry.id %}" onsubmit="return confirm('Delete this entry?');">
+                            {% csrf_token %}
+                            <button type="submit" class="bill-btn bill-btn-danger">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="bill-empty">No entries for this date yet.</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
