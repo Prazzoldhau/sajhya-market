@@ -68,6 +68,7 @@ INSTALLED_APPS = [
     'delivery_app',
     'lab_app',
     'careers_app',
+    'billing_app',
 
 ]
 
