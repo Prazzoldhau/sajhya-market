@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load marketplace_extras %}
+
+{% block title %}Donate Mobility & Disability Aids — Sajhya Flood Relief{% endblock %}
+{% block meta_description %}Donate your unused wheelchair, crutches, walker, commode chair or other mobility aid to Nepalis with disabilities affected by recent flooding — Sajhya arranges pickup.{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ 'css/marketplace-store.css'|plain_static }}">
+{% endblock %}
+
+{% block content %}
+<div class="store">
+
+    {% include 'donate/_donate_header.html' %}
+
+    <form method="POST" action="" id="donate-form">
+        {% csrf_token %}
+
+        <!-- Hero -->
+        <section class="store-donate-hero">
+            <div class="store-wrap store-donate-hero-inner">
+                <h1>Your old mobility aid could change someone's life right now</h1>
+                <p>Recent flooding across Nepal has left many people with disabilities without the wheelchairs, walkers, and supports they depend on. If you have a wheelchair, crutches, walker, commode chair, AFO, or similar item sitting unused, donate it — we'll arrange pickup and get it to someone who needs it.</p>
+                <a href="#pledge-form" class="store-btn-primary store-donate-hero-cta" id="donate-hero-cta">Donate Now ↓</a>
+            </div>
+        </section>
+
+        <div class="store-wrap">
+            <section class="store-section">
+                <div class="store-section-head">
+                    <h2>What we're collecting</h2>
+                    <span class="store-sub">Tick anything you have to give — any condition is worth offering, we'll check it's usable</span>
+                </div>
+
+                {% if categories %}
+                <div class="store-donate-grid">
+                    {% for cat in categories %}
+                    <label class="store-donate-card">
+                        <input type="checkbox" name="items" value="{{ cat.id }}" data-name="{{ cat.name }}">
+                        <div class="store-donate-card-img">
+                            {% if cat.image %}
+                                <img src="{{ cat.image.url }}" alt="{{ cat.name }}" loading="lazy">
+                            {% else %}
+                                <span class="store-donate-card-placeholder">🦽</span>
+                            {% endif %}
+                        </div>
+                        <span class="store-donate-check"></span>
+                        <div class="store-donate-card-body">
+                            <p class="store-donate-card-name">{{ cat.name }}</p>
+                            {% if cat.description %}<p class="store-donate-card-desc">{{ cat.description }}</p>{% endif %}
+                        </div>
+                    </label>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="store-empty">
+                    <p>Categories are being set up — you can still describe what you'd like to donate in the form below.</p>
+                </div>
+                {% endif %}
+
+                <p class="store-sub" style="margin-top:1rem">Have something else disability-related that's not listed? Describe it in the notes below — we'll take a look.</p>
+            </section>
+
+            <!-- Pledge form -->
+            <section class="store-section" id="pledge-form">
+                <div class="store-summary" style="max-width:480px;margin:0 auto">
+                    <h3 class="store-summary-title">Your Details</h3>
+                    <div id="donate-selected-summary" class="store-sub" style="margin-bottom:1rem"></div>
+
+                    <div class="store-form-group">
+                        <label class="store-label">Your Full Name <span class="store-required">*</span></label>
+                        <input type="text" name="donor_name" class="store-input" placeholder="Your full name" required>
+                    </div>
+
+                    <div class="store-form-group">
+                        <label class="store-label">Phone Number <span class="store-required">*</span></label>
+                        <input type="tel" name="phone_number" class="store-input" placeholder="98XXXXXXXX" required>
+                    </div>
+
+                    <div class="store-form-group">
+                        <label class="store-label">Pickup Address <span class="store-required">*</span></label>
+                        <textarea name="address" class="store-input store-textarea" rows="2" placeholder="Where should we collect it from?" required></textarea>
+                    </div>
+
+                    <div class="store-form-group">
+                        <label class="store-label">Notes</label>
+                        <textarea name="notes" class="store-input store-textarea" rows="2" placeholder="Condition, quantity, or anything not listed above"></textarea>
+                    </div>
+
+                    <button type="submit" class="store-btn-primary store-btn-full">I Want to Donate</button>
+
+                    <p class="store-sub" style="margin-top:0.9rem;text-align:center">We'll call you within 24-48 hours to arrange free pickup.</p>
+                </div>
+            </section>
+        </div>
+    </form>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    var checkboxes = Array.prototype.slice.call(document.querySelectorAll('input[name="items"]'));
+    var summaryEl = document.getElementById('donate-selected-summary');
+
+    function update() {
+        var selected = checkboxes.filter(function (cb) { return cb.checked; });
+        if (selected.length === 0) {
+            summaryEl.textContent = '';
+            return;
+        }
+        var names = selected.map(function (cb) { return cb.dataset.name; });
+        summaryEl.textContent = 'Donating: ' + names.join(', ');
+    }
+
+    checkboxes.forEach(function (cb) {
+        cb.addEventListener('change', update);
+    });
+
+    update();
+}());
+</script>
+{% endblock %}

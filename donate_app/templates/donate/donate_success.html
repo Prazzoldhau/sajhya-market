@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load marketplace_extras %}
+
+{% block title %}Thank You — Sajhya Donation{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ 'css/marketplace-store.css'|plain_static }}">
+{% endblock %}
+
+{% block content %}
+<div class="store">
+
+    {% include 'donate/_donate_header.html' %}
+
+    <div class="store-wrap">
+        <div class="store-success">
+            <div class="store-success-icon">🦽</div>
+            <h1 class="store-success-title">Thank You!</h1>
+            <p class="store-success-sub">Your donation means someone recovering from the floods gets back their independence. Our team will call you within 24-48 hours to arrange free pickup.</p>
+
+            <div class="store-order-details">
+                <div class="store-order-detail-row">
+                    <span class="store-detail-label">Reference Number</span>
+                    <span class="store-detail-val store-order-num">#{{ pledge.pledge_number }}</span>
+                </div>
+                <div class="store-order-detail-row">
+                    <span class="store-detail-label">Name</span>
+                    <span class="store-detail-val">{{ pledge.donor_name }}</span>
+                </div>
+                <div class="store-order-detail-row">
+                    <span class="store-detail-label">Phone</span>
+                    <span class="store-detail-val">{{ pledge.phone_number }}</span>
+                </div>
+                <div class="store-order-detail-row">
+                    <span class="store-detail-label">Pickup Address</span>
+                    <span class="store-detail-val">{{ pledge.address }}</span>
+                </div>
+                {% if pledge.items.all %}
+                <div class="store-order-detail-row">
+                    <span class="store-detail-label">Items</span>
+                    <span class="store-detail-val">{% for item in pledge.items.all %}{{ item.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <a href="{% url 'landing' %}" class="store-btn-primary">Back to Sajhya</a>
+
+            <p class="store-contact-note">
+                Questions? Contact us at <strong>sajhya.com</strong>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

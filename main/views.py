@@ -59,6 +59,7 @@ def robots_txt(request):
         "Disallow: /marketplace/pharmacy/update-cart/",
         "Disallow: /marketplace/pharmacy/order-success/",
         "Disallow: /lab-tests/order-success/",
+        "Disallow: /donate/success/",
         "Disallow: /find-physio/manage/",
         "Disallow: /find-physio/booking/",
         "Disallow: /find-physio/*/book/",
