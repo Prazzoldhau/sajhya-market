@@ -1,0 +1,21 @@
+{% load marketplace_extras %}
+<header class="store-header">
+    <div class="store-wrap store-header-row">
+        <a href="{% url 'landing' %}" class="store-logo">
+            <img src="{{ 'img/logo.png'|plain_static }}" alt="Sajhya">
+            Sajhya
+        </a>
+
+        <!-- No search box here -- one page, a handful of categories, nothing
+             worth searching (same reasoning as trimming Lab Tests' header). -->
+
+        <div class="store-header-icons">
+            <a href="{% url 'login' %}" class="store-icon-btn" title="Account">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="8" r="3.4" stroke="currentColor" stroke-width="1.8"/>
+                    <path d="M4.5 20c1.4-3.4 4.4-5.2 7.5-5.2s6.1 1.8 7.5 5.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+            </a>
+        </div>
+    </div>
+</header>

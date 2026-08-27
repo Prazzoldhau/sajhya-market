@@ -1623,6 +1623,179 @@ body.store-lab-modal-lock {
     border-bottom: 1px solid var(--store-border);
 }
 
+/* ---------- Donate ---------- */
+
+.store-donate-hero {
+    background: linear-gradient(135deg, #dc2255 0%, #c2740b 100%);
+    padding: 3.5rem 0;
+    color: #fff;
+    text-align: center;
+}
+
+.store-donate-hero-inner {
+    max-width: 720px;
+}
+
+.store-donate-hero h1 {
+    font-size: 1.9rem;
+    font-weight: 800;
+    line-height: 1.25;
+    margin-bottom: 1rem;
+}
+
+.store-donate-hero p {
+    font-size: 1rem;
+    line-height: 1.6;
+    opacity: 0.95;
+    margin-bottom: 1.75rem;
+}
+
+/* Qualified with the parent, not just .store-donate-hero-cta alone -- .store
+   a { color: inherit } (in the base header/nav rules) is a class+type
+   selector, more specific than a single class, and would otherwise win and
+   inherit the hero's own white text color regardless of source order. */
+.store-donate-hero .store-donate-hero-cta {
+    display: inline-block;
+    background: #fff;
+    color: #dc2255;
+    font-weight: 700;
+    padding: 0.85rem 2rem;
+    font-size: 1rem;
+}
+
+.store-donate-hero .store-donate-hero-cta:hover {
+    background: #fff0f4;
+}
+
+.store-donate-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+}
+
+.store-donate-card {
+    position: relative;
+    display: block;
+    cursor: pointer;
+    background: #fff;
+    border: 1px solid var(--store-border);
+    border-radius: var(--store-radius);
+    overflow: hidden;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.store-donate-card input {
+    position: absolute;
+    top: 0;
+    left: 0;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+}
+
+.store-donate-card:hover {
+    border-color: var(--store-primary);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+    transform: translateY(-2px);
+}
+
+.store-donate-card:has(input:checked) {
+    border-color: #dc2255;
+    box-shadow: 0 8px 24px rgba(220, 34, 85, 0.15);
+}
+
+.store-donate-card-img {
+    height: 130px;
+    background: var(--store-surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.store-donate-card-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.store-donate-card-placeholder {
+    font-size: 2.5rem;
+    opacity: 0.35;
+}
+
+.store-donate-check {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    width: 1.4rem;
+    height: 1.4rem;
+    border-radius: 50%;
+    background: #fff;
+    border: 1.5px solid var(--store-border);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+.store-donate-check::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 6px;
+    width: 5px;
+    height: 9px;
+    border: solid #fff;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+    opacity: 0;
+}
+
+.store-donate-card input:checked ~ .store-donate-check {
+    background: #dc2255;
+    border-color: #dc2255;
+}
+
+.store-donate-card input:checked ~ .store-donate-check::after {
+    opacity: 1;
+}
+
+.store-donate-card-body {
+    padding: 0.9rem 1rem 1.1rem;
+}
+
+.store-donate-card-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--store-ink);
+    margin-bottom: 0.25rem;
+}
+
+.store-donate-card-desc {
+    font-size: 0.78rem;
+    color: var(--store-muted);
+    line-height: 1.4;
+}
+
+@media (max-width: 992px) {
+    .store-donate-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 560px) {
+    .store-donate-hero {
+        padding: 2.5rem 0;
+    }
+
+    .store-donate-hero h1 {
+        font-size: 1.5rem;
+    }
+
+    .store-donate-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+}
+
 .store-lab-line-price {
     float: right;
     color: var(--store-ink);
