@@ -7,13 +7,16 @@ class DonatableCategory(models.Model):
     Wheelchair, Crutches, Walker, etc. Admin-managed like LabTest/marketplace
     Category, so the accepted-items list can change without an app release.
 
-    `image` is a real upload (not the static-path convention marketplace
-    Product/PharmacyProduct use) -- this list was seeded with no photos on
-    purpose, meant to be filled in later straight from Django admin rather
-    than requiring a code change + redeploy for every item photo."""
+    `image` was originally a real ImageField (self-service upload straight
+    through Django admin, no code change needed) -- switched to the same
+    static-path CharField convention marketplace Product/PharmacyProduct/IGR
+    use once real photos actually needed shipping: neither this assistant
+    nor the admin uploading them has direct server file access outside of
+    git, so a MEDIA_ROOT upload has no way to reach production -- committing
+    to static/ and pushing does."""
     name = models.CharField(max_length=100, unique=True)
     description = models.CharField(max_length=255, blank=True, help_text='e.g. "Any size, working condition preferred"')
-    image = models.ImageField(upload_to='donate/items/', null=True, blank=True)
+    image = models.CharField(max_length=200, blank=True, default='', help_text='Path under static/, e.g. categorized_product/donate/wheelchair.jpg')
     is_active = models.BooleanField(default=True)
     sort_order = models.PositiveIntegerField(default=0)
 
