@@ -40,7 +40,7 @@
                         <input type="checkbox" name="items" value="{{ cat.id }}" data-name="{{ cat.name }}">
                         <div class="store-donate-card-img">
                             {% if cat.image %}
-                                <img src="{{ cat.image.url }}" alt="{{ cat.name }}" loading="lazy">
+                                <img src="{{ cat.image|plain_static }}" alt="{{ cat.name }}" loading="lazy">
                             {% else %}
                                 <span class="store-donate-card-placeholder">🦽</span>
                             {% endif %}
