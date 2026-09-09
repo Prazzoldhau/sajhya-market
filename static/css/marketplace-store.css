@@ -392,6 +392,15 @@ body > .container.mt-3:empty {
     min-height: 2.1em;
 }
 
+.store-card-brand {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--store-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin: -0.25rem 0 0.4rem;
+}
+
 .store-card-price {
     /* Distinct from the name above (was the same --store-ink as the
        title, so nothing on the card actually stood out) -- price gets
@@ -557,6 +566,15 @@ body > .container.mt-3:empty {
     line-height: 1.2;
     color: var(--store-ink);
     margin: 0 0 0.9rem;
+}
+
+.store-detail-brand {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--store-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin: -0.6rem 0 1rem;
 }
 
 .store-detail-price {

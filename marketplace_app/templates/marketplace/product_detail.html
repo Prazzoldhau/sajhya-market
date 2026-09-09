@@ -46,6 +46,7 @@
                 {% endif %}
 
                 <h1 class="store-detail-title">{{ product.name }}</h1>
+                {% if product.brand %}<p class="store-detail-brand">{{ product.brand }}</p>{% endif %}
 
                 <div class="store-detail-price">NPR {{ product.price }}</div>
 
