@@ -19,6 +19,12 @@ class Category(models.Model):
 
 class Product(models.Model):
     name = models.CharField(max_length=200)
+    brand = models.CharField(
+        max_length=100, blank=True, default='',
+        help_text='e.g. "Zuvara", "UM Orthotics" -- shown under the product name so visually '
+                   'similar items from different catalogs (same photo style, different price) '
+                   "aren't confused for each other. Blank is fine for products with no real brand."
+    )
     category = models.ForeignKey(
         Category, on_delete=models.SET_NULL, null=True, blank=True, related_name='products'
     )

@@ -10,6 +10,7 @@
     </div>
     <div class="store-card-body">
         <p class="store-card-name">{{ product.name }}</p>
+        {% if product.brand %}<p class="store-card-brand">{{ product.brand }}</p>{% endif %}
         <div class="store-card-price">NPR {{ product.price }}</div>
     </div>
 </a>
