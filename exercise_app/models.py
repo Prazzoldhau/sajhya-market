@@ -76,6 +76,12 @@ class ExerciseMain(models.Model):
     exercise_description_nepali = models.TextField(blank=True, default='')
     exercise_url = models.URLField(null=True, blank=True)
     youtube_url = models.URLField(null=True, blank=True, help_text='Link to a YouTube video demonstrating this exercise')
+    # Preferred over youtube_url when set: a direct video file URL (e.g. a
+    # public Supabase Storage file) the app plays embedded in-app, right
+    # where the step-image slideshow is shown, instead of opening YouTube
+    # externally. Paste the bucket file's public URL here manually -- same
+    # workflow as youtube_url above, just a second, preferred source.
+    hosted_video_url = models.URLField(null=True, blank=True, help_text='Direct video file URL (e.g. Supabase Storage public URL) played embedded in-app; takes priority over youtube_url when set')
 
     def __str__(self):
         return self.exercise_name

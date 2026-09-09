@@ -140,6 +140,7 @@ class Command(BaseCommand):
         total_exercises = exercises.count()
         with_nepali = exercises.exclude(Q(exercise_description_nepali='') | Q(exercise_description_nepali__isnull=True)).count()
         with_video = exercises.exclude(Q(youtube_url='') | Q(youtube_url__isnull=True)).count()
+        with_hosted_video = exercises.exclude(Q(hosted_video_url='') | Q(hosted_video_url__isnull=True)).count()
         regions_covered = Region.objects.count()
         subregions_covered = SubRegion.objects.count()
 
@@ -151,6 +152,8 @@ class Command(BaseCommand):
             'pct_with_nepali_translation': pct(with_nepali, total_exercises),
             'with_youtube_video': with_video,
             'pct_with_youtube_video': pct(with_video, total_exercises),
+            'with_hosted_video': with_hosted_video,
+            'pct_with_hosted_video': pct(with_hosted_video, total_exercises),
         }
 
         # ---- Print ------------------------------------------------------------
