@@ -5,9 +5,9 @@ already in the app (`Spine → Lumbar`, difficulty 1). One script per
 exercise, each mapped to its exact `ExerciseMain` record by ID.
 
 Other batches in this folder:
-[`lumbar-intermediate.md`](lumbar-intermediate.md) (Level 2, 22 exercises).
-Advanced (Level 3) — pending a decision on the loaded barbell/kettlebell
-lifts (see below).
+[`lumbar-intermediate.md`](lumbar-intermediate.md) (Level 2, 22 exercises) ·
+[`lumbar-advanced.md`](lumbar-advanced.md) (Level 3, 21 — 11 self-guided,
+10 supervised loaded lifts as technique references only).
 
 ---
 
