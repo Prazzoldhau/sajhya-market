@@ -4,6 +4,8 @@
 in the app (`Spine → Cervical`, difficulty 1), mapped to their
 `ExerciseMain` records by ID.
 
+Other batches: [`cervical-intermediate.md`](cervical-intermediate.md) (Level 2, 19 exercises).
+
 Format and rules match the Lumbar batches
 ([`lumbar-beginner.md`](lumbar-beginner.md)): 4-column table
 (`Time` · `Visual` · `Voice-over` Nepali · `On-screen text`), then
