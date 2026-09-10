@@ -4,8 +4,10 @@
 already in the app (`Spine → Lumbar`, difficulty 1). One script per
 exercise, each mapped to its exact `ExerciseMain` record by ID.
 
-Intermediate (Level 2, ~22 exercises incl. Bird Dog, Bridge, Prone
-Press-up) and Advanced (Level 3) are separate later batches.
+Other batches in this folder:
+[`lumbar-intermediate.md`](lumbar-intermediate.md) (Level 2, 22 exercises).
+Advanced (Level 3) — pending a decision on the loaded barbell/kettlebell
+lifts (see below).
 
 ---
 
