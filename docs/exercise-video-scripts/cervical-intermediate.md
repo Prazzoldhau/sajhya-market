@@ -4,7 +4,8 @@
 exercises in the app (`Spine → Cervical`, difficulty 2), mapped to their
 `ExerciseMain` records by ID.
 
-Other batches: [`cervical-beginner.md`](cervical-beginner.md).
+Other batches: [`cervical-beginner.md`](cervical-beginner.md) ·
+[`cervical-advanced.md`](cervical-advanced.md).
 
 Format and rules match the earlier batches: 4-column table
 (`Time` · `Visual` · `Voice-over` Nepali · `On-screen text`), then
