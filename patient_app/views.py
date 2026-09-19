@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.db.models import Prefetch, F
+from django.db.models import Prefetch, F, Count
 from personal_account.models import AddPatient, ActivationCard, PatientPhysioPairing, get_nepal_time
 from exercise_app.models import Prescription, PrescriptionExercise, ExerciseFeedback, Region, SubRegion, ExerciseMain
 from marketplace_app.models import Category, Product, ProductImage, ProductVariant, Order, OrderItem, Commission, CommissionRate, PatientProductRecommendation
@@ -1220,13 +1220,18 @@ def patient_api_browse_regions(request):
     patient, err = _patient_required(request)
     if err:
         return err
-    regions = Region.objects.prefetch_related('subregion_set').order_by('region_name')
+    # Roughly half of all sub-regions currently have zero exercises in
+    # them (placeholders for content not built out yet) -- counts are
+    # included so the app can skip listing those as tappable dead ends.
+    regions = Region.objects.prefetch_related(
+        Prefetch('subregion_set', queryset=SubRegion.objects.annotate(exercise_count=Count('exercisemain')))
+    ).order_by('region_name')
     return JsonResponse({'regions': [
         {
             'id': r.id,
             'region_name': r.region_name,
             'subregions': [
-                {'id': sr.id, 'sub_region_name': sr.sub_region_name}
+                {'id': sr.id, 'sub_region_name': sr.sub_region_name, 'exercise_count': sr.exercise_count}
                 for sr in r.subregion_set.all().order_by('sub_region_name')
             ],
         }
