@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Prefetch, F
 from personal_account.models import AddPatient, ActivationCard, PatientPhysioPairing, get_nepal_time
-from exercise_app.models import Prescription, PrescriptionExercise, ExerciseFeedback
+from exercise_app.models import Prescription, PrescriptionExercise, ExerciseFeedback, Region, SubRegion, ExerciseMain
 from marketplace_app.models import Category, Product, ProductImage, ProductVariant, Order, OrderItem, Commission, CommissionRate, PatientProductRecommendation
 from lab_app.models import LabTest, LabTestRequest, LabTestRequestItem
 from marketplace_app.views import get_recommended_for_diagnosis
@@ -1202,6 +1202,75 @@ def patient_api_orders(request):
         'items_count': o.items.count(),
     } for o in orders]
     return JsonResponse({'orders': data})
+
+
+# ==================== EXERCISE LIBRARY (Browse) ====================
+# Read-only: lets a patient explore the exercise library themselves,
+# independent of what a physio has actually prescribed them. Deliberately
+# not wired into mark-done/feedback/video-click tracking -- those all key
+# off a PrescriptionExercise id, not an ExerciseMain id, and a browsed
+# exercise has no PrescriptionExercise row (nothing was prescribed). Keeping
+# browse response shapes distinct from the prescribed-exercise ones (no
+# schedule_*/is_completed fields) is deliberate, not an oversight -- it
+# stops the two id spaces from ever being used interchangeably.
+
+@csrf_exempt
+@require_http_methods(["GET"])
+def patient_api_browse_regions(request):
+    patient, err = _patient_required(request)
+    if err:
+        return err
+    regions = Region.objects.prefetch_related('subregion_set').order_by('region_name')
+    return JsonResponse({'regions': [
+        {
+            'id': r.id,
+            'region_name': r.region_name,
+            'subregions': [
+                {'id': sr.id, 'sub_region_name': sr.sub_region_name}
+                for sr in r.subregion_set.all().order_by('sub_region_name')
+            ],
+        }
+        for r in regions
+    ]})
+
+
+@csrf_exempt
+@require_http_methods(["GET"])
+def patient_api_browse_exercises(request):
+    patient, err = _patient_required(request)
+    if err:
+        return err
+
+    subregion_id = request.GET.get('subregion_id', '').strip()
+    if not subregion_id:
+        return JsonResponse({'error': 'subregion_id is required'}, status=400)
+
+    qs = ExerciseMain.objects.filter(sub_region_fk_id=subregion_id).prefetch_related('step_images').order_by('exercise_name')
+    return JsonResponse({'exercises': [
+        {
+            'id': e.id,
+            'exercise_name': e.exercise_name,
+            'exercise_type': e.exercise_type,
+            'difficulty_level': e.difficulty_level,
+            'exercise_url': request.build_absolute_uri(e.exercise_url) if e.exercise_url else None,
+            'youtube_url': e.youtube_url,
+            'hosted_video_url': e.hosted_video_url,
+            'default_sets': e.default_sets,
+            'default_reps': e.default_reps,
+            'hold_time_sec': e.hold_time_sec,
+            'default_rest_time_sec': e.default_rest_time_sec,
+            'description': e.exercise_description,
+            'description_nepali': e.exercise_description_nepali,
+            'step_images': [
+                {
+                    'order': si.order,
+                    'image_url': request.build_absolute_uri(si.image_url) if si.image_url else None,
+                    'label': si.label,
+                } for si in e.step_images.all()
+            ],
+        }
+        for e in qs
+    ]})
 
 
 # ==================== LAB SERVICE (Blood Investigation) ====================

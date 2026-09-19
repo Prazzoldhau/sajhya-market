@@ -34,6 +34,10 @@ urlpatterns = [
     path('api/exercise/<int:exercise_id>/feedback/', views.submit_exercise_feedback, name='submit_exercise_feedback'),
     path('api/exercise/<int:exercise_id>/video-click/', views.submit_video_click, name='submit_video_click'),
 
+    # Exercise library (browse, independent of physio prescription)
+    path('api/browse/regions/', views.patient_api_browse_regions, name='patient_api_browse_regions'),
+    path('api/browse/exercises/', views.patient_api_browse_exercises, name='patient_api_browse_exercises'),
+
     # Engagement tracking
     path('api/ping-open/', views.patient_api_ping_open, name='patient_api_ping_open'),
 
