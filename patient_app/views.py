@@ -1339,6 +1339,55 @@ def patient_api_browse_exercises_public(request):
     ]})
 
 
+@csrf_exempt
+@require_http_methods(["GET"])
+def patient_api_browse_exercises_search_public(request):
+    """Search the exercise library by name across every region/sub-region
+    at once -- patient_api_browse_exercises_public is scoped to a single
+    sub_region_id, which can't answer "find me an exercise called X"
+    without knowing which of the 5 regions to look in first. No login
+    required, same reasoning as the other browse-* public endpoints."""
+    query = request.GET.get('q', '').strip()
+    if not query:
+        return JsonResponse({'error': 'q is required'}, status=400)
+
+    qs = (
+        ExerciseMain.objects
+        .filter(exercise_name__icontains=query)
+        .select_related('sub_region_fk', 'sub_region_fk__region_fk')
+        .prefetch_related('step_images')
+        .order_by('exercise_name')[:50]
+    )
+    return JsonResponse({'exercises': [
+        {
+            'id': e.id,
+            'exercise_name': e.exercise_name,
+            'exercise_type': e.exercise_type,
+            'difficulty_level': e.get_difficulty_level_display(),
+            'exercise_url': request.build_absolute_uri(e.exercise_url) if e.exercise_url else None,
+            'youtube_url': e.youtube_url,
+            'hosted_video_url': e.hosted_video_url,
+            'default_sets': e.default_sets,
+            'default_reps': e.default_reps,
+            'hold_time_sec': e.hold_time_sec,
+            'default_rest_time_sec': e.default_rest_time_sec,
+            'description': e.exercise_description,
+            'description_nepali': e.exercise_description_nepali,
+            'sub_region_id': e.sub_region_fk_id,
+            'sub_region_name': e.sub_region_fk.sub_region_name,
+            'region_name': e.sub_region_fk.region_fk.region_name,
+            'step_images': [
+                {
+                    'order': si.order,
+                    'image_url': request.build_absolute_uri(si.image_url) if si.image_url else None,
+                    'label': si.label,
+                } for si in e.step_images.all()
+            ],
+        }
+        for e in qs
+    ]})
+
+
 # ==================== LAB SERVICE (Blood Investigation) ====================
 # First real Services-tab feature -- Physiotherapy/Dental/Dietician/etc. are
 # still "coming soon" placeholders in the app. Mirrors the marketplace
