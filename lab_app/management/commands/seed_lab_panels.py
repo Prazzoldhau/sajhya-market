@@ -8,9 +8,12 @@ Test names below were corrected against the catalog actually live in
 production (short report-style names like "CBC", "LFT", "RFT (Renal
 Function Test)"), NOT the longer descriptive names this file originally
 used (e.g. "Complete Blood Count (CBC)") -- those never matched anything
-in the real catalog, so every panel silently skipped. There is no HbA1c
-test in the current catalog, so Diabetes Panel is fasting/PP/random sugar
-only until one is added.
+in the real catalog, so every panel silently skipped.
+
+Diabetes Panel expects a LabTest named exactly "HbA1c" -- add that in
+Django admin (Lab tests) *before* running this command, or Diabetes
+Panel will be skipped entirely (a partial-match panel isn't created;
+see the skip behavior below).
 
 IMPORTANT: bundle prices below are rough placeholders (roughly 10-15% off
 the a-la-carte total of the included tests), NOT this clinic's actual price
@@ -32,9 +35,9 @@ from lab_app.models import LabTest, LabTestPanel
 PANELS = [
     (
         'Diabetes Panel',
-        'Fasting, post-meal (PP) and random blood sugar screening.',
-        ['Blood Sugar - Fasting', 'Blood Sugar - PP', 'Blood Sugar - Random'],
-        130, True,
+        'Fasting, post-meal (PP) and random blood sugar plus 3-month average control (HbA1c).',
+        ['Blood Sugar - Fasting', 'Blood Sugar - PP', 'Blood Sugar - Random', 'HbA1c'],
+        900, True,
     ),
     (
         'Cardiology Panel',
