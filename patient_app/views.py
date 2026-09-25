@@ -1307,6 +1307,29 @@ def patient_api_lab_tests(request):
 
 
 @csrf_exempt
+@require_http_methods(["GET"])
+def patient_api_lab_tests_public(request):
+    """Same catalog as patient_api_lab_tests, minus the login gate -- for
+    apps/surfaces that want to show the lab test list (browse only, no
+    booking) without requiring a patient account. Booking still goes
+    through patient_api_lab_request_create, which does require login."""
+    tests = LabTest.objects.filter(is_active=True)
+    return JsonResponse({'lab_tests': [
+        {
+            'id': t.id,
+            'name': t.name,
+            'category': t.category,
+            'category_display': t.get_category_display(),
+            'price': str(t.price),
+            'sample_type': t.sample_type,
+            'prep_instructions': t.prep_instructions,
+            'turnaround_time': t.turnaround_time,
+        }
+        for t in tests
+    ]})
+
+
+@csrf_exempt
 @require_http_methods(["POST"])
 def patient_api_lab_request_create(request):
     patient, err = _patient_required(request)
