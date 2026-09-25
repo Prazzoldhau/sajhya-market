@@ -15,10 +15,15 @@ Django admin (Lab tests) *before* running this command, or Diabetes
 Panel will be skipped entirely (a partial-match panel isn't created;
 see the skip behavior below).
 
-IMPORTANT: bundle prices below are rough placeholders (roughly 10-15% off
-the a-la-carte total of the included tests), NOT this clinic's actual price
-list -- correct every price in Django admin (Lab test panels) before real
-use, same as LabTest's own placeholder prices.
+IMPORTANT: bundle prices below are placeholders set at ~11-13% off the
+a-la-carte total of the included tests as of when this file was last
+priced (so every panel actually saves the patient something -- an
+earlier version of this file used guessed prices that were *more*
+expensive than buying the tests separately for 4 of the 10 panels).
+These are NOT this clinic's actual price list -- correct every price
+in Django admin (Lab test panels) before real use, same as LabTest's
+own placeholder prices, and re-check the discount if the underlying
+LabTest prices change (this file does not auto-recompute).
 
 Safe to re-run: uses get_or_create on `name`, updates description/tests/
 is_featured/is_active on re-run but never overwrites a price you've already
@@ -37,55 +42,55 @@ PANELS = [
         'Diabetes Panel',
         'Fasting, post-meal (PP) and random blood sugar plus 3-month average control (HbA1c).',
         ['Blood Sugar - Fasting', 'Blood Sugar - PP', 'Blood Sugar - Random', 'HbA1c'],
-        900, True,
+        2350, True,
     ),
     (
         'Cardiology Panel',
         'Cholesterol/triglycerides, inflammation marker, and a cardiac injury marker for cardiovascular risk screening.',
         ['Lipid Profile', 'CRP Quantitative', 'Troponin I'],
-        2200, True,
+        1650, True,
     ),
     (
         'Fever Panel',
         'Covers the most common causes of fever investigated in Nepal -- typhoid, dengue, and a general infection/blood workup.',
         ['CBC', 'Widal Test', 'Dengue NS-1', 'Urine R/E', 'CRP Quantitative'],
-        2200, True,
+        2700, True,
     ),
     (
         'Liver & Hepatitis Panel',
         'Liver function plus Hepatitis B and C screening.',
         ['LFT', 'HBsAg (Spot)', 'HCV (Spot)'],
-        1600, False,
+        1700, False,
     ),
     (
         'Kidney Panel',
         'Renal function, electrolytes, and uric acid.',
         ['RFT (Renal Function Test)', 'Na, K (Sodium, Potassium) Electrolyte', 'Uric Acid'],
-        1400, False,
+        1050, False,
     ),
     (
         'Thyroid & Vitamins Panel',
         'Thyroid function plus the two most commonly deficient vitamins.',
         ['TFT (FT3, FT4, TSH)', '25-OH Vitamin D', 'Vitamin B12'],
-        5000, False,
+        4050, False,
     ),
     (
         'Anemia Panel',
         'Full anemia workup -- blood count, smear, iron stores, and B12.',
         ['CBC', 'Peripheral Blood Smear (PBS)', 'Reticulocyte Count', 'Iron Profile', 'Vitamin B12'],
-        3600, False,
+        4450, False,
     ),
     (
         'Infection Screening Panel',
         'Standard pre-marital/pre-employment infection screen.',
         ['HIV (Spot Test)', 'VDRL Test', 'HBsAg (Spot)', 'HCV (Spot)'],
-        1700, False,
+        2000, False,
     ),
     (
         'Electrolyte & Mineral Panel',
         'Sodium, potassium, calcium, magnesium and phosphorus.',
         ['Na, K (Sodium, Potassium) Electrolyte', 'Calcium', 'Serum Magnesium', 'Phosphorus'],
-        1400, False,
+        1300, False,
     ),
     (
         'Master Health Checkup Panel',
@@ -94,7 +99,7 @@ PANELS = [
             'CBC', 'Blood Sugar - Fasting', 'LFT', 'RFT (Renal Function Test)', 'Lipid Profile',
             'Urine R/E', 'HBsAg (Spot)', 'TSH', 'ESR',
         ],
-        3800, True,
+        3200, True,
     ),
 ]
 
