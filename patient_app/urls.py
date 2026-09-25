@@ -57,6 +57,7 @@ urlpatterns = [
     # Lab service (Blood Investigation)
     path('api/lab/tests/', views.patient_api_lab_tests, name='patient_api_lab_tests'),
     path('api/lab/public-tests/', views.patient_api_lab_tests_public, name='patient_api_lab_tests_public'),
+    path('api/lab/public-panels/', views.patient_api_lab_panels_public, name='patient_api_lab_panels_public'),
     path('api/lab/request/', views.patient_api_lab_request_create, name='patient_api_lab_request_create'),
     path('api/lab/requests/', views.patient_api_lab_requests, name='patient_api_lab_requests'),
 ]

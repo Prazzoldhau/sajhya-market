@@ -3,7 +3,7 @@ from django.db.models import Prefetch, F, Count
 from personal_account.models import AddPatient, ActivationCard, PatientPhysioPairing, get_nepal_time
 from exercise_app.models import Prescription, PrescriptionExercise, ExerciseFeedback, Region, SubRegion, ExerciseMain
 from marketplace_app.models import Category, Product, ProductImage, ProductVariant, Order, OrderItem, Commission, CommissionRate, PatientProductRecommendation
-from lab_app.models import LabTest, LabTestRequest, LabTestRequestItem
+from lab_app.models import LabTest, LabTestPanel, LabTestRequest, LabTestRequestItem
 from marketplace_app.views import get_recommended_for_diagnosis
 from marketplace_app.templatetags.marketplace_extras import CATEGORY_ICON_IMAGES
 from django.http import JsonResponse, HttpResponse
@@ -1326,6 +1326,30 @@ def patient_api_lab_tests_public(request):
             'turnaround_time': t.turnaround_time,
         }
         for t in tests
+    ]})
+
+
+@csrf_exempt
+@require_http_methods(["GET"])
+def patient_api_lab_panels_public(request):
+    """Bundled packages (Diabetes Panel, Fever Panel, Master Health Checkup,
+    etc) -- same no-login browse access as patient_api_lab_tests_public.
+    Booking a panel still requires going through
+    patient_api_lab_request_create with the panel's individual test ids."""
+    panels = LabTestPanel.objects.filter(is_active=True).prefetch_related('tests').order_by('-is_featured', 'name')
+    return JsonResponse({'lab_panels': [
+        {
+            'id': p.id,
+            'name': p.name,
+            'description': p.description,
+            'price': str(p.price),
+            'a_la_carte_total': str(p.a_la_carte_total),
+            'savings': str(p.savings),
+            'is_featured': p.is_featured,
+            'test_ids': [t.id for t in p.tests.all()],
+            'tests': [t.name for t in p.tests.all()],
+        }
+        for p in panels
     ]})
 
 

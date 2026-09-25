@@ -1,8 +1,16 @@
 """
 Seeds LabTestPanel with a starter set of bundled test packages, built only
-from tests already in the LabTest catalog (see seed_lab_tests) -- these are
-the same panels Nepali diagnostic labs commonly market as fixed-price
-packages (Diabetes Panel, Fever Panel, etc).
+from tests already in the LabTest catalog -- these are the same panels
+Nepali diagnostic labs commonly market as fixed-price packages (Diabetes
+Panel, Fever Panel, etc).
+
+Test names below were corrected against the catalog actually live in
+production (short report-style names like "CBC", "LFT", "RFT (Renal
+Function Test)"), NOT the longer descriptive names this file originally
+used (e.g. "Complete Blood Count (CBC)") -- those never matched anything
+in the real catalog, so every panel silently skipped. There is no HbA1c
+test in the current catalog, so Diabetes Panel is fasting/PP/random sugar
+only until one is added.
 
 IMPORTANT: bundle prices below are rough placeholders (roughly 10-15% off
 the a-la-carte total of the included tests), NOT this clinic's actual price
@@ -15,7 +23,7 @@ corrected in admin. Skips (with a warning) any panel whose test names don't
 all match the current LabTest catalog, so editing that catalog's names
 won't silently create a broken/incomplete panel.
 
-Usage: python manage.py seed_lab_panels (run after seed_lab_tests)
+Usage: python manage.py seed_lab_panels
 """
 from django.core.management.base import BaseCommand
 from lab_app.models import LabTest, LabTestPanel
@@ -24,67 +32,66 @@ from lab_app.models import LabTest, LabTestPanel
 PANELS = [
     (
         'Diabetes Panel',
-        'Fasting & random blood sugar plus 3-month average control (HbA1c).',
-        ['Fasting Blood Sugar (FBS)', 'Random Blood Sugar (RBS)', 'HbA1c (Glycated Hemoglobin)'],
-        1100, True,
+        'Fasting, post-meal (PP) and random blood sugar screening.',
+        ['Blood Sugar - Fasting', 'Blood Sugar - PP', 'Blood Sugar - Random'],
+        130, True,
     ),
     (
         'Cardiology Panel',
-        'Cholesterol/triglycerides and inflammation marker for cardiovascular risk screening.',
-        ['Lipid Profile', 'C-Reactive Protein (CRP)'],
-        1500, True,
+        'Cholesterol/triglycerides, inflammation marker, and a cardiac injury marker for cardiovascular risk screening.',
+        ['Lipid Profile', 'CRP Quantitative', 'Troponin I'],
+        2200, True,
     ),
     (
         'Fever Panel',
         'Covers the most common causes of fever investigated in Nepal -- typhoid, dengue, and a general infection/blood workup.',
-        ['Complete Blood Count (CBC)', 'Widal Test (Typhoid)', 'Dengue NS1/IgG/IgM', 'Urine Routine & Microscopy (R/E)', 'C-Reactive Protein (CRP)'],
-        2500, True,
+        ['CBC', 'Widal Test', 'Dengue NS-1', 'Urine R/E', 'CRP Quantitative'],
+        2200, True,
     ),
     (
         'Liver & Hepatitis Panel',
         'Liver function plus Hepatitis B and C screening.',
-        ['Liver Function Test (LFT)', 'HBsAg (Hepatitis B)', 'Anti-HCV (Hepatitis C)'],
-        1800, False,
+        ['LFT', 'HBsAg (Spot)', 'HCV (Spot)'],
+        1600, False,
     ),
     (
         'Kidney Panel',
         'Renal function, electrolytes, and uric acid.',
-        ['Renal Function Test (RFT/KFT)', 'Serum Electrolytes (Na, K, Cl)', 'Serum Uric Acid'],
-        1600, False,
+        ['RFT (Renal Function Test)', 'Na, K (Sodium, Potassium) Electrolyte', 'Uric Acid'],
+        1400, False,
     ),
     (
         'Thyroid & Vitamins Panel',
         'Thyroid function plus the two most commonly deficient vitamins.',
-        ['Thyroid Profile (TSH, T3, T4)', 'Vitamin D (25-OH)', 'Vitamin B12'],
-        5500, False,
+        ['TFT (FT3, FT4, TSH)', '25-OH Vitamin D', 'Vitamin B12'],
+        5000, False,
     ),
     (
         'Anemia Panel',
         'Full anemia workup -- blood count, smear, iron stores, and B12.',
-        ['Complete Blood Count (CBC)', 'Peripheral Blood Smear', 'Reticulocyte Count', 'Serum Ferritin', 'Vitamin B12'],
-        4000, False,
+        ['CBC', 'Peripheral Blood Smear (PBS)', 'Reticulocyte Count', 'Iron Profile', 'Vitamin B12'],
+        3600, False,
     ),
     (
         'Infection Screening Panel',
         'Standard pre-marital/pre-employment infection screen.',
-        ['HIV Screening', 'VDRL (Syphilis)', 'HBsAg (Hepatitis B)', 'Anti-HCV (Hepatitis C)'],
-        1900, False,
+        ['HIV (Spot Test)', 'VDRL Test', 'HBsAg (Spot)', 'HCV (Spot)'],
+        1700, False,
     ),
     (
         'Electrolyte & Mineral Panel',
-        'Sodium, potassium, chloride, calcium, magnesium and phosphorus.',
-        ['Serum Electrolytes (Na, K, Cl)', 'Serum Calcium', 'Serum Magnesium', 'Serum Phosphorus'],
-        1600, False,
+        'Sodium, potassium, calcium, magnesium and phosphorus.',
+        ['Na, K (Sodium, Potassium) Electrolyte', 'Calcium', 'Serum Magnesium', 'Phosphorus'],
+        1400, False,
     ),
     (
         'Master Health Checkup Panel',
         "Nepal's typical comprehensive executive checkup -- blood count, sugar, liver, kidney, cholesterol, urine, hepatitis B, thyroid and inflammation.",
         [
-            'Complete Blood Count (CBC)', 'Fasting Blood Sugar (FBS)', 'Liver Function Test (LFT)',
-            'Renal Function Test (RFT/KFT)', 'Lipid Profile', 'Urine Routine & Microscopy (R/E)',
-            'HBsAg (Hepatitis B)', 'TSH Only', 'Erythrocyte Sedimentation Rate (ESR)',
+            'CBC', 'Blood Sugar - Fasting', 'LFT', 'RFT (Renal Function Test)', 'Lipid Profile',
+            'Urine R/E', 'HBsAg (Spot)', 'TSH', 'ESR',
         ],
-        4200, True,
+        3800, True,
     ),
 ]
 
