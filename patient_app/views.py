@@ -1278,6 +1278,67 @@ def patient_api_browse_exercises(request):
     ]})
 
 
+@csrf_exempt
+@require_http_methods(["GET"])
+def patient_api_browse_regions_public(request):
+    """Same region/sub-region catalog as patient_api_browse_regions, minus
+    the login gate -- the exercise library is generic reference content,
+    not tied to any patient, so there's no reason to require an account
+    just to browse it. Only *prescribed* exercises (tied to a specific
+    patient's Prescription) still require login."""
+    regions = Region.objects.prefetch_related(
+        Prefetch('subregion_set', queryset=SubRegion.objects.annotate(exercise_count=Count('exercisemain')))
+    ).order_by('region_name')
+    return JsonResponse({'regions': [
+        {
+            'id': r.id,
+            'region_name': r.region_name,
+            'subregions': [
+                {'id': sr.id, 'sub_region_name': sr.sub_region_name, 'exercise_count': sr.exercise_count}
+                for sr in r.subregion_set.all().order_by('sub_region_name')
+            ],
+        }
+        for r in regions
+    ]})
+
+
+@csrf_exempt
+@require_http_methods(["GET"])
+def patient_api_browse_exercises_public(request):
+    """Same exercise listing as patient_api_browse_exercises, minus the
+    login gate -- see patient_api_browse_regions_public."""
+    subregion_id = request.GET.get('subregion_id', '').strip()
+    if not subregion_id:
+        return JsonResponse({'error': 'subregion_id is required'}, status=400)
+
+    qs = ExerciseMain.objects.filter(sub_region_fk_id=subregion_id).prefetch_related('step_images').order_by('exercise_name')
+    return JsonResponse({'exercises': [
+        {
+            'id': e.id,
+            'exercise_name': e.exercise_name,
+            'exercise_type': e.exercise_type,
+            'difficulty_level': e.difficulty_level,
+            'exercise_url': request.build_absolute_uri(e.exercise_url) if e.exercise_url else None,
+            'youtube_url': e.youtube_url,
+            'hosted_video_url': e.hosted_video_url,
+            'default_sets': e.default_sets,
+            'default_reps': e.default_reps,
+            'hold_time_sec': e.hold_time_sec,
+            'default_rest_time_sec': e.default_rest_time_sec,
+            'description': e.exercise_description,
+            'description_nepali': e.exercise_description_nepali,
+            'step_images': [
+                {
+                    'order': si.order,
+                    'image_url': request.build_absolute_uri(si.image_url) if si.image_url else None,
+                    'label': si.label,
+                } for si in e.step_images.all()
+            ],
+        }
+        for e in qs
+    ]})
+
+
 # ==================== LAB SERVICE (Blood Investigation) ====================
 # First real Services-tab feature -- Physiotherapy/Dental/Dietician/etc. are
 # still "coming soon" placeholders in the app. Mirrors the marketplace

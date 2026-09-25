@@ -37,6 +37,8 @@ urlpatterns = [
     # Exercise library (browse, independent of physio prescription)
     path('api/browse/regions/', views.patient_api_browse_regions, name='patient_api_browse_regions'),
     path('api/browse/exercises/', views.patient_api_browse_exercises, name='patient_api_browse_exercises'),
+    path('api/browse/public-regions/', views.patient_api_browse_regions_public, name='patient_api_browse_regions_public'),
+    path('api/browse/public-exercises/', views.patient_api_browse_exercises_public, name='patient_api_browse_exercises_public'),
 
     # Engagement tracking
     path('api/ping-open/', views.patient_api_ping_open, name='patient_api_ping_open'),
