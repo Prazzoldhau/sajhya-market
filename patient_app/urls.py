@@ -47,6 +47,7 @@ urlpatterns = [
     # Marketplace
     path('api/categories/', views.patient_api_categories, name='patient_api_categories'),
     path('api/products/', views.patient_api_products, name='patient_api_products'),
+    path('api/public-products/', views.patient_api_products_public, name='patient_api_products_public'),
     path('api/pharmacy/products/', views.patient_api_pharmacy_products, name='patient_api_pharmacy_products'),
     path('api/pharmacy/public-products/', views.patient_api_pharmacy_products_public, name='patient_api_pharmacy_products_public'),
     path('api/cart/', views.patient_api_cart, name='patient_api_cart'),

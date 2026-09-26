@@ -1008,6 +1008,39 @@ def patient_api_products(request):
     return JsonResponse({'products': data})
 
 
+@csrf_exempt
+@require_http_methods(["GET"])
+def patient_api_products_public(request):
+    """Same idea as patient_api_lab_tests_public/patient_api_pharmacy_products_public:
+    browse-only, no login required. Unlike pharmacy's public endpoint, this
+    one CAN reuse patient_api_products' own query as-is -- the general
+    Product catalog wasn't affected by the migration that moved pharmacy
+    items into their own table. Adds brand/is_featured to the response,
+    which patient_api_products itself doesn't serialize despite both
+    existing on the model."""
+    qs = Product.objects.filter(in_stock=True).exclude(category__name='Pharmacy').select_related('category').prefetch_related(_variants_prefetch(), _gallery_prefetch())
+    cat_id = request.GET.get('category', '').strip()
+    if cat_id:
+        qs = qs.filter(category_id=cat_id)
+    search = request.GET.get('search', '').strip()
+    if search:
+        qs = qs.filter(name__icontains=search)
+    data = [{
+        'id': p.id,
+        'name': p.name,
+        'brand': p.brand,
+        'price': str(p.price),
+        'unit': p.unit,
+        'category': p.category.name if p.category else '',
+        'image_url': _image_url(request, p.image),
+        'images': _product_images(request, p),
+        'description': p.description,
+        'is_featured': p.is_featured,
+        'variants': _product_variants(request, p),
+    } for p in qs]
+    return JsonResponse({'products': data})
+
+
 def patient_api_pharmacy_products(request):
     patient, err = _patient_required(request)
     if err:
