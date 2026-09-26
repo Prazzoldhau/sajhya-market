@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Prefetch, F, Count
 from personal_account.models import AddPatient, ActivationCard, PatientPhysioPairing, get_nepal_time
 from exercise_app.models import Prescription, PrescriptionExercise, ExerciseFeedback, Region, SubRegion, ExerciseMain
-from marketplace_app.models import Category, Product, ProductImage, ProductVariant, Order, OrderItem, Commission, CommissionRate, PatientProductRecommendation
+from marketplace_app.models import Category, Product, ProductImage, ProductVariant, Order, OrderItem, Commission, CommissionRate, PatientProductRecommendation, PharmacyProduct
 from lab_app.models import LabTest, LabTestPanel, LabTestRequest, LabTestRequestItem
 from marketplace_app.views import get_recommended_for_diagnosis
 from marketplace_app.templatetags.marketplace_extras import CATEGORY_ICON_IMAGES
@@ -1026,6 +1026,38 @@ def patient_api_pharmacy_products(request):
         'images': _product_images(request, p),
         'description': p.description,
         'variants': _product_variants(request, p),
+    } for p in qs]
+    return JsonResponse({'products': data})
+
+
+@csrf_exempt
+@require_http_methods(["GET"])
+def patient_api_pharmacy_products_public(request):
+    """Same idea as patient_api_lab_tests_public: browse-only, no login
+    required. Deliberately NOT just "patient_api_pharmacy_products minus the
+    login check" -- that view queries Product/category__name='Pharmacy',
+    which migration 0015_migrate_pharmacy_products_to_own_table moved into
+    its own PharmacyProduct table and deleted from Product, so that filter
+    now matches nothing. PharmacyProduct also has no ProductImage/
+    ProductVariant relations (pharmacy items never used variants/gallery),
+    so this returns a single image_url and no images/variants lists,
+    unlike patient_api_products/patient_api_pharmacy_products."""
+    qs = PharmacyProduct.objects.filter(in_stock=True)
+    search = request.GET.get('search', '').strip()
+    if search:
+        qs = qs.filter(name__icontains=search)
+    qs = qs.order_by('-is_featured', 'name')
+    data = [{
+        'id': p.id,
+        'name': p.name,
+        'category': p.category,
+        'description': p.description,
+        'price': str(p.price),
+        'unit': p.unit,
+        'image_url': _image_url(request, p.image),
+        'in_stock': p.in_stock,
+        'is_featured': p.is_featured,
+        'requires_prescription': p.requires_prescription,
     } for p in qs]
     return JsonResponse({'products': data})
 
