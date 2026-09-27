@@ -1269,6 +1269,165 @@ def patient_api_orders(request):
     return JsonResponse({'orders': data})
 
 
+# ==================== PHARMACY CART/CHECKOUT ====================
+# A separate cart + checkout pipeline from the marketplace one above,
+# mirroring how the public website already treats pharmacy as its own
+# thing (marketplace_app.views' pharmacy_add_to_cart/pharmacy_checkout use
+# their own _get_pharmacy_cart session key, distinct from the general
+# cart). Needed because patient_api_cart_add/patient_api_order only ever
+# handle Product ids -- PharmacyProduct lives in its own table (see
+# patient_api_pharmacy_products_public's docstring) and has no variants,
+# so it can't just be folded into the existing cart_add/order endpoints
+# without them needing to guess which table an id belongs to.
+#
+# Same as the marketplace checkout, this doesn't block ordering an item
+# with requires_prescription=True -- no prescription-upload/verification
+# step exists anywhere in this codebase yet, patient app or website.
+
+def _get_patient_pharmacy_cart(request):
+    return request.session.get('patient_pharmacy_cart', {})
+
+
+def _save_patient_pharmacy_cart(request, cart):
+    request.session['patient_pharmacy_cart'] = cart
+    request.session.modified = True
+
+
+def patient_api_pharmacy_cart(request):
+    patient, err = _patient_required(request)
+    if err:
+        return err
+    cart = _get_patient_pharmacy_cart(request)
+    items = []
+    total = Decimal('0')
+    for key, item in cart.items():
+        item_total = Decimal(str(item['price'])) * item['quantity']
+        total += item_total
+        items.append({
+            'product_id': int(key),
+            'name': item['name'],
+            'price': str(item['price']),
+            'quantity': item['quantity'],
+            'unit': item.get('unit', ''),
+            'image_url': item.get('image_url', ''),
+            'requires_prescription': item.get('requires_prescription', False),
+            'item_total': str(item_total),
+        })
+    return JsonResponse({
+        'items': items,
+        'total': str(total),
+        'count': sum(i['quantity'] for i in cart.values()),
+    })
+
+
+@csrf_exempt
+@require_http_methods(['POST'])
+def patient_api_pharmacy_cart_add(request, product_id):
+    patient, err = _patient_required(request)
+    if err:
+        return err
+    product = get_object_or_404(PharmacyProduct, id=product_id, in_stock=True)
+
+    cart = _get_patient_pharmacy_cart(request)
+    key = str(product_id)
+    if key in cart:
+        cart[key]['quantity'] += 1
+    else:
+        cart[key] = {
+            'name': product.name,
+            'price': str(product.price),
+            'quantity': 1,
+            'unit': product.unit,
+            'image_url': _image_url(request, product.image),
+            'requires_prescription': product.requires_prescription,
+        }
+    _save_patient_pharmacy_cart(request, cart)
+    return JsonResponse({'success': True, 'cart_count': sum(i['quantity'] for i in cart.values())})
+
+
+@csrf_exempt
+@require_http_methods(['POST'])
+def patient_api_pharmacy_cart_update(request):
+    patient, err = _patient_required(request)
+    if err:
+        return err
+    try:
+        data = json.loads(request.body)
+        pid = int(data['product_id'])
+        qty = int(data.get('quantity', 0))
+    except (json.JSONDecodeError, KeyError, ValueError):
+        return JsonResponse({'error': 'Invalid data'}, status=400)
+    key = str(pid)
+    cart = _get_patient_pharmacy_cart(request)
+    if key in cart:
+        if qty <= 0:
+            del cart[key]
+        else:
+            cart[key]['quantity'] = qty
+    _save_patient_pharmacy_cart(request, cart)
+    return JsonResponse({'success': True, 'cart_count': sum(i['quantity'] for i in cart.values())})
+
+
+@csrf_exempt
+@require_http_methods(['POST'])
+def patient_api_pharmacy_order(request):
+    patient, err = _patient_required(request)
+    if err:
+        return err
+    cart = _get_patient_pharmacy_cart(request)
+    if not cart:
+        return JsonResponse({'error': 'Cart is empty'}, status=400)
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    delivery_address = data.get('delivery_address', '').strip()
+    notes = data.get('notes', '').strip()
+    customer_phone = data.get('customer_phone', '').strip() or patient.patient_contact
+    if not delivery_address:
+        return JsonResponse({'error': 'Delivery address required'}, status=400)
+    if not customer_phone:
+        return JsonResponse({'error': 'Phone number required'}, status=400)
+
+    total = sum(Decimal(str(item['price'])) * item['quantity'] for item in cart.values())
+
+    order = Order.objects.create(
+        order_type='pharmacy',
+        customer_name=patient.patient_name,
+        customer_email=f'{patient.patient_code}@sajhya.local',
+        customer_phone=customer_phone,
+        delivery_address=delivery_address,
+        notes=notes,
+        total_amount=total,
+    )
+    for key, item in cart.items():
+        pid = int(key)
+        pharmacy_product = PharmacyProduct.objects.filter(id=pid).first()
+        OrderItem.objects.create(
+            order=order,
+            pharmacy_product=pharmacy_product,
+            product_name=item['name'],
+            quantity=item['quantity'],
+            unit_price=Decimal(str(item['price'])),
+        )
+
+    # Auto-create commission for referring physio, same as the general order.
+    physio = patient.created_by
+    if physio:
+        rate = CommissionRate.get_rate_for_physio(physio)
+        Commission.objects.create(
+            order=order,
+            physio=physio,
+            patient_code=patient.patient_code,
+            order_amount=total,
+            commission_rate=rate,
+            commission_amount=(total * rate / Decimal('100')).quantize(Decimal('0.01')),
+        )
+
+    _save_patient_pharmacy_cart(request, {})
+    return JsonResponse({'success': True, 'order_number': order.order_number, 'total': str(total)})
+
+
 # ==================== EXERCISE LIBRARY (Browse) ====================
 # Read-only: lets a patient explore the exercise library themselves,
 # independent of what a physio has actually prescribed them. Deliberately

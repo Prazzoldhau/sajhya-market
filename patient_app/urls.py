@@ -55,6 +55,13 @@ urlpatterns = [
     path('api/cart/update/', views.patient_api_cart_update, name='patient_api_cart_update'),
     path('api/order/', views.patient_api_order, name='patient_api_order'),
     path('api/orders/', views.patient_api_orders, name='patient_api_orders'),
+
+    # Pharmacy cart/checkout (separate from the marketplace cart above --
+    # PharmacyProduct has its own id space and no variants)
+    path('api/pharmacy/cart/', views.patient_api_pharmacy_cart, name='patient_api_pharmacy_cart'),
+    path('api/pharmacy/cart/add/<int:product_id>/', views.patient_api_pharmacy_cart_add, name='patient_api_pharmacy_cart_add'),
+    path('api/pharmacy/cart/update/', views.patient_api_pharmacy_cart_update, name='patient_api_pharmacy_cart_update'),
+    path('api/pharmacy/order/', views.patient_api_pharmacy_order, name='patient_api_pharmacy_order'),
     path('api/physio/', views.patient_api_physio, name='patient_api_physio'),
     path('api/recommended/', views.patient_api_recommended, name='patient_api_recommended'),
     path('add-recs-to-cart/', views.add_recs_to_cart, name='add-recs-to-cart'),
