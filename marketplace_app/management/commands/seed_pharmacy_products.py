@@ -26,25 +26,40 @@ photo shows a printed "Rx" mark -- not inferred/guessed (and only if the
 row still has the unreviewed False default, so it never clobbers an
 admin correction).
 
+Three rows were renamed after their photos showed the original Excel
+label didn't match the actual brand/strength in stock (confirmed by the
+user against the physical box): Estaglan 4 -> SL-GAN 1 (Estazolam 1mg),
+Parmiplex 0.5 -> Pramipex 0.25 (Pramipexole 0.25mg), Rosrol 10 ->
+Rovastin 5 (Rosuvastatin 5mg). RENAMES below applies this rename in
+place (same row, same price/history) before PRODUCTS is processed, so
+re-running this command never recreates the old-named row.
+
 Usage: python manage.py seed_pharmacy_products
 """
 from django.core.management.base import BaseCommand
 from marketplace_app.models import PharmacyProduct
+
+# (old_name, new_name) -- applied once; a no-op once the rename has happened
+RENAMES = [
+    ('Estaglan 4', 'SL-GAN 1'),
+    ('Parmiplex 0.5', 'Pramipex 0.25'),
+    ('Rosrol 10', 'Rovastin 5'),
+]
 
 # (name, placeholder_price_npr_from_cost_per_unit, image_path_or_blank, rx_confirmed_from_packaging_photo)
 PRODUCTS = [
     ('Gabapin', 246.5, 'pharmacy/gabapin.jpg', True),
     ('Pantop', 80.0, '', False),
     ('Finast', 340.67, '', False),
-    ('Rosrol 10', 170.0, '', False),
+    ('Rovastin 5', 170.0, 'pharmacy/rovastin-5.jpg', False),
     ('Telmisartan', 180.0, 'pharmacy/telmisartan.jpg', True),
     ('Duvanta 40', 395.0, 'pharmacy/duvanta-40.jpg', False),
     ('Duvanta 20', 206.67, '', False),
     ('Syndopa Plus', 59.33, 'pharmacy/syndopa-plus.jpg', True),
     ('Fortiplex (Cap)', 66.0, 'pharmacy/fortiplex-cap.jpg', False),
     ('Auromega', 992.0, '', False),
-    ('Parmiplex 0.5', 203.33, '', False),
-    ('Estaglan 4', 390.0, '', False),
+    ('Pramipex 0.25', 203.33, 'pharmacy/pramipex-025.jpg', False),
+    ('SL-GAN 1', 390.0, 'pharmacy/sl-gan-1.jpg', False),
 ]
 
 
@@ -52,6 +67,16 @@ class Command(BaseCommand):
     help = "Seed PharmacyProduct from a supplier purchase record. Safe to re-run."
 
     def handle(self, *args, **options):
+        renamed = 0
+        for old_name, new_name in RENAMES:
+            if PharmacyProduct.objects.filter(name=new_name).exists():
+                continue
+            row = PharmacyProduct.objects.filter(name=old_name).first()
+            if row:
+                row.name = new_name
+                row.save(update_fields=['name'])
+                renamed += 1
+
         created, skipped, updated = 0, 0, 0
         for name, price, image, rx_confirmed in PRODUCTS:
             obj, was_created = PharmacyProduct.objects.get_or_create(
@@ -84,7 +109,7 @@ class Command(BaseCommand):
                 updated += 1
 
         self.stdout.write(self.style.SUCCESS(
-            f"Pharmacy products: {created} created, {skipped} already existed "
+            f"Pharmacy products: {renamed} renamed, {created} created, {skipped} already existed "
             f"({updated} of those updated with a new photo/Rx flag), {len(PRODUCTS)} total."
         ))
         self.stdout.write(self.style.WARNING(
