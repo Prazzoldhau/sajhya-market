@@ -252,7 +252,7 @@ def pharmacy_add_to_cart(request, product_id):
             'quantity': 1,
             'unit': product.unit,
             'category': product.category,
-            'image': product.image,
+            'image': product.image_url_path,
         }
 
     _save_pharmacy_cart(request, cart)
@@ -394,7 +394,7 @@ def add_to_cart(request, product_id):
             'quantity': 1,
             'unit': product.unit,
             'category': product.category.name if product.category else '',
-            'image': product.image,
+            'image': product.image_url_path,
         }
 
     _save_cart(request, cart)
@@ -664,7 +664,7 @@ def add_picks_to_cart(request, patient_id):
                 'quantity': 1,
                 'unit': p.unit,
                 'category': p.category.name if p.category else '',
-                'image': p.image,
+                'image': p.image_url_path,
             }
     _save_cart(request, cart)
     return redirect('view-cart')

@@ -25,7 +25,7 @@
                 {% for item in cart_items %}
                 <div class="store-cart-row">
                     {% if item.image %}
-                    <img src="{{ item.image|plain_static }}" alt="{{ item.name }}" class="store-cart-icon-img">
+                    <img src="{{ item.image }}" alt="{{ item.name }}" class="store-cart-icon-img">
                     {% else %}
                     <div class="store-cart-icon">💊</div>
                     {% endif %}

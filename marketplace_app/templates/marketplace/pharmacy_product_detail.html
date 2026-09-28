@@ -27,8 +27,8 @@
         <div class="store-detail">
             <div class="store-detail-img">
                 {% if product.requires_prescription %}<span class="store-rx-badge">Rx</span>{% endif %}
-                {% if product.image %}
-                    <img src="{{ product.image|plain_static }}" alt="{{ product.name }}">
+                {% if product.image_url_path %}
+                    <img src="{{ product.image_url_path }}" alt="{{ product.name }}">
                 {% else %}
                     <div class="placeholder">
                         <span>💊</span>
@@ -87,8 +87,8 @@
                 <a href="{% url 'pharmacy-product-detail' rp.id %}" class="store-card">
                     <div class="store-card-img">
                         {% if rp.requires_prescription %}<span class="store-rx-badge">Rx</span>{% endif %}
-                        {% if rp.image %}
-                            <img src="{{ rp.image|plain_static }}" alt="{{ rp.name }}">
+                        {% if rp.image_url_path %}
+                            <img src="{{ rp.image_url_path }}" alt="{{ rp.name }}">
                         {% else %}
                             <span class="placeholder">💊</span>
                         {% endif %}

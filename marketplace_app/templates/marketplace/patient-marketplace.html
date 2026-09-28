@@ -64,8 +64,8 @@
         <div class="mkt-product-card" style="border:1.5px solid rgba(102,126,234,.3);">
             <a href="{% url 'product-detail' rec.product.id %}" class="mkt-product-link">
                 <div class="mkt-product-img">
-                    {% if rec.product.image %}
-                        <img src="{{ rec.product.image|plain_static }}" alt="{{ rec.product.name }}">
+                    {% if rec.product.image_url_path %}
+                        <img src="{{ rec.product.image_url_path }}" alt="{{ rec.product.name }}">
                     {% else %}
                         <div class="mkt-img-placeholder">{{ rec.product.category.icon|default:"📦" }}</div>
                     {% endif %}
@@ -112,8 +112,8 @@
         <div class="mkt-product-card" style="border:1.5px solid rgba(17,153,142,.25);">
             <a href="{% url 'product-detail' product.id %}" class="mkt-product-link">
                 <div class="mkt-product-img">
-                    {% if product.image %}
-                        <img src="{{ product.image|plain_static }}" alt="{{ product.name }}">
+                    {% if product.image_url_path %}
+                        <img src="{{ product.image_url_path }}" alt="{{ product.name }}">
                     {% else %}
                         <div class="mkt-img-placeholder">{{ product.category.icon|default:"📦" }}</div>
                     {% endif %}
@@ -157,8 +157,8 @@
         <div class="mkt-product-card">
             <a href="{% url 'product-detail' product.id %}" class="mkt-product-link">
                 <div class="mkt-product-img">
-                    {% if product.image %}
-                        <img src="{{ product.image|plain_static }}" alt="{{ product.name }}">
+                    {% if product.image_url_path %}
+                        <img src="{{ product.image_url_path }}" alt="{{ product.name }}">
                     {% else %}
                         <div class="mkt-img-placeholder">{{ product.category.icon|default:"📦" }}</div>
                     {% endif %}
