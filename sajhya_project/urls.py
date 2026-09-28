@@ -46,6 +46,11 @@ urlpatterns = [
 
 ]
 
-# Only serve media files in development (DEBUG=True)
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Served unconditionally, not just when DEBUG=True: WhiteNoise already
+# serves STATIC_ROOT straight from this same WSGI process in production
+# (see settings.py), and there's no separate web-server-level mapping for
+# MEDIA_URL on this cPanel/Passenger host. Without this, an admin-uploaded
+# product photo (marketplace_app.Product/PharmacyProduct.image_upload)
+# would save to disk fine but its /media/... URL would 404 for every
+# patient trying to view it.
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

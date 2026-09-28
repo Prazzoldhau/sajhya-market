@@ -884,6 +884,17 @@ def _image_url(request, image_path):
     return request.build_absolute_uri(f'{settings.STATIC_URL}{encoded}')
 
 
+def _product_photo_url(request, obj):
+    """obj is a Product, ProductVariant, or PharmacyProduct -- see
+    marketplace_app.models.ImageUrlMixin.image_url_path for how the path is
+    resolved (a direct admin upload takes priority over the older
+    static-path convention `.image` when both are set)."""
+    path = obj.image_url_path
+    if not path:
+        return None
+    return request.build_absolute_uri(path)
+
+
 def _category_icon_url(request, category_name):
     """Same CATEGORY_ICON_IMAGES lookup the web marketplace template uses
     (marketplace_app.templatetags.marketplace_extras.category_icon_image),
@@ -920,7 +931,7 @@ def _product_variants(request, product):
             'label': v.label,
             'price': str(v.price),
             'in_stock': v.in_stock,
-            'image_url': _image_url(request, v.image) if v.image else _image_url(request, product.image),
+            'image_url': _product_photo_url(request, v) if v.image else _product_photo_url(request, product),
         }
         for v in variants
     ]
@@ -942,12 +953,12 @@ def _product_images(request, product):
     gallery photos), then ProductImage rows in order. Expects
     `gallery_images_list` to be prefetched via _gallery_prefetch(); falls
     back to a fresh query if it wasn't."""
-    main = _image_url(request, product.image)
+    main = _product_photo_url(request, product)
     urls = [main] if main else []
     extra = getattr(product, 'gallery_images_list', None)
     if extra is None:
         extra = product.gallery_images.order_by('order', 'id')
-    urls.extend(_image_url(request, img.image) for img in extra)
+    urls.extend(_product_photo_url(request, img) for img in extra)
     return urls
 
 
@@ -1000,7 +1011,7 @@ def patient_api_products(request):
         'price': str(p.price),
         'unit': p.unit,
         'category': p.category.name if p.category else '',
-        'image_url': _image_url(request, p.image),
+        'image_url': _product_photo_url(request, p),
         'images': _product_images(request, p),
         'description': p.description,
         'variants': _product_variants(request, p),
@@ -1032,7 +1043,7 @@ def patient_api_products_public(request):
         'price': str(p.price),
         'unit': p.unit,
         'category': p.category.name if p.category else '',
-        'image_url': _image_url(request, p.image),
+        'image_url': _product_photo_url(request, p),
         'images': _product_images(request, p),
         'description': p.description,
         'is_featured': p.is_featured,
@@ -1055,7 +1066,7 @@ def patient_api_pharmacy_products(request):
         'price': str(p.price),
         'unit': p.unit,
         'category': p.category.name if p.category else '',
-        'image_url': _image_url(request, p.image),
+        'image_url': _product_photo_url(request, p),
         'images': _product_images(request, p),
         'description': p.description,
         'variants': _product_variants(request, p),
@@ -1087,7 +1098,7 @@ def patient_api_pharmacy_products_public(request):
         'description': p.description,
         'price': str(p.price),
         'unit': p.unit,
-        'image_url': _image_url(request, p.image),
+        'image_url': _product_photo_url(request, p),
         'in_stock': p.in_stock,
         'is_featured': p.is_featured,
         'requires_prescription': p.requires_prescription,
@@ -1152,7 +1163,7 @@ def patient_api_cart_add(request, product_id):
             'price': str(variant.price if variant else product.price),
             'quantity': 1,
             'unit': product.unit,
-            'image_url': _image_url(request, (variant.image if variant and variant.image else product.image)),
+            'image_url': _product_photo_url(request, variant) if variant and variant.image else _product_photo_url(request, product),
         }
     _save_patient_cart(request, cart)
     return JsonResponse({'success': True, 'cart_count': sum(i['quantity'] for i in cart.values())})
@@ -1338,7 +1349,7 @@ def patient_api_pharmacy_cart_add(request, product_id):
             'price': str(product.price),
             'quantity': 1,
             'unit': product.unit,
-            'image_url': _image_url(request, product.image),
+            'image_url': _product_photo_url(request, product),
             'requires_prescription': product.requires_prescription,
         }
     _save_patient_pharmacy_cart(request, cart)
@@ -1794,7 +1805,7 @@ def patient_api_recommended(request):
             'unit': p.unit,
             'category': p.category.name if p.category else '',
             'category_icon': p.category.icon if p.category else '📦',
-            'image_url': _image_url(request, p.image),
+            'image_url': _product_photo_url(request, p),
             'description': p.description,
             'note': note,
             'source': source,   # 'physio_pick' | 'auto'

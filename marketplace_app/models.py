@@ -1,7 +1,30 @@
 from django.db import models
 from django.conf import settings
 from decimal import Decimal
+from urllib.parse import quote
 import uuid
+
+
+class ImageUrlMixin:
+    """Shared photo-URL resolution for Product/ProductVariant/ProductImage/
+    PharmacyProduct. A direct admin upload (`image_upload`, on the models
+    that have one) takes priority over the older manual static-path
+    convention (`image`, e.g. 'categorized_product/pharmacy/gabapin.jpg')
+    when both are set -- lets existing git-committed photos keep working
+    while new products can just be uploaded through the admin form instead.
+
+    image_upload.url is already safely encoded by its storage backend; the
+    legacy string isn't, so it's percent-encoded here (old filenames can
+    contain literal spaces/parens, e.g. 'categorized_product/9/9 (023).png')."""
+
+    @property
+    def image_url_path(self):
+        upload = getattr(self, 'image_upload', None)
+        if upload:
+            return upload.url
+        if self.image:
+            return f'{settings.STATIC_URL}{quote(self.image, safe="/")}'
+        return ''
 
 
 class Category(models.Model):
@@ -17,7 +40,7 @@ class Category(models.Model):
         return self.name
 
 
-class Product(models.Model):
+class Product(ImageUrlMixin, models.Model):
     name = models.CharField(max_length=200)
     brand = models.CharField(
         max_length=100, blank=True, default='',
@@ -31,7 +54,16 @@ class Product(models.Model):
     description = models.TextField(blank=True)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     unit = models.CharField(max_length=50, default='per piece')
-    image = models.CharField(max_length=200, blank=True, default='')
+    image = models.CharField(
+        max_length=200, blank=True, default='',
+        help_text='Legacy static path under static/, e.g. categorized_product/9/9 (023).png. '
+                   'Prefer uploading a photo below for new products -- this is only still here '
+                   'for products photographed this way before direct upload existed.',
+    )
+    image_upload = models.ImageField(
+        upload_to='marketplace_uploads/', blank=True, null=True,
+        help_text='Upload a photo directly. Takes priority over the static path above when both are set.',
+    )
     in_stock = models.BooleanField(default=True)
     is_featured = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -43,7 +75,7 @@ class Product(models.Model):
         return self.name
 
 
-class ProductImage(models.Model):
+class ProductImage(ImageUrlMixin, models.Model):
     """Additional photos for a product's detail-page gallery, beyond the
     single required Product.image -- swipeable/zoomable in the app.
     Mirrors exercise_app.ExerciseStepImage's shape (ordered rows, not
@@ -60,7 +92,7 @@ class ProductImage(models.Model):
         return f"{self.product.name} — image {self.order}"
 
 
-class ProductVariant(models.Model):
+class ProductVariant(ImageUrlMixin, models.Model):
     """A purchasable option of a Product with its own price/stock/photo -- e.g.
     a resistance band's strength, a brace's size. Optional: most products have
     none and are bought directly. image is optional; blank means "use the
@@ -80,7 +112,7 @@ class ProductVariant(models.Model):
         return f"{self.product.name} — {self.label}"
 
 
-class PharmacyProduct(models.Model):
+class PharmacyProduct(ImageUrlMixin, models.Model):
     """Pharmacy's own catalog -- deliberately a separate table from Product
     (used to just be Product rows tagged category='Pharmacy'). Flat list, no
     category FK yet: the old Pharmacy listing never had real sub-categories
@@ -91,7 +123,16 @@ class PharmacyProduct(models.Model):
     description = models.TextField(blank=True)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     unit = models.CharField(max_length=50, default='per piece')
-    image = models.CharField(max_length=200, blank=True, default='')
+    image = models.CharField(
+        max_length=200, blank=True, default='',
+        help_text='Legacy static path under static/, e.g. categorized_product/pharmacy/gabapin.jpg. '
+                   'Prefer uploading a photo below for new products -- this is only still here '
+                   'for products photographed this way before direct upload existed.',
+    )
+    image_upload = models.ImageField(
+        upload_to='pharmacy_uploads/', blank=True, null=True,
+        help_text='Upload a photo directly. Takes priority over the static path above when both are set.',
+    )
     in_stock = models.BooleanField(default=True)
     is_featured = models.BooleanField(default=False)
     requires_prescription = models.BooleanField(default=False, help_text='Shows an Rx-required badge on the storefront.')

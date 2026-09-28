@@ -19,12 +19,17 @@ leaves it alone on future runs).
 
 Real box/blister photos for a few of these were added later (see
 static/categorized_product/pharmacy/) -- matched only where the photo's
-printed brand AND strength exactly match the row below. image is set only
-if the row doesn't already have one (never overwrites an admin upload),
-and requires_prescription is set to True only where the actual packaging
-photo shows a printed "Rx" mark -- not inferred/guessed (and only if the
-row still has the unreviewed False default, so it never clobbers an
-admin correction).
+printed brand AND strength exactly match the row below. Paths here must
+include the 'categorized_product/' prefix, matching every other consumer
+of PharmacyProduct.image (patient_app._product_photo_url,
+physio_api_app._product_image_url, marketplace_app's own templates all
+build the URL as STATIC_URL + image verbatim, with no prefix injected).
+image is set only if the row doesn't already have one (never overwrites
+an admin upload -- image_upload always wins over this field regardless,
+see ImageUrlMixin), and requires_prescription is set to True only where
+the actual packaging photo shows a printed "Rx" mark -- not
+inferred/guessed (and only if the row still has the unreviewed False
+default, so it never clobbers an admin correction).
 
 Three rows were renamed after their photos showed the original Excel
 label didn't match the actual brand/strength in stock (confirmed by the
@@ -48,25 +53,40 @@ RENAMES = [
 
 # (name, placeholder_price_npr_from_cost_per_unit, image_path_or_blank, rx_confirmed_from_packaging_photo)
 PRODUCTS = [
-    ('Gabapin', 246.5, 'pharmacy/gabapin.jpg', True),
+    ('Gabapin', 246.5, 'categorized_product/pharmacy/gabapin.jpg', True),
     ('Pantop', 80.0, '', False),
     ('Finast', 340.67, '', False),
-    ('Rovastin 5', 170.0, 'pharmacy/rovastin-5.jpg', False),
-    ('Telmisartan', 180.0, 'pharmacy/telmisartan.jpg', True),
-    ('Duvanta 40', 395.0, 'pharmacy/duvanta-40.jpg', False),
+    ('Rovastin 5', 170.0, 'categorized_product/pharmacy/rovastin-5.jpg', False),
+    ('Telmisartan', 180.0, 'categorized_product/pharmacy/telmisartan.jpg', True),
+    ('Duvanta 40', 395.0, 'categorized_product/pharmacy/duvanta-40.jpg', False),
     ('Duvanta 20', 206.67, '', False),
-    ('Syndopa Plus', 59.33, 'pharmacy/syndopa-plus.jpg', True),
-    ('Fortiplex (Cap)', 66.0, 'pharmacy/fortiplex-cap.jpg', False),
+    ('Syndopa Plus', 59.33, 'categorized_product/pharmacy/syndopa-plus.jpg', True),
+    ('Fortiplex (Cap)', 66.0, 'categorized_product/pharmacy/fortiplex-cap.jpg', False),
     ('Auromega', 992.0, '', False),
-    ('Pramipex 0.25', 203.33, 'pharmacy/pramipex-025.jpg', False),
-    ('SL-GAN 1', 390.0, 'pharmacy/sl-gan-1.jpg', False),
+    ('Pramipex 0.25', 203.33, 'categorized_product/pharmacy/pramipex-025.jpg', False),
+    ('SL-GAN 1', 390.0, 'categorized_product/pharmacy/sl-gan-1.jpg', False),
 ]
+
+
+# One-time correction: an earlier version of this command stored these same
+# photos without the 'categorized_product/' prefix, which 404'd (every
+# consumer builds the URL as STATIC_URL + image verbatim -- no prefix is
+# injected anywhere). Only rewrites rows still holding that exact prior
+# wrong value, so it can never touch a path an admin deliberately typed in.
+IMAGE_PATH_FIXES = {
+    f'pharmacy/{path.rsplit("/", 1)[-1]}': path
+    for _, _, path, _ in PRODUCTS if path
+}
 
 
 class Command(BaseCommand):
     help = "Seed PharmacyProduct from a supplier purchase record. Safe to re-run."
 
     def handle(self, *args, **options):
+        fixed = 0
+        for wrong, right in IMAGE_PATH_FIXES.items():
+            fixed += PharmacyProduct.objects.filter(image=wrong).update(image=right)
+
         renamed = 0
         for old_name, new_name in RENAMES:
             if PharmacyProduct.objects.filter(name=new_name).exists():
@@ -109,8 +129,9 @@ class Command(BaseCommand):
                 updated += 1
 
         self.stdout.write(self.style.SUCCESS(
-            f"Pharmacy products: {renamed} renamed, {created} created, {skipped} already existed "
-            f"({updated} of those updated with a new photo/Rx flag), {len(PRODUCTS)} total."
+            f"Pharmacy products: {fixed} image path(s) corrected, {renamed} renamed, {created} created, "
+            f"{skipped} already existed ({updated} of those updated with a new photo/Rx flag), "
+            f"{len(PRODUCTS)} total."
         ))
         self.stdout.write(self.style.WARNING(
             "Reminder: prices are this clinic's purchase cost per unit (total_cost / quantity "

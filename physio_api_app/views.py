@@ -422,23 +422,24 @@ def home_visit_update_status(request, booking_id):
 # ─── shop (marketplace_app) ───────────────────────────────────────────────────
 
 def _product_image_url(request, obj):
-    """obj is a Product or ProductVariant -- both store a static-relative path
-    in `.image` (e.g. 'categorized_product/9/9 (023).png'). Build a full URL
-    clients can load directly, percent-encoding spaces/parens the raw path may
-    contain.
+    """obj is a Product, ProductVariant, or PharmacyProduct -- see
+    marketplace_app.models.ImageUrlMixin.image_url_path for how the path is
+    resolved (a direct admin upload takes priority over the older
+    static-path convention `.image` when both are set, e.g.
+    'categorized_product/9/9 (023).png').
 
-    Deliberately does NOT go through django.templatetags.static.static() --
-    that resolves through the collectstatic manifest (staticfiles.json), and
-    on production that manifest is currently stale relative to what's on disk
-    (verified live: the manifest's hashed filenames 404, e.g.
-    /static/categorized_product/9/9 (003).75ae8ead298f.png does not exist,
-    while the plain /static/categorized_product/9/9 (003).png does). Building
-    the URL directly from STATIC_URL, same as patient_app._image_url, sidesteps
-    the stale manifest entirely."""
-    if not obj.image:
+    Deliberately does NOT go through django.templatetags.static.static() for
+    the legacy static-path branch -- that resolves through the collectstatic
+    manifest (staticfiles.json), and on production that manifest is currently
+    stale relative to what's on disk (verified live: the manifest's hashed
+    filenames 404, e.g. /static/categorized_product/9/9 (003).75ae8ead298f.png
+    does not exist, while the plain /static/categorized_product/9/9 (003).png
+    does). image_url_path builds that URL directly from STATIC_URL instead,
+    sidestepping the stale manifest entirely."""
+    path = obj.image_url_path
+    if not path:
         return ''
-    path = f'{settings.STATIC_URL}{obj.image}'
-    return request.build_absolute_uri(quote(path, safe='/'))
+    return request.build_absolute_uri(path)
 
 
 def _category_icon_url(request, category_name):
