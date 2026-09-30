@@ -100,29 +100,58 @@ def csrf_token_view(request):
 def patient_login(request):
     # If the browser sends a POST request (user clicked the button)
     if request.method == "POST":
-        patient_code = request.POST.get('username')
-        pin_input = request.POST.get('password')
-        
-        try:
-            patient = AddPatient.objects.get(patient_code=patient_code)
-            
-            # FOR INTERNAL TESTING ONLY: Plain text comparison
-            # ⚠️ REPLACE THIS WITH HASHED PIN IN PRODUCTION
-            if patient.patient_contact == pin_input:
-                # Store the patient's ID in the session (this logs them in)
-                request.session['patient_id'] = patient.id
-                
-                # ✅ Simply redirect to the dashboard
-                # The dashboard will handle fetching the prescription
-                return redirect('patient-dashboard')
-            else:
-                return render(request, 'patient-login.html', {'error': 'Invalid credentials'})
-                
-        except AddPatient.DoesNotExist:
+        patient_code = request.POST.get('username', '').strip()
+        pin_input = request.POST.get('password', '').strip()
+
+        patient = AddPatient.objects.filter(patient_code=patient_code).first()
+        # Same rules as patient_api_login: refuse a soft-deleted account, and
+        # a self-registered patient has a real hashed password while a
+        # physio-created one still uses phone-as-PIN -- both paths must work
+        # here since this form is the only web login for either kind.
+        if not patient or patient.is_deleted:
             return render(request, 'patient-login.html', {'error': 'Invalid credentials'})
-    
+
+        if patient.password:
+            valid = check_password(pin_input, patient.password)
+        else:
+            valid = patient.patient_contact == pin_input
+
+        if valid:
+            request.session['patient_id'] = patient.id
+            return redirect('patient-dashboard')
+
+        return render(request, 'patient-login.html', {'error': 'Invalid credentials'})
+
     # If GET request, show the login form
     return render(request, 'patient-login.html')
+
+
+def patient_signup(request):
+    """Web equivalent of patient_api_signup -- lets a patient create their
+    own account straight from the website instead of only via the native
+    app. Same rules: name + password only, no physio involved yet."""
+    if request.method == "POST":
+        patient_name = request.POST.get('patient_name', '').strip()
+        password = request.POST.get('password', '')
+        confirm_password = request.POST.get('confirm_password', '')
+
+        if not patient_name or not password:
+            return render(request, 'patient-signup.html', {'error': 'Name and password are required'})
+        if len(password) < 6:
+            return render(request, 'patient-signup.html', {'error': 'Password must be at least 6 characters'})
+        if password != confirm_password:
+            return render(request, 'patient-signup.html', {'error': 'Passwords do not match'})
+
+        patient = AddPatient.objects.create(
+            patient_name=patient_name,
+            patient_contact='',
+            patient_diagnosis='Not specified',
+            password=make_password(password),
+        )
+        request.session['patient_id'] = patient.id
+        return redirect('patient-dashboard')
+
+    return render(request, 'patient-signup.html')
     
 
 # ==================== CUSTOM DECORATOR ====================
