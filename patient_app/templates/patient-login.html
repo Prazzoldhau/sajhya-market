@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Patient Login - Sajhya Healthcare{% endblock %}
+{% block title %}Login - Sajhya Healthcare{% endblock %}
 
 
 
@@ -21,7 +21,7 @@
                     {% csrf_token %}
 
                     <div class="form-group">
-                        <label for="username" class="form-label">Patient Code <span class="text-danger">*</span></label>
+                        <label for="username" class="form-label">Account Code <span class="text-danger">*</span></label>
                         <input type="text" name="username" id="username" class="form-control" required autofocus>
                     </div>
 
@@ -40,7 +40,7 @@
                 </form>
             </div>
             <div class="auth-footer">
-                <p class="mb-0">New patient?
+                <p class="mb-0">New here?
                     <a href="{% url 'patient-signup' %}" class="btn-link-custom">Create a free account</a>
                 </p>
             </div>
