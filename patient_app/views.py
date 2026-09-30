@@ -1221,6 +1221,7 @@ def patient_api_order(request):
     total = sum(Decimal(str(item['price'])) * item['quantity'] for item in cart.values())
 
     order = Order.objects.create(
+        order_type='marketplace',
         customer_name=patient.patient_name,
         customer_email=f'{patient.patient_code}@sajhya.local',
         customer_phone=customer_phone,
