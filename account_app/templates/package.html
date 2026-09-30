@@ -28,19 +28,19 @@
         <!-- Header -->
         <div class="text-center text-white mb-5">
             <h1 class="display-4 fw-bold mb-3">Choose Your Account Type</h1>
-            <p class="lead">Free for patients -- paid plans for clinicians and healthcare practices</p>
+            <p class="lead">Free for everyday users -- paid plans for clinicians and healthcare practices</p>
         </div>
 
         <!-- Cards Row -->
         <div class="row g-4">
-            <!-- Patient Card -->
+            <!-- Normal (patient-facing) Account Card -->
             <div class="col-md-3">
-                <div class="card" data-type="patient">
+                <div class="card" data-type="normal">
                     <div class="card-header person-header">
                         <div class="icon-circle">
                             <i class="fas fa-user"></i>
                         </div>
-                        <h3 class="mt-2">Patient</h3>
+                        <h3 class="mt-2">Normal Account</h3>
                         <span class="price-badge mt-2">Free, Always</span>
                     </div>
                     <div class="card-body">
@@ -52,7 +52,7 @@
                             <li><i class="fas fa-check"></i> No credit card needed</li>
                         </ul>
                         <a href="{% url 'patient-signup' %}" class="btn btn-gradient mt-3">
-                            Create Patient Account <i class="fas fa-arrow-right"></i>
+                            Create Free Account <i class="fas fa-arrow-right"></i>
                         </a>
                     </div>
                 </div>
