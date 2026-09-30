@@ -22,6 +22,37 @@
             <p id="notificationsStatusMsg" style="display:none; font-size:0.85rem; color:#4caf50;">🔔 Notifications enabled</p>
         </div>
 
+        <!-- Quick access -- cart/lab-tests/pharmacy/donate were only ever
+             reachable through the native app's own separate JSON-driven
+             cart, with nothing on this page pointing at them. These all
+             link to the public website (same session, same carts the
+             "Recommended for You" section below already checks out
+             through), not the app's own API-backed flow. -->
+        <div class="quick-actions">
+            <a href="{% url 'view-cart' %}" class="qa-tile">
+                <span class="qa-icon">🛒</span>
+                <span class="qa-label">Cart</span>
+                {% if cart_count %}<span class="qa-badge">{{ cart_count }}</span>{% endif %}
+            </a>
+            <a href="{% url 'pharmacy' %}" class="qa-tile">
+                <span class="qa-icon">💊</span>
+                <span class="qa-label">Pharmacy</span>
+                {% if pharmacy_cart_count %}<span class="qa-badge">{{ pharmacy_cart_count }}</span>{% endif %}
+            </a>
+            <a href="{% url 'lab-tests' %}" class="qa-tile">
+                <span class="qa-icon">🧪</span>
+                <span class="qa-label">Lab Tests</span>
+            </a>
+            <a href="{% url 'marketplace' %}" class="qa-tile">
+                <span class="qa-icon">🏪</span>
+                <span class="qa-label">Marketplace</span>
+            </a>
+            <a href="{% url 'donate' %}" class="qa-tile">
+                <span class="qa-icon">🤝</span>
+                <span class="qa-label">Donate</span>
+            </a>
+        </div>
+
         {% if latest_prescription %}
             <div class="prescription-card" data-prescription-id="{{ latest_prescription.id }}">
                 <div class="prescription-header" onclick="togglePrescription(0)">
@@ -129,6 +160,47 @@
                 <p>You do not have any exercise prescriptions.</p>
             </div>
         {% endif %}
+
+    {% if lab_requests %}
+    <div class="rec-section">
+        <div class="rec-section-title">🧪 My Lab Test Bookings</div>
+        <div class="history-list">
+            {% for req in lab_requests %}
+            <div class="history-row">
+                <div class="history-main">
+                    <span class="history-id">#{{ req.request_number }}</span>
+                    <span class="history-items">{% for item in req.items.all %}{{ item.test_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
+                </div>
+                <div class="history-side">
+                    <span class="history-status status-{{ req.status }}">{{ req.get_status_display }}</span>
+                    <span class="history-date">{{ req.created_at|date:"d M" }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <a href="{% url 'lab-tests' %}" class="rec-view-all" style="margin-top:8px;">Book Another Test →</a>
+    </div>
+    {% endif %}
+
+    {% if orders %}
+    <div class="rec-section">
+        <div class="rec-section-title">📦 My Orders</div>
+        <div class="history-list">
+            {% for order in orders %}
+            <div class="history-row">
+                <div class="history-main">
+                    <span class="history-id">#{{ order.order_number }}</span>
+                    <span class="history-items">{{ order.get_order_type_display }} · {{ order.items.count }} item{{ order.items.count|pluralize }}</span>
+                </div>
+                <div class="history-side">
+                    <span class="history-status status-{{ order.status }}">{{ order.get_status_display }}</span>
+                    <span class="history-date">NPR {{ order.total_amount }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
 
     {% if manual_recs or auto_recs %}
     <div class="rec-section">
@@ -313,6 +385,36 @@
             background: #f8f9fa; border-radius: 10px; color: #667eea; font-size: 0.85rem;
             font-weight: 600; text-decoration: none; border: 1.5px dashed #c7d2fe; }
         .rec-view-all:hover { background: #e0e7ff; }
+
+        /* Quick access strip */
+        .quick-actions { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 4px;
+            margin-bottom: 4px; -ms-overflow-style: none; scrollbar-width: none; }
+        .quick-actions::-webkit-scrollbar { display: none; }
+        .qa-tile { position: relative; flex: 0 0 auto; display: flex; flex-direction: column;
+            align-items: center; gap: 4px; min-width: 72px; padding: 12px 10px;
+            background: white; border-radius: 14px; box-shadow: 0 2px 8px rgba(0,0,0,.07);
+            border: 1.5px solid #e5e7eb; text-decoration: none; color: #374151; }
+        .qa-tile:active { background: #f8f9ff; }
+        .qa-icon { font-size: 1.3rem; }
+        .qa-label { font-size: 0.7rem; font-weight: 600; white-space: nowrap; }
+        .qa-badge { position: absolute; top: 6px; right: 6px; background: #ef4444; color: white;
+            font-size: 0.62rem; font-weight: 700; min-width: 16px; height: 16px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center; padding: 0 3px; }
+
+        /* Lab bookings / order history */
+        .history-list { display: flex; flex-direction: column; gap: 8px; }
+        .history-row { display: flex; align-items: center; justify-content: space-between; gap: 10px;
+            background: white; border: 1.5px solid #e5e7eb; border-radius: 10px; padding: 10px 12px; }
+        .history-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+        .history-id { font-size: 0.8rem; font-weight: 700; color: #374151; }
+        .history-items { font-size: 0.72rem; color: #9ca3af; overflow: hidden; text-overflow: ellipsis;
+            white-space: nowrap; max-width: 200px; }
+        .history-side { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; flex-shrink: 0; }
+        .history-status { font-size: 0.65rem; font-weight: 700; padding: 2px 8px; border-radius: 10px;
+            background: #d1fae5; color: #065f46; white-space: nowrap; }
+        .history-status.status-pending { background: #fef3c7; color: #92400e; }
+        .history-status.status-cancelled { background: #fee2e2; color: #991b1b; }
+        .history-date { font-size: 0.68rem; color: #9ca3af; }
     </style>
 
     <script>

@@ -4,7 +4,7 @@ from personal_account.models import AddPatient, ActivationCard, PatientPhysioPai
 from exercise_app.models import Prescription, PrescriptionExercise, ExerciseFeedback, Region, SubRegion, ExerciseMain
 from marketplace_app.models import Category, Product, ProductImage, ProductVariant, Order, OrderItem, Commission, CommissionRate, PatientProductRecommendation, PharmacyProduct
 from lab_app.models import LabTest, LabTestPanel, LabTestRequest, LabTestRequestItem
-from marketplace_app.views import get_recommended_for_diagnosis
+from marketplace_app.views import get_recommended_for_diagnosis, _get_cart, _get_pharmacy_cart, get_cart_count, get_pharmacy_cart_count
 from marketplace_app.templatetags.marketplace_extras import CATEGORY_ICON_IMAGES
 from django.http import JsonResponse, HttpResponse
 from django.conf import settings
@@ -167,6 +167,27 @@ def patient_dashboard(request):
     auto_recs, matched_label = get_recommended_for_diagnosis(patient.patient_diagnosis)
     auto_recs = auto_recs.exclude(id__in=manual_ids).select_related('category')[:4]
 
+    # Same session carts the public Marketplace/Pharmacy pages use (not
+    # patient_app's own _get_patient_cart/_get_patient_pharmacy_cart, which
+    # back the separate native-app JSON checkout flow) -- this dashboard
+    # links out to the website's own view-cart/checkout, same as
+    # add_recs_to_cart below, so it has to read the cart those pages read.
+    cart = _get_cart(request)
+    pharmacy_cart = _get_pharmacy_cart(request)
+    cart_count = get_cart_count(request)
+    pharmacy_cart_count = get_pharmacy_cart_count(request)
+    cart_total = sum((Decimal(str(item['price'])) * item['quantity'] for item in cart.values()), Decimal('0.00'))
+    pharmacy_cart_total = sum((Decimal(str(item['price'])) * item['quantity'] for item in pharmacy_cart.values()), Decimal('0.00'))
+
+    lab_requests = LabTestRequest.objects.filter(patient=patient).prefetch_related('items').order_by('-created_at')[:5]
+
+    # Marketplace + Pharmacy orders this patient placed through the app --
+    # same synthetic-email lookup patient_api_orders uses, since Order has
+    # no real FK to AddPatient (see patient_api_order's own comment on why).
+    orders = Order.objects.filter(
+        customer_email=f'{patient.patient_code}@sajhya.local'
+    ).prefetch_related('items').order_by('-created_at')[:5]
+
     context = {
         'patient': patient,
         'latest_prescription': latest_prescription,
@@ -175,6 +196,12 @@ def patient_dashboard(request):
         'auto_recs': auto_recs,
         'matched_label': matched_label,
         'vapid_public_key': settings.VAPID_PUBLIC_KEY,
+        'cart_count': cart_count,
+        'cart_total': cart_total,
+        'pharmacy_cart_count': pharmacy_cart_count,
+        'pharmacy_cart_total': pharmacy_cart_total,
+        'lab_requests': lab_requests,
+        'orders': orders,
     }
 
     return render(request, 'patient-dashboard-image.html', context)
