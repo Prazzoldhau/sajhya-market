@@ -6,6 +6,7 @@ urlpatterns = [
     path('patient-login/', views.patient_login, name='patient-login'),
     path('patient-signup/', views.patient_signup, name='patient-signup'),
     path('patient-dashboard/', views.patient_dashboard, name='patient-dashboard'),
+    path('patient-medical-profile/', views.patient_medical_profile_page, name='patient-medical-profile'),
 
     # Auth
     path('api/csrf/', views.csrf_token_view, name='csrf_token'),
@@ -65,6 +66,8 @@ urlpatterns = [
     path('api/pharmacy/order/', views.patient_api_pharmacy_order, name='patient_api_pharmacy_order'),
     path('api/physio/', views.patient_api_physio, name='patient_api_physio'),
     path('api/recommended/', views.patient_api_recommended, name='patient_api_recommended'),
+    path('api/medical-profile/', views.patient_api_medical_profile, name='patient_api_medical_profile'),
+    path('api/medical-profile/update/', views.patient_api_medical_profile_update, name='patient_api_medical_profile_update'),
     path('add-recs-to-cart/', views.add_recs_to_cart, name='add-recs-to-cart'),
 
     # Lab service (Blood Investigation)

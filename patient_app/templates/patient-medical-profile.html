@@ -1,0 +1,87 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Profile - {{ patient.patient_name }}</title>
+    <link rel="stylesheet" href="{% static 'css/patient-portal.css' %}">
+    <style>
+        body { background: #f4f6fa; }
+        .container { max-width: 640px; margin: 0 auto; padding: 20px 16px 40px; }
+        .mp-header { margin-bottom: 18px; }
+        .mp-header h1 { font-size: 1.3rem; margin: 0 0 4px; color: #374151; }
+        .mp-header p { font-size: 0.85rem; color: #9ca3af; margin: 0; }
+        .mp-card { background: white; border-radius: 14px; padding: 18px 16px; margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,.07); border: 1.5px solid #e5e7eb; }
+        .mp-field { margin-bottom: 16px; }
+        .mp-field:last-child { margin-bottom: 0; }
+        .mp-field label { display: block; font-weight: 700; font-size: 0.88rem; color: #374151; margin-bottom: 4px; }
+        .mp-field .mp-hint { font-size: 0.75rem; color: #9ca3af; margin-bottom: 6px; }
+        .mp-field textarea { width: 100%; min-height: 80px; padding: 10px 12px; font-size: 0.92rem;
+            border: 1.5px solid #e5e7eb; border-radius: 10px; font-family: inherit; resize: vertical; box-sizing: border-box; }
+        .mp-field textarea:focus { outline: none; border-color: #667eea; }
+        .mp-save-btn { display: block; width: 100%; padding: 13px; border: none; border-radius: 10px;
+            background: linear-gradient(135deg,#667eea,#764ba2); color: white; font-size: 1rem; font-weight: 700; cursor: pointer; }
+        .mp-save-btn:active { opacity: 0.9; }
+        .mp-saved-banner { background: #d1fae5; color: #065f46; padding: 11px 14px; border-radius: 10px;
+            font-size: 0.85rem; font-weight: 600; margin-bottom: 16px; }
+        .mp-back { display: inline-block; margin-bottom: 14px; color: #667eea; font-size: 0.85rem;
+            font-weight: 600; text-decoration: none; }
+        .mp-updated { font-size: 0.72rem; color: #9ca3af; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="{% url 'patient-dashboard' %}" class="mp-back">&larr; Back to Dashboard</a>
+        <div class="mp-header">
+            <h1>🩺 Medical Profile</h1>
+            <p>Keep this up to date so your physiotherapist always has an accurate picture.</p>
+        </div>
+
+        {% if saved %}
+        <div class="mp-saved-banner">✓ Saved. Thanks for keeping this current.</div>
+        {% endif %}
+
+        <form method="post" class="mp-card">
+            {% csrf_token %}
+
+            <div class="mp-field">
+                <label for="current_medications">Current Medications</label>
+                <div class="mp-hint">What medicines are you taking right now, and how often?</div>
+                <textarea id="current_medications" name="current_medications"
+                    placeholder="e.g. Metformin 500mg twice daily, Atorvastatin 10mg at night">{{ profile.current_medications }}</textarea>
+            </div>
+
+            <div class="mp-field">
+                <label for="allergies">Allergies</label>
+                <div class="mp-hint">Any drug, food, or other allergies and what happens if exposed?</div>
+                <textarea id="allergies" name="allergies"
+                    placeholder="e.g. Penicillin — rash">{{ profile.allergies }}</textarea>
+            </div>
+
+            <div class="mp-field">
+                <label for="routine_tests">Routine Blood / Other Tests</label>
+                <div class="mp-hint">Tests you get done periodically, and how often.</div>
+                <textarea id="routine_tests" name="routine_tests"
+                    placeholder="e.g. HbA1c every 3 months, Lipid profile every 6 months">{{ profile.routine_tests }}</textarea>
+            </div>
+
+            <div class="mp-field">
+                <label for="medical_history">Medical History</label>
+                <div class="mp-hint">Past surgeries, chronic conditions, hospitalizations, family history.</div>
+                <textarea id="medical_history" name="medical_history"
+                    placeholder="e.g. Appendectomy 2019, Type 2 Diabetes since 2021">{{ profile.medical_history }}</textarea>
+            </div>
+
+            {% if profile.updated_at %}
+            <div class="mp-updated">Last updated {{ profile.updated_at|date:"d M Y, g:i A" }}</div>
+            {% endif %}
+
+            <div style="margin-top:18px;">
+                <button type="submit" class="mp-save-btn">Save Medical Profile</button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

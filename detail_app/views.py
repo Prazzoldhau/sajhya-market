@@ -36,6 +36,7 @@ def patient_detail(request, patient_id):
         "manual_recs": manual_recs,
         "auto_recommended": auto_recommended,
         "matched_label": matched_label,
+        "medical_profile": getattr(patient, 'medical_profile', None),
     }
     return render(request, 'patient-detail-dashboard.html', context)
 
