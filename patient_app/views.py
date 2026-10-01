@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Prefetch, F, Count
-from personal_account.models import AddPatient, ActivationCard, PatientPhysioPairing, get_nepal_time
+from personal_account.models import AddPatient, ActivationCard, PatientPhysioPairing, PatientMedicalProfile, get_nepal_time
 from exercise_app.models import Prescription, PrescriptionExercise, ExerciseFeedback, Region, SubRegion, ExerciseMain
 from marketplace_app.models import Category, Product, ProductImage, ProductVariant, Order, OrderItem, Commission, CommissionRate, PatientProductRecommendation, PharmacyProduct
 from lab_app.models import LabTest, LabTestPanel, LabTestRequest, LabTestRequestItem
@@ -217,6 +217,8 @@ def patient_dashboard(request):
         customer_email=f'{patient.patient_code}@sajhya.local'
     ).prefetch_related('items').order_by('-created_at')[:5]
 
+    medical_profile = getattr(patient, 'medical_profile', None)
+
     context = {
         'patient': patient,
         'latest_prescription': latest_prescription,
@@ -231,9 +233,35 @@ def patient_dashboard(request):
         'pharmacy_cart_total': pharmacy_cart_total,
         'lab_requests': lab_requests,
         'orders': orders,
+        'medical_profile': medical_profile,
     }
 
     return render(request, 'patient-dashboard-image.html', context)
+
+
+@patient_login_required
+def patient_medical_profile_page(request):
+    """Lets a patient view/edit their own standing medical info -- current
+    medications, allergies, routine tests, history -- separate from any
+    single visit's notes (see PatientMedicalProfile docstring)."""
+    patient_id = request.session.get('patient_id')
+    patient = get_object_or_404(AddPatient, id=patient_id)
+    profile, _ = PatientMedicalProfile.objects.get_or_create(patient=patient)
+
+    saved = False
+    if request.method == "POST":
+        profile.current_medications = request.POST.get('current_medications', '').strip()
+        profile.allergies = request.POST.get('allergies', '').strip()
+        profile.routine_tests = request.POST.get('routine_tests', '').strip()
+        profile.medical_history = request.POST.get('medical_history', '').strip()
+        profile.save()
+        saved = True
+
+    return render(request, 'patient-medical-profile.html', {
+        'patient': patient,
+        'profile': profile,
+        'saved': saved,
+    })
 
 
 def add_recs_to_cart(request):
@@ -1881,3 +1909,42 @@ def patient_api_recommended(request):
         'matched_label': matched_label,
         'total': len(physio_picks) + len(auto_picks),
     })
+
+
+def _medical_profile_dict(profile):
+    return {
+        'current_medications': profile.current_medications,
+        'allergies': profile.allergies,
+        'routine_tests': profile.routine_tests,
+        'medical_history': profile.medical_history,
+        'updated_at': profile.updated_at.isoformat(),
+    }
+
+
+@csrf_exempt
+@require_http_methods(["GET"])
+def patient_api_medical_profile(request):
+    patient, err = _patient_required(request)
+    if err:
+        return err
+    profile, _ = PatientMedicalProfile.objects.get_or_create(patient=patient)
+    return JsonResponse({'medical_profile': _medical_profile_dict(profile)})
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def patient_api_medical_profile_update(request):
+    patient, err = _patient_required(request)
+    if err:
+        return err
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON'}, status=400)
+
+    profile, _ = PatientMedicalProfile.objects.get_or_create(patient=patient)
+    for field in ('current_medications', 'allergies', 'routine_tests', 'medical_history'):
+        if field in data:
+            setattr(profile, field, str(data[field]).strip())
+    profile.save()
+    return JsonResponse({'success': True, 'medical_profile': _medical_profile_dict(profile)})

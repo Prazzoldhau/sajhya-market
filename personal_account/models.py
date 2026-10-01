@@ -181,6 +181,33 @@ class AddPatient(models.Model):
         return bool(self.activation_expires_at and self.activation_expires_at > get_nepal_time())
 
 
+class PatientMedicalProfile(models.Model):
+    """Standing medical info the patient keeps up to date themselves --
+    current medications, allergies, routine tests, and history -- as
+    opposed to VisitNote.medication_changes etc., which is what changed
+    in one specific visit. A physio should check this before treating or
+    prescribing; it isn't tied to any single session."""
+
+    patient = models.OneToOneField(AddPatient, on_delete=models.CASCADE, related_name='medical_profile')
+    current_medications = models.TextField(
+        blank=True, default='',
+        help_text='e.g. "Metformin 500mg twice daily, Atorvastatin 10mg at night"',
+    )
+    allergies = models.TextField(blank=True, default='', help_text='Drug, food, or other allergies and reactions')
+    routine_tests = models.TextField(
+        blank=True, default='',
+        help_text='Tests done periodically, e.g. "HbA1c every 3 months, Lipid profile every 6 months"',
+    )
+    medical_history = models.TextField(
+        blank=True, default='',
+        help_text='Past surgeries, chronic conditions, hospitalizations, family history',
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Medical profile: {self.patient.patient_name}"
+
+
 class ActivationCard(models.Model):
     """A single-use recharge-card-style code that grants a patient
     `duration_days` of app access when redeemed (see AddPatient.

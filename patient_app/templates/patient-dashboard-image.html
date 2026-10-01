@@ -53,6 +53,22 @@
             </a>
         </div>
 
+        <div class="rec-section">
+            <div class="rec-section-title">🩺 Medical Profile</div>
+            {% if medical_profile.current_medications or medical_profile.allergies or medical_profile.routine_tests or medical_profile.medical_history %}
+                <div class="mp-summary">
+                    {% if medical_profile.current_medications %}<p><strong>Medications:</strong> {{ medical_profile.current_medications|truncatechars:80 }}</p>{% endif %}
+                    {% if medical_profile.allergies %}<p><strong>Allergies:</strong> {{ medical_profile.allergies|truncatechars:80 }}</p>{% endif %}
+                    {% if medical_profile.routine_tests %}<p><strong>Routine Tests:</strong> {{ medical_profile.routine_tests|truncatechars:80 }}</p>{% endif %}
+                    {% if medical_profile.medical_history %}<p><strong>History:</strong> {{ medical_profile.medical_history|truncatechars:80 }}</p>{% endif %}
+                </div>
+                <a href="{% url 'patient-medical-profile' %}" class="rec-view-all">Update Medical Profile →</a>
+            {% else %}
+                <div class="rec-section-sub">Help your physiotherapist by adding your current medications, allergies, and medical history.</div>
+                <a href="{% url 'patient-medical-profile' %}" class="rec-view-all">+ Add Medical Profile</a>
+            {% endif %}
+        </div>
+
         {% if latest_prescription %}
             <div class="prescription-card" data-prescription-id="{{ latest_prescription.id }}">
                 <div class="prescription-header" onclick="togglePrescription(0)">
@@ -385,6 +401,10 @@
             background: #f8f9fa; border-radius: 10px; color: #667eea; font-size: 0.85rem;
             font-weight: 600; text-decoration: none; border: 1.5px dashed #c7d2fe; }
         .rec-view-all:hover { background: #e0e7ff; }
+        .mp-summary { background: white; border: 1.5px solid #e5e7eb; border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
+        .mp-summary p { margin: 0 0 4px; font-size: 0.8rem; color: #374151; }
+        .mp-summary p:last-child { margin-bottom: 0; }
+        .mp-summary strong { color: #667eea; }
 
         /* Quick access strip */
         .quick-actions { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 4px;
