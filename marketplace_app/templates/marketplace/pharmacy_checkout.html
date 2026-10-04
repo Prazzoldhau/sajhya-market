@@ -22,6 +22,15 @@
                 <form method="POST" action="">
                     {% csrf_token %}
 
+                    {% if patient %}
+                    <p class="store-sub" style="margin-bottom:1rem">Checking out as <strong>{{ patient.patient_name }}</strong> ({{ patient.patient_code }}).</p>
+                    {% if not patient.patient_contact %}
+                    <div class="store-form-group">
+                        <label class="store-label">Phone Number <span class="store-required">*</span></label>
+                        <input type="tel" name="customer_phone" class="store-input" placeholder="98XXXXXXXX" required>
+                    </div>
+                    {% endif %}
+                    {% else %}
                     <div class="store-form-row">
                         <div class="store-form-group">
                             <label class="store-label">Full Name <span class="store-required">*</span></label>
@@ -40,6 +49,7 @@
                         <input type="email" name="customer_email" class="store-input" placeholder="your@email.com" required
                                value="{{ request.user.email|default:'' }}">
                     </div>
+                    {% endif %}
 
                     <div class="store-form-group">
                         <label class="store-label">Delivery Address <span class="store-required">*</span></label>

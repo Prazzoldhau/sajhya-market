@@ -6,6 +6,7 @@ from django.http import JsonResponse
 from django.template.loader import render_to_string
 from django.db.models import Sum, Count
 from .models import Category, Product, PharmacyProduct, Order, OrderItem, DiagnosisProductMap, PatientProductRecommendation
+from personal_account.models import AddPatient
 from decimal import Decimal
 from functools import wraps
 import random
@@ -20,6 +21,16 @@ def staff_required(view_func):
             raise PermissionDenied
         return view_func(request, *args, **kwargs)
     return wrapper
+
+
+def _logged_in_patient(request):
+    """The session-based patient login (see patient_app.patient_login) is
+    shared across the whole site -- this lets checkout recognise a
+    logged-in patient and skip asking for details it already has on file."""
+    patient_id = request.session.get('patient_id')
+    if not patient_id:
+        return None
+    return AddPatient.objects.filter(id=patient_id, is_deleted=False).first()
 
 
 _STATUS_VALUES = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled']
@@ -314,15 +325,24 @@ def pharmacy_checkout(request):
         return redirect('pharmacy')
 
     cart_items, total = _build_pharmacy_cart_lines(cart)
+    patient = _logged_in_patient(request)
 
     if request.method == 'POST':
-        customer_name = request.POST.get('customer_name', '').strip()
-        customer_email = request.POST.get('customer_email', '').strip()
-        customer_phone = request.POST.get('customer_phone', '').strip()
         delivery_address = request.POST.get('delivery_address', '').strip()
         notes = request.POST.get('notes', '').strip()
 
-        if not all([customer_name, customer_email, customer_phone, delivery_address]):
+        if patient:
+            customer_name = patient.patient_name
+            customer_email = f'{patient.patient_code}@sajhya.local'
+            customer_phone = patient.patient_contact or request.POST.get('customer_phone', '').strip()
+            missing = not all([customer_phone, delivery_address])
+        else:
+            customer_name = request.POST.get('customer_name', '').strip()
+            customer_email = request.POST.get('customer_email', '').strip()
+            customer_phone = request.POST.get('customer_phone', '').strip()
+            missing = not all([customer_name, customer_email, customer_phone, delivery_address])
+
+        if missing:
             messages.error(request, 'Please fill in all required fields.')
         else:
             order = Order.objects.create(
@@ -357,6 +377,7 @@ def pharmacy_checkout(request):
         'cart_items': cart_items,
         'total': total,
         'cart_count': 0,
+        'patient': patient,
     }
     return render(request, 'marketplace/pharmacy_checkout.html', context)
 
@@ -456,15 +477,28 @@ def checkout(request):
         return redirect('marketplace')
 
     cart_items, total = _build_cart_lines(cart)
+    patient = _logged_in_patient(request)
 
     if request.method == 'POST':
-        customer_name = request.POST.get('customer_name', '').strip()
-        customer_email = request.POST.get('customer_email', '').strip()
-        customer_phone = request.POST.get('customer_phone', '').strip()
         delivery_address = request.POST.get('delivery_address', '').strip()
         notes = request.POST.get('notes', '').strip()
 
-        if not all([customer_name, customer_email, customer_phone, delivery_address]):
+        if patient:
+            # Name/email are already on file -- same synthetic-email
+            # convention patient_api_order uses, since Order has no real FK
+            # to AddPatient. Phone falls back to the POSTed value only when
+            # the patient has none on file (self-registered patients don't).
+            customer_name = patient.patient_name
+            customer_email = f'{patient.patient_code}@sajhya.local'
+            customer_phone = patient.patient_contact or request.POST.get('customer_phone', '').strip()
+            missing = not all([customer_phone, delivery_address])
+        else:
+            customer_name = request.POST.get('customer_name', '').strip()
+            customer_email = request.POST.get('customer_email', '').strip()
+            customer_phone = request.POST.get('customer_phone', '').strip()
+            missing = not all([customer_name, customer_email, customer_phone, delivery_address])
+
+        if missing:
             messages.error(request, 'Please fill in all required fields.')
         else:
             order = Order.objects.create(
@@ -498,6 +532,7 @@ def checkout(request):
         'cart_items': cart_items,
         'total': total,
         'cart_count': 0,
+        'patient': patient,
     }
     return render(request, 'marketplace/checkout.html', context)
 
