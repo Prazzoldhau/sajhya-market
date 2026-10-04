@@ -74,6 +74,13 @@
                     placeholder="e.g. Appendectomy 2019, Type 2 Diabetes since 2021">{{ profile.medical_history }}</textarea>
             </div>
 
+            <div class="mp-field">
+                <label for="physiotherapy_history">Physiotherapy History</label>
+                <div class="mp-hint">Past physiotherapy treatment, injuries, or surgeries relevant to movement/rehab.</div>
+                <textarea id="physiotherapy_history" name="physiotherapy_history"
+                    placeholder="e.g. ACL reconstruction 2022, 6 months of physio afterward">{{ profile.physiotherapy_history }}</textarea>
+            </div>
+
             {% if profile.updated_at %}
             <div class="mp-updated">Last updated {{ profile.updated_at|date:"d M Y, g:i A" }}</div>
             {% endif %}

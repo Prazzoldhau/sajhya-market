@@ -40,6 +40,7 @@ urlpatterns = [
     path ('find-physio/', include('find_physio_app.urls')),
     path ('summit/', include('summit_app.urls')),
     path ('visit-notes/', include('visit_notes_app.urls')),
+    path ('assessments/', include('assessment_app.urls')),
     path ('physio-api/', include('physio_api_app.urls')),
     path ('vendor-api/', include('vendor_api_app.urls')),
     path ('delivery/', include('delivery_app.urls')),

@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Assessment - {{ assessment.patient.patient_name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="mkt-header-row">
+        <div class="header">
+            <br>
+            <h2>{{ assessment.patient.patient_name }} &mdash; {{ assessment.get_region_display }}</h2>
+            <p class="text-muted">{{ assessment.created_at|date:"d M Y, H:i" }} &middot; Recorded by {{ assessment.created_by.username|default:"-" }}</p>
+            <a href="{% url 'assessment-list' patient_id=assessment.patient.id %}">&larr; Back to Assessments</a>
+        </div>
+        <a href="{% url 'edit-assessment' assessment_id=assessment.id %}" class="btn btn-primary">Edit Assessment</a>
+    </div>
+
+    <div class="auth-card" style="margin-bottom:1.5rem;">
+        <div class="auth-header"><h3>Subjective</h3></div>
+        <div class="auth-body">
+            <p><strong>Chief Complaint:</strong> {{ assessment.chief_complaint|default:"-" }}</p>
+        </div>
+    </div>
+
+    <div class="auth-card" style="margin-bottom:1.5rem;">
+        <div class="auth-header"><h3>Objective</h3></div>
+        <div class="auth-body">
+            <p><strong>Observation:</strong> {{ assessment.observation|default:"-" }}</p>
+            <p><strong>Range of Motion:</strong> {{ assessment.range_of_motion|default:"-" }}</p>
+            <p><strong>Palpation:</strong> {{ assessment.palpation|default:"-" }}</p>
+            <p><strong>Special Tests:</strong> {{ assessment.special_tests|default:"-" }}</p>
+            <p><strong>Neurovascular Screen:</strong> {{ assessment.neurovascular_screen|default:"-" }}</p>
+        </div>
+    </div>
+
+    <div class="auth-card" style="margin-bottom:1.5rem;">
+        <div class="auth-header"><h3>Assessment &amp; Plan</h3></div>
+        <div class="auth-body">
+            <p><strong>Clinical Impression:</strong> {{ assessment.clinical_impression|default:"-" }}</p>
+            <p><strong>Plan:</strong> {{ assessment.plan|default:"-" }}</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

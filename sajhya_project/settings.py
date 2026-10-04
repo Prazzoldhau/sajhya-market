@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     'careers_app',
     'billing_app',
     'donate_app',
+    'assessment_app',
 
 ]
 
