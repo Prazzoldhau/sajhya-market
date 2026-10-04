@@ -1,7 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.db.models import Prefetch, F, Count
-from personal_account.models import AddPatient, ActivationCard, PatientPhysioPairing, PatientMedicalProfile, PatientMedication, PatientBloodTest, get_nepal_time
+from personal_account.models import AddPatient, ActivationCard, PatientPhysioPairing, PatientMedicalProfile, PatientMedication, PatientBloodTest, PatientAid, get_nepal_time
+from visit_notes_app.models import VisitNote
 from exercise_app.models import Prescription, PrescriptionExercise, ExerciseFeedback, Region, SubRegion, ExerciseMain
 from marketplace_app.models import Category, Product, ProductImage, ProductVariant, Order, OrderItem, Commission, CommissionRate, PatientProductRecommendation, PharmacyProduct
 from lab_app.models import LabTest, LabTestPanel, LabTestRequest, LabTestRequestItem
@@ -292,11 +293,16 @@ def patient_medical_profile_page(request):
 
     blood_tests = patient.blood_test_entries.select_related('lab_test')
 
-    # Physiotherapy sub-tabs -- Assessment (read-only, physio-recorded),
-    # Exercises (summary only, full interactive tracker stays on the
-    # dashboard), Aids (same physio-pick/diagnosis-match query the
-    # dashboard's "Recommended for You" already runs).
+    # Physiotherapy sub-tabs -- Assessment (read-only, physio-recorded: both
+    # assessment_app's region-scoped assessments AND the fuller VisitNote
+    # SOAP note for neuro/geriatric cases, which already has its own much
+    # richer structured fields for those two case types -- see VisitNote's
+    # docstring), Exercises (prescribed summary + a search of the exercise
+    # library), Aids (physio-picked/diagnosis-match recs, same query the
+    # dashboard's "Recommended for You" runs, plus the patient's own
+    # search-and-add aid entries).
     assessments = patient.regional_assessments.all()[:10]
+    visit_notes = patient.visit_notes.filter(case_type__in=['neuro', 'geriatric']).order_by('-created_at')[:10]
 
     latest_prescription = Prescription.objects.filter(patient=patient).order_by('-created_at').first()
     prescribed_exercises = latest_prescription.exercises.all().order_by('order') if latest_prescription else []
@@ -310,6 +316,8 @@ def patient_medical_profile_page(request):
     auto_recs, matched_label = get_recommended_for_diagnosis(patient.patient_diagnosis)
     auto_recs = auto_recs.exclude(id__in=manual_ids).select_related('category')[:8]
 
+    aids = patient.aids.select_related('product')
+
     return render(request, 'patient-medical-profile.html', {
         'patient': patient,
         'profile': profile,
@@ -317,11 +325,13 @@ def patient_medical_profile_page(request):
         'medications_by_time': medications_by_time,
         'blood_tests': blood_tests,
         'assessments': assessments,
+        'visit_notes': visit_notes,
         'latest_prescription': latest_prescription,
         'prescribed_exercises': prescribed_exercises,
         'manual_recs': manual_recs,
         'auto_recs': auto_recs,
         'matched_label': matched_label,
+        'aids': aids,
     })
 
 
@@ -381,6 +391,34 @@ def patient_bloodtest_delete(request, bloodtest_id):
         patient_id = request.session.get('patient_id')
         PatientBloodTest.objects.filter(id=bloodtest_id, patient_id=patient_id).delete()
     return redirect(f"{reverse('patient-medical-profile')}?tab=blood_tests")
+
+
+@patient_login_required
+def patient_aid_add(request):
+    if request.method == "POST":
+        patient_id = request.session.get('patient_id')
+        patient = get_object_or_404(AddPatient, id=patient_id)
+        product_id = request.POST.get('product_id', '').strip()
+        custom_name = request.POST.get('custom_name', '').strip()
+        notes = request.POST.get('notes', '').strip()
+
+        if product_id or custom_name:
+            product = Product.objects.filter(id=product_id).first() if product_id else None
+            PatientAid.objects.create(
+                patient=patient,
+                product=product,
+                custom_name='' if product else custom_name,
+                notes=notes,
+            )
+    return redirect(f"{reverse('patient-medical-profile')}?tab=physiotherapy&subtab=aids")
+
+
+@patient_login_required
+def patient_aid_delete(request, aid_id):
+    if request.method == "POST":
+        patient_id = request.session.get('patient_id')
+        PatientAid.objects.filter(id=aid_id, patient_id=patient_id).delete()
+    return redirect(f"{reverse('patient-medical-profile')}?tab=physiotherapy&subtab=aids")
 
 
 def add_recs_to_cart(request):
@@ -2080,6 +2118,13 @@ def _medical_profile_dict(profile):
                 'notes': b.notes,
             } for b in patient.blood_test_entries.select_related('lab_test')
         ],
+        'aids': [
+            {
+                'id': a.id,
+                'name': a.display_name,
+                'notes': a.notes,
+            } for a in patient.aids.select_related('product')
+        ],
     }
 
 
@@ -2192,4 +2237,42 @@ def patient_api_bloodtest_delete(request, bloodtest_id):
     if err:
         return err
     PatientBloodTest.objects.filter(id=bloodtest_id, patient=patient).delete()
+    return JsonResponse({'success': True})
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def patient_api_aid_add(request):
+    patient, err = _patient_required(request)
+    if err:
+        return err
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON'}, status=400)
+
+    product_id = data.get('product_id')
+    custom_name = data.get('custom_name', '').strip()
+    notes = data.get('notes', '').strip()
+
+    product = Product.objects.filter(id=product_id).first() if product_id else None
+    if not product and not custom_name:
+        return JsonResponse({'success': False, 'error': 'product_id or custom_name required'}, status=400)
+
+    aid = PatientAid.objects.create(
+        patient=patient,
+        product=product,
+        custom_name='' if product else custom_name,
+        notes=notes,
+    )
+    return JsonResponse({'success': True, 'id': aid.id, 'name': aid.display_name}, status=201)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def patient_api_aid_delete(request, aid_id):
+    patient, err = _patient_required(request)
+    if err:
+        return err
+    PatientAid.objects.filter(id=aid_id, patient=patient).delete()
     return JsonResponse({'success': True})

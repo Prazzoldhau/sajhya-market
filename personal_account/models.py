@@ -284,6 +284,31 @@ class PatientBloodTest(models.Model):
         return f"{self.display_name} - {self.patient.patient_name}"
 
 
+class PatientAid(models.Model):
+    """One mobility/orthotic aid entry the patient adds themselves under
+    the Physiotherapy tab's Aids sub-tab, searched against the Marketplace
+    catalog -- same search-and-add pattern as PatientMedication/
+    PatientBloodTest. Distinct from PatientProductRecommendation, which is
+    what a physio picks for the patient rather than what the patient adds
+    for themselves; both are shown side by side in the Aids sub-tab."""
+
+    patient = models.ForeignKey(AddPatient, on_delete=models.CASCADE, related_name='aids')
+    product = models.ForeignKey('marketplace_app.Product', on_delete=models.SET_NULL, null=True, blank=True)
+    custom_name = models.CharField(max_length=200, blank=True, default='')
+    notes = models.CharField(max_length=255, blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    @property
+    def display_name(self):
+        return self.product.name if self.product else self.custom_name
+
+    def __str__(self):
+        return f"{self.display_name} - {self.patient.patient_name}"
+
+
 class ActivationCard(models.Model):
     """A single-use recharge-card-style code that grants a patient
     `duration_days` of app access when redeemed (see AddPatient.
