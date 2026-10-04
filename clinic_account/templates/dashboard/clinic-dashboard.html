@@ -119,6 +119,7 @@
                     <a href="{% url 'prescription-page' patient_id=patient.id %}" class="btn btn-info">Rx</a>
                     <a href="{% url 'exercise-selectable' patient_id=patient.id %}" class="btn btn-success">Exe</a>
                     <a href="{% url 'visit-notes-list' patient_id=patient.id %}" class="btn btn-warning">Notes</a>
+                        <a href="{% url 'assessment-list' patient_id=patient.id %}" class="btn btn-dark">Assess</a>
                 </td>
             </tr>
             {% endfor %}

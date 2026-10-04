@@ -270,6 +270,7 @@ def patient_medical_profile_page(request):
         profile.allergies = request.POST.get('allergies', '').strip()
         profile.routine_tests = request.POST.get('routine_tests', '').strip()
         profile.medical_history = request.POST.get('medical_history', '').strip()
+        profile.physiotherapy_history = request.POST.get('physiotherapy_history', '').strip()
         profile.save()
         saved = True
 
@@ -771,6 +772,15 @@ def submit_video_click(request, exercise_id):
 def patient_api_logout(request):
     request.session.flush()
     return JsonResponse({'success': True})
+
+
+@require_http_methods(['POST'])
+def patient_logout_web(request):
+    """Web equivalent of patient_api_logout -- the dashboard (and every
+    other patient-facing web page) had no way to end the session at all;
+    a patient on a shared/public computer had no way to sign out."""
+    request.session.flush()
+    return redirect('patient-login')
 
 
 def _purge_patient_personal_data(patient):
@@ -1950,6 +1960,7 @@ def _medical_profile_dict(profile):
         'allergies': profile.allergies,
         'routine_tests': profile.routine_tests,
         'medical_history': profile.medical_history,
+        'physiotherapy_history': profile.physiotherapy_history,
         'updated_at': profile.updated_at.isoformat(),
     }
 
@@ -1976,7 +1987,7 @@ def patient_api_medical_profile_update(request):
         return JsonResponse({'success': False, 'error': 'Invalid JSON'}, status=400)
 
     profile, _ = PatientMedicalProfile.objects.get_or_create(patient=patient)
-    for field in ('current_medications', 'allergies', 'routine_tests', 'medical_history'):
+    for field in ('current_medications', 'allergies', 'routine_tests', 'medical_history', 'physiotherapy_history'):
         if field in data:
             setattr(profile, field, str(data[field]).strip())
     profile.save()

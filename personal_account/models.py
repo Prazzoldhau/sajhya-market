@@ -210,6 +210,11 @@ class PatientMedicalProfile(models.Model):
         blank=True, default='',
         help_text='Past surgeries, chronic conditions, hospitalizations, family history',
     )
+    physiotherapy_history = models.TextField(
+        blank=True, default='',
+        help_text='Past physiotherapy treatment, injuries, or surgeries relevant to movement/rehab -- '
+                   'e.g. "ACL reconstruction 2022, 6 months of physio afterward"',
+    )
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):

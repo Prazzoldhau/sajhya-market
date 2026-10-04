@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Assessment - {{ patient.patient_name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="header">
+        <br>
+        <h2>{% if editing %}Edit Assessment{% else %}New Assessment{% endif %}</h2>
+        {% if editing %}
+        <p class="text-muted">{{ patient.patient_name }} ({{ patient.patient_code }}) &middot; originally recorded {{ assessment.created_at|date:"d M Y, H:i" }}</p>
+        <a href="{% url 'assessment-detail' assessment_id=assessment.id %}">&larr; Cancel, back to assessment</a>
+        {% else %}
+        <p class="text-muted">{{ patient.patient_name }} ({{ patient.patient_code }})</p>
+        <a href="{% url 'assessment-list' patient_id=patient.id %}">&larr; Back to Assessments</a>
+        {% endif %}
+    </div>
+
+    <form method="post" novalidate>
+        {% csrf_token %}
+
+        <div class="auth-card" style="margin-bottom:1.5rem;">
+            <div class="auth-header"><h3>Region</h3></div>
+            <div class="auth-body">
+                <div class="form-group">{{ form.region }}</div>
+            </div>
+        </div>
+
+        <div class="auth-card" style="margin-bottom:1.5rem;">
+            <div class="auth-header"><h3>Subjective</h3></div>
+            <div class="auth-body">
+                <div class="form-group"><label class="form-label">Chief Complaint</label>{{ form.chief_complaint }}</div>
+            </div>
+        </div>
+
+        <div class="auth-card" style="margin-bottom:1.5rem;">
+            <div class="auth-header"><h3>Objective</h3></div>
+            <div class="auth-body">
+                <div class="form-group"><label class="form-label">Observation</label>{{ form.observation }}</div>
+                <div class="form-group"><label class="form-label">Range of Motion</label>{{ form.range_of_motion }}</div>
+                <div class="form-group"><label class="form-label">Palpation</label>{{ form.palpation }}</div>
+                <div class="form-group">
+                    <label class="form-label">Special Tests</label>
+                    {{ form.special_tests }}
+                    <div id="reference-tests-box" style="margin-top:0.6rem;padding:0.75rem 1rem;background:#f8f9fb;border:1px solid #e5e7eb;border-radius:8px;font-size:0.85rem;"></div>
+                </div>
+                <div class="form-group"><label class="form-label">Neurovascular Screen</label>{{ form.neurovascular_screen }}</div>
+            </div>
+        </div>
+
+        <div class="auth-card" style="margin-bottom:1.5rem;">
+            <div class="auth-header"><h3>Assessment &amp; Plan</h3></div>
+            <div class="auth-body">
+                <div class="form-group"><label class="form-label">Clinical Impression</label>{{ form.clinical_impression }}</div>
+                <div class="form-group"><label class="form-label">Plan</label>{{ form.plan }}</div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">{% if editing %}Save Changes{% else %}Save Assessment{% endif %}</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    var referenceTests = {{ reference_tests_json|safe }};
+    var regionSelect = document.getElementById('id_region');
+    var box = document.getElementById('reference-tests-box');
+
+    function render() {
+        var tests = referenceTests[regionSelect.value] || [];
+        if (!tests.length) {
+            box.innerHTML = '<em>No reference tests listed for this region yet.</em>';
+            return;
+        }
+        var html = '<strong>Common tests for this region:</strong><ul style="margin:0.4rem 0 0;padding-left:1.1rem;">';
+        tests.forEach(function (t) {
+            html += '<li style="margin-bottom:0.3rem;"><strong>' + t.name + '</strong> &mdash; ' + t.purpose + '</li>';
+        });
+        html += '</ul>';
+        box.innerHTML = html;
+    }
+
+    regionSelect.addEventListener('change', render);
+    render();
+}());
+</script>
+{% endblock %}

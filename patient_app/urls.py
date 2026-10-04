@@ -7,6 +7,7 @@ urlpatterns = [
     path('patient-signup/', views.patient_signup, name='patient-signup'),
     path('patient-dashboard/', views.patient_dashboard, name='patient-dashboard'),
     path('patient-medical-profile/', views.patient_medical_profile_page, name='patient-medical-profile'),
+    path('patient-logout/', views.patient_logout_web, name='patient-logout-web'),
 
     # Auth
     path('api/csrf/', views.csrf_token_view, name='csrf_token'),
