@@ -41,8 +41,6 @@
         /* Medication / blood test lists */
         .mp-time-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
         .mp-time-col h3 { font-size: 0.9rem; margin: 0 0 8px; color: #374151; }
-        .mp-entry-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px;
-            background: #f8f9fb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px 10px; margin-bottom: 6px; }
         .mp-entry-name { font-size: 0.85rem; font-weight: 600; color: #374151; }
         .mp-entry-sub { font-size: 0.72rem; color: #9ca3af; }
         .mp-entry-del button { background: none; border: none; color: #dc2626; cursor: pointer; font-size: 0.9rem; padding: 0 4px; }
@@ -58,13 +56,19 @@
             background: #f8f9ff; color: #667eea; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
 
         /* Physiotherapy */
-        .mp-assess-row { background: #f8f9fb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; }
         .mp-assess-row strong { color: #667eea; }
-        .mp-exercise-row { display: flex; justify-content: space-between; gap: 8px; font-size: 0.85rem;
-            padding: 6px 0; border-bottom: 1px solid #f0f0f0; }
-        .mp-rec-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
-        .mp-rec-card { background: #f8f9fb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px; }
-        .mp-rec-card .mp-entry-name { display: block; margin-bottom: 4px; }
+
+        /* Shared tile grid -- used for Medication/Lab/Assessment/Exercises/Aids
+           entries, same visual language as the Lab Tests page's panel tiles
+           (.store-lab-grid/.store-lab-card) and Pharmacy's product grid. */
+        .mp-tile-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 10px; }
+        .mp-tile { background: #fff; border: 1.5px solid #e5e7eb; border-radius: 10px; padding: 10px 12px;
+            position: relative; transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease; }
+        a.mp-tile { display: block; text-decoration: none; color: inherit; cursor: pointer; }
+        .mp-tile:hover { border-color: #667eea; box-shadow: 0 8px 20px rgba(0,0,0,.06); transform: translateY(-2px); }
+        .mp-tile .mp-entry-name { display: block; margin-bottom: 4px; padding-right: 18px; }
+        .mp-tile .mp-entry-del { position: absolute; top: 6px; right: 6px; }
+        .mp-tile-play { color: #667eea; font-size: 0.7rem; font-weight: 700; }
     </style>
 </head>
 <body>
@@ -93,20 +97,20 @@
             <div class="mp-time-cols">
                 <div class="mp-time-col">
                     <h3>Morning</h3>
-                    {% for med in medications_by_time.morning %}
-                    <div class="mp-entry-row">
-                        <div>
+                    <div class="mp-tile-grid">
+                        {% for med in medications_by_time.morning %}
+                        <div class="mp-tile">
                             <div class="mp-entry-name">{{ med.display_name }}</div>
                             {% if med.instructions %}<div class="mp-entry-sub">{{ med.instructions }}</div>{% endif %}
+                            <form class="mp-entry-del" method="post" action="{% url 'patient-medication-delete' med.id %}">
+                                {% csrf_token %}
+                                <button type="submit" title="Remove">✕</button>
+                            </form>
                         </div>
-                        <form class="mp-entry-del" method="post" action="{% url 'patient-medication-delete' med.id %}">
-                            {% csrf_token %}
-                            <button type="submit" title="Remove">✕</button>
-                        </form>
+                        {% empty %}
+                        <div class="mp-empty">No medications added.</div>
+                        {% endfor %}
                     </div>
-                    {% empty %}
-                    <div class="mp-empty">No medications added.</div>
-                    {% endfor %}
                     <form class="mp-add-form" method="post" action="{% url 'patient-medication-add' %}">
                         {% csrf_token %}
                         <input type="hidden" name="time_of_day" value="morning">
@@ -120,20 +124,20 @@
 
                 <div class="mp-time-col">
                     <h3>Evening</h3>
-                    {% for med in medications_by_time.evening %}
-                    <div class="mp-entry-row">
-                        <div>
+                    <div class="mp-tile-grid">
+                        {% for med in medications_by_time.evening %}
+                        <div class="mp-tile">
                             <div class="mp-entry-name">{{ med.display_name }}</div>
                             {% if med.instructions %}<div class="mp-entry-sub">{{ med.instructions }}</div>{% endif %}
+                            <form class="mp-entry-del" method="post" action="{% url 'patient-medication-delete' med.id %}">
+                                {% csrf_token %}
+                                <button type="submit" title="Remove">✕</button>
+                            </form>
                         </div>
-                        <form class="mp-entry-del" method="post" action="{% url 'patient-medication-delete' med.id %}">
-                            {% csrf_token %}
-                            <button type="submit" title="Remove">✕</button>
-                        </form>
+                        {% empty %}
+                        <div class="mp-empty">No medications added.</div>
+                        {% endfor %}
                     </div>
-                    {% empty %}
-                    <div class="mp-empty">No medications added.</div>
-                    {% endfor %}
                     <form class="mp-add-form" method="post" action="{% url 'patient-medication-add' %}">
                         {% csrf_token %}
                         <input type="hidden" name="time_of_day" value="evening">
@@ -147,20 +151,20 @@
 
                 <div class="mp-time-col">
                     <h3>Night</h3>
-                    {% for med in medications_by_time.night %}
-                    <div class="mp-entry-row">
-                        <div>
+                    <div class="mp-tile-grid">
+                        {% for med in medications_by_time.night %}
+                        <div class="mp-tile">
                             <div class="mp-entry-name">{{ med.display_name }}</div>
                             {% if med.instructions %}<div class="mp-entry-sub">{{ med.instructions }}</div>{% endif %}
+                            <form class="mp-entry-del" method="post" action="{% url 'patient-medication-delete' med.id %}">
+                                {% csrf_token %}
+                                <button type="submit" title="Remove">✕</button>
+                            </form>
                         </div>
-                        <form class="mp-entry-del" method="post" action="{% url 'patient-medication-delete' med.id %}">
-                            {% csrf_token %}
-                            <button type="submit" title="Remove">✕</button>
-                        </form>
+                        {% empty %}
+                        <div class="mp-empty">No medications added.</div>
+                        {% endfor %}
                     </div>
-                    {% empty %}
-                    <div class="mp-empty">No medications added.</div>
-                    {% endfor %}
                     <form class="mp-add-form" method="post" action="{% url 'patient-medication-add' %}">
                         {% csrf_token %}
                         <input type="hidden" name="time_of_day" value="night">
@@ -176,20 +180,20 @@
 
         <!-- ===================== Blood Tests ===================== -->
         <div class="mp-tab-panel mp-card" data-tab-panel="blood_tests" hidden>
-            {% for bt in blood_tests %}
-            <div class="mp-entry-row">
-                <div>
+            <div class="mp-tile-grid">
+                {% for bt in blood_tests %}
+                <div class="mp-tile">
                     <div class="mp-entry-name">{{ bt.display_name }}</div>
                     {% if bt.notes %}<div class="mp-entry-sub">{{ bt.notes }}</div>{% endif %}
+                    <form class="mp-entry-del" method="post" action="{% url 'patient-bloodtest-delete' bt.id %}">
+                        {% csrf_token %}
+                        <button type="submit" title="Remove">✕</button>
+                    </form>
                 </div>
-                <form class="mp-entry-del" method="post" action="{% url 'patient-bloodtest-delete' bt.id %}">
-                    {% csrf_token %}
-                    <button type="submit" title="Remove">✕</button>
-                </form>
+                {% empty %}
+                <div class="mp-empty">No routine blood tests added.</div>
+                {% endfor %}
             </div>
-            {% empty %}
-            <div class="mp-empty">No routine blood tests added.</div>
-            {% endfor %}
 
             <form class="mp-add-form" method="post" action="{% url 'patient-bloodtest-add' %}">
                 {% csrf_token %}
@@ -236,32 +240,48 @@
             </div>
 
             <div class="mp-subtab-panel" data-subtab-panel="assessment">
-                {% for a in assessments %}
-                <div class="mp-assess-row">
-                    <strong>{{ a.get_region_display }}</strong> &middot; {{ a.created_at|date:"d M Y" }}<br>
-                    {% if a.chief_complaint %}<span class="mp-entry-sub">{{ a.chief_complaint|truncatechars:100 }}</span>{% endif %}
+                <div class="mp-tile-grid">
+                    {% for a in assessments %}
+                    <div class="mp-tile">
+                        <div class="mp-entry-name">{{ a.get_region_display }}</div>
+                        <div class="mp-entry-sub">{{ a.created_at|date:"d M Y" }}</div>
+                        {% if a.chief_complaint %}<div class="mp-entry-sub">{{ a.chief_complaint|truncatechars:100 }}</div>{% endif %}
+                    </div>
+                    {% endfor %}
+                    {% for v in visit_notes %}
+                    <div class="mp-tile">
+                        <div class="mp-entry-name">{{ v.get_case_type_display }} Assessment</div>
+                        <div class="mp-entry-sub">{{ v.created_at|date:"d M Y" }}</div>
+                        {% if v.chief_complaint_today %}<div class="mp-entry-sub">{{ v.chief_complaint_today|truncatechars:100 }}</div>{% endif %}
+                    </div>
+                    {% endfor %}
+                    {% if not assessments and not visit_notes %}
+                    <div class="mp-empty">No assessments recorded yet by your physiotherapist.</div>
+                    {% endif %}
                 </div>
-                {% endfor %}
-                {% for v in visit_notes %}
-                <div class="mp-assess-row">
-                    <strong>{{ v.get_case_type_display }} Assessment</strong> &middot; {{ v.created_at|date:"d M Y" }}<br>
-                    {% if v.chief_complaint_today %}<span class="mp-entry-sub">{{ v.chief_complaint_today|truncatechars:100 }}</span>{% endif %}
-                </div>
-                {% endfor %}
-                {% if not assessments and not visit_notes %}
-                <div class="mp-empty">No assessments recorded yet by your physiotherapist.</div>
-                {% endif %}
             </div>
 
             <div class="mp-subtab-panel" data-subtab-panel="exercises" hidden>
                 <h4 style="font-size:0.85rem;color:#374151;margin:0 0 8px;">Currently Prescribed</h4>
                 {% if prescribed_exercises %}
-                    {% for ex in prescribed_exercises %}
-                    <div class="mp-exercise-row">
-                        <span>{{ ex.exercise_name }}</span>
-                        <span class="mp-entry-sub">{{ ex.sets }} sets &times; {{ ex.reps }} reps</span>
+                    <div class="mp-tile-grid">
+                        {% for ex in prescribed_exercises %}
+                        {% with video_url=ex.exercise.hosted_video_url|default:ex.exercise.youtube_url %}
+                        {% if video_url %}
+                        <a href="{{ video_url }}" target="_blank" rel="noopener" class="mp-tile">
+                            <div class="mp-entry-name">{{ ex.exercise_name }}</div>
+                            <div class="mp-entry-sub">{{ ex.sets }} sets &times; {{ ex.reps }} reps</div>
+                            <div class="mp-tile-play">▶ Watch</div>
+                        </a>
+                        {% else %}
+                        <div class="mp-tile">
+                            <div class="mp-entry-name">{{ ex.exercise_name }}</div>
+                            <div class="mp-entry-sub">{{ ex.sets }} sets &times; {{ ex.reps }} reps</div>
+                        </div>
+                        {% endif %}
+                        {% endwith %}
+                        {% endfor %}
                     </div>
-                    {% endfor %}
                     <a href="{% url 'patient-dashboard' %}" class="mp-add-btn" style="display:block;text-align:center;text-decoration:none;margin-top:10px;">View full tracker on Dashboard →</a>
                 {% else %}
                 <div class="mp-empty">No exercises prescribed yet.</div>
@@ -270,26 +290,26 @@
                 <h4 style="font-size:0.85rem;color:#374151;margin:18px 0 8px;">Search Exercise Library</h4>
                 <div class="mp-add-form">
                     <input type="text" id="mp-exercise-search" placeholder="Search exercises by name..." autocomplete="off">
-                    <div class="mp-suggestions" id="mp-exercise-suggestions" style="position:static;display:none;box-shadow:none;border:none;margin-top:8px;max-height:none;"></div>
+                    <div class="mp-tile-grid" id="mp-exercise-suggestions" style="margin-top:10px;"></div>
                 </div>
             </div>
 
             <div class="mp-subtab-panel" data-subtab-panel="aids" hidden>
                 <h4 style="font-size:0.85rem;color:#374151;margin:0 0 8px;">My Aids</h4>
-                {% for aid in aids %}
-                <div class="mp-entry-row">
-                    <div>
+                <div class="mp-tile-grid">
+                    {% for aid in aids %}
+                    <div class="mp-tile">
                         <div class="mp-entry-name">{{ aid.display_name }}</div>
                         {% if aid.notes %}<div class="mp-entry-sub">{{ aid.notes }}</div>{% endif %}
+                        <form class="mp-entry-del" method="post" action="{% url 'patient-aid-delete' aid.id %}">
+                            {% csrf_token %}
+                            <button type="submit" title="Remove">✕</button>
+                        </form>
                     </div>
-                    <form class="mp-entry-del" method="post" action="{% url 'patient-aid-delete' aid.id %}">
-                        {% csrf_token %}
-                        <button type="submit" title="Remove">✕</button>
-                    </form>
+                    {% empty %}
+                    <div class="mp-empty">No aids added yet.</div>
+                    {% endfor %}
                 </div>
-                {% empty %}
-                <div class="mp-empty">No aids added yet.</div>
-                {% endfor %}
 
                 <form class="mp-add-form" method="post" action="{% url 'patient-aid-add' %}">
                     {% csrf_token %}
@@ -302,17 +322,17 @@
 
                 <h4 style="font-size:0.85rem;color:#374151;margin:18px 0 8px;">Recommended by Your Physiotherapist</h4>
                 {% if manual_recs or auto_recs %}
-                <div class="mp-rec-grid">
+                <div class="mp-tile-grid">
                     {% for rec in manual_recs %}
-                    <a href="{% url 'product-detail' rec.product.id %}" class="mp-rec-card" style="text-decoration:none;color:inherit;">
-                        <span class="mp-entry-name">{{ rec.product.name }}</span>
-                        <span class="mp-entry-sub">NPR {{ rec.product.price }} &middot; Physio Pick</span>
+                    <a href="{% url 'product-detail' rec.product.id %}" class="mp-tile">
+                        <div class="mp-entry-name">{{ rec.product.name }}</div>
+                        <div class="mp-entry-sub">NPR {{ rec.product.price }} &middot; Physio Pick</div>
                     </a>
                     {% endfor %}
                     {% for product in auto_recs %}
-                    <a href="{% url 'product-detail' product.id %}" class="mp-rec-card" style="text-decoration:none;color:inherit;">
-                        <span class="mp-entry-name">{{ product.name }}</span>
-                        <span class="mp-entry-sub">NPR {{ product.price }}</span>
+                    <a href="{% url 'product-detail' product.id %}" class="mp-tile">
+                        <div class="mp-entry-name">{{ product.name }}</div>
+                        <div class="mp-entry-sub">NPR {{ product.price }}</div>
                     </a>
                     {% endfor %}
                 </div>
@@ -491,28 +511,37 @@
             if (!aidInput.parentElement.contains(e.target)) aidBox.style.display = 'none';
         });
 
-        // ---- Exercise library search (debounced, read-only results -- browsing, not prescribing) ----
+        // ---- Exercise library search (debounced) -- each result is a
+        // clickable tile linking straight to its video, same as the
+        // "Currently Prescribed" tiles above, so results are actually
+        // selectable instead of inert text. ----
         var exInput = document.getElementById('mp-exercise-search');
         var exBox = document.getElementById('mp-exercise-suggestions');
         var exTimer;
+        function escapeHtml(s) { return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
         exInput.addEventListener('input', function () {
             clearTimeout(exTimer);
             var q = exInput.value.trim();
-            if (q.length < 2) { exBox.style.display = 'none'; return; }
+            if (q.length < 2) { exBox.innerHTML = ''; return; }
             exTimer = setTimeout(function () {
                 fetch('/patient-app/api/browse/public-exercises/search/?q=' + encodeURIComponent(q))
                     .then(function (r) { return r.json(); })
                     .then(function (data) {
                         var items = data.exercises || [];
                         if (!items.length) {
-                            exBox.innerHTML = '<div class="mp-suggest-empty">No exercises match "' + q + '"</div>';
-                        } else {
-                            exBox.innerHTML = items.map(function (ex) {
-                                return '<div class="mp-exercise-row"><span>' + ex.exercise_name + '</span>' +
-                                    '<span class="mp-entry-sub">' + (ex.default_sets || '-') + ' sets &times; ' + (ex.default_reps || '-') + ' reps</span></div>';
-                            }).join('');
+                            exBox.innerHTML = '<div class="mp-empty">No exercises match "' + escapeHtml(q) + '"</div>';
+                            return;
                         }
-                        exBox.style.display = 'block';
+                        exBox.innerHTML = items.map(function (ex) {
+                            var videoUrl = ex.hosted_video_url || ex.youtube_url;
+                            var inner = '<div class="mp-entry-name">' + escapeHtml(ex.exercise_name) + '</div>' +
+                                '<div class="mp-entry-sub">' + (ex.default_sets || '-') + ' sets &times; ' + (ex.default_reps || '-') + ' reps</div>';
+                            if (videoUrl) {
+                                inner += '<div class="mp-tile-play">▶ Watch</div>';
+                                return '<a href="' + videoUrl + '" target="_blank" rel="noopener" class="mp-tile">' + inner + '</a>';
+                            }
+                            return '<div class="mp-tile">' + inner + '</div>';
+                        }).join('');
                     });
             }, 250);
         });
