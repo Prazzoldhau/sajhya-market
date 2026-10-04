@@ -32,11 +32,39 @@
         .mp-updated { font-size: 0.72rem; color: #9ca3af; margin-top: 10px; }
 
         /* Tabs */
-        .mp-tabs, .mp-subtabs { display: flex; gap: 6px; overflow-x: auto; margin-bottom: 16px; }
-        .mp-tab, .mp-subtab { flex: 0 0 auto; padding: 10px 14px; border-radius: 10px; border: 1.5px solid #e5e7eb;
+        .mp-subtabs { display: flex; gap: 6px; overflow-x: auto; margin-bottom: 16px; }
+        .mp-subtab { flex: 0 0 auto; padding: 10px 14px; border-radius: 10px; border: 1.5px solid #e5e7eb;
             background: white; color: #6b7280; font-size: 0.85rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
-        .mp-tab.active, .mp-subtab.active { background: linear-gradient(135deg,#667eea,#764ba2); color: white; border-color: transparent; }
+        .mp-subtab.active { background: linear-gradient(135deg,#667eea,#764ba2); color: white; border-color: transparent; }
         .mp-tab-panel[hidden], .mp-subtab-panel[hidden] { display: none; }
+
+        /* Main tab cards -- icon-badge cards, one per section */
+        .mp-tabs { display: flex; gap: 10px; overflow-x: auto; margin-bottom: 20px; padding-bottom: 2px; }
+        .mp-tab { flex: 0 0 150px; text-align: left; background: white; border: 1.5px solid #e5e7eb; border-radius: 14px;
+            padding: 14px; cursor: pointer; transition: transform .15s ease, box-shadow .15s ease; }
+        .mp-tab:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,.06); }
+        .mp-tab.active { background: linear-gradient(135deg,#2f6fed,#2454c9); border-color: transparent;
+            box-shadow: 0 8px 20px rgba(47,111,237,.3); }
+        .mp-tab-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center;
+            justify-content: center; font-size: 1.25rem; margin-bottom: 10px; background: #eef2ff; }
+        .mp-tab.active .mp-tab-icon { background: rgba(255,255,255,.22); }
+        .mp-tab-icon.icon-medicine { background: #dbeafe; }
+        .mp-tab-icon.icon-lab { background: #fee2e2; }
+        .mp-tab-icon.icon-physio { background: #e0e7ff; }
+        .mp-tab-icon.icon-record { background: #fef3c7; }
+        .mp-tab-icon.icon-nursing { background: #ccfbf1; }
+        .mp-tab.active .mp-tab-icon.icon-medicine, .mp-tab.active .mp-tab-icon.icon-lab,
+        .mp-tab.active .mp-tab-icon.icon-physio, .mp-tab.active .mp-tab-icon.icon-record,
+        .mp-tab.active .mp-tab-icon.icon-nursing { background: rgba(255,255,255,.22); }
+        .mp-tab-title { font-weight: 700; font-size: 0.92rem; color: #374151; }
+        .mp-tab.active .mp-tab-title { color: white; }
+        .mp-tab-status { font-size: 0.78rem; color: #9ca3af; margin-top: 2px; }
+        .mp-tab.active .mp-tab-status { color: rgba(255,255,255,.85); }
+        .mp-tab-status.is-active-status { color: #2f6fed; font-weight: 600; }
+        .mp-tab.active .mp-tab-status.is-active-status { color: white; }
+        .mp-tab-pill { display: inline-block; margin-top: 10px; padding: 3px 9px; border-radius: 999px;
+            font-size: 0.68rem; font-weight: 700; background: #f3f4f6; color: #6b7280; }
+        .mp-tab.active .mp-tab-pill { background: rgba(255,255,255,.22); color: white; }
 
         /* Medication / blood test lists */
         .mp-time-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
@@ -84,12 +112,34 @@
         {% endif %}
 
         <div class="mp-tabs">
-            <button type="button" class="mp-tab active" data-tab="medication">💊 Medication</button>
-            <button type="button" class="mp-tab" data-tab="blood_tests">🩸 Lab</button>
-            <button type="button" class="mp-tab" data-tab="medical_history">📋 Medical History</button>
-            <button type="button" class="mp-tab" data-tab="medical_profile">👤 Medical Profile</button>
-            <button type="button" class="mp-tab" data-tab="nursing">🧑‍⚕️ Nursing</button>
-            <button type="button" class="mp-tab" data-tab="physiotherapy">🏃 Physiotherapy</button>
+            <button type="button" class="mp-tab active" data-tab="medication">
+                <div class="mp-tab-icon icon-medicine">💊</div>
+                <div class="mp-tab-title">Medicine</div>
+                <div class="mp-tab-status{% if medication_count %} is-active-status{% endif %}">{% if medication_count %}Active{% else %}Inactive{% endif %}</div>
+                {% if medication_count %}<span class="mp-tab-pill">{{ medication_count }} medicine{{ medication_count|pluralize }}</span>{% endif %}
+            </button>
+            <button type="button" class="mp-tab" data-tab="blood_tests">
+                <div class="mp-tab-icon icon-lab">🧪</div>
+                <div class="mp-tab-title">Lab Test</div>
+                <div class="mp-tab-status{% if blood_test_count %} is-active-status{% endif %}">{% if blood_test_count %}Active{% else %}Inactive{% endif %}</div>
+                {% if blood_test_count %}<span class="mp-tab-pill">{{ blood_test_count }} test{{ blood_test_count|pluralize }}</span>{% endif %}
+            </button>
+            <button type="button" class="mp-tab" data-tab="physiotherapy">
+                <div class="mp-tab-icon icon-physio">🏃</div>
+                <div class="mp-tab-title">Physiotherapy</div>
+                <div class="mp-tab-status{% if physio_record_count %} is-active-status{% endif %}">{% if physio_record_count %}Active{% else %}Inactive{% endif %}</div>
+                {% if physio_record_count %}<span class="mp-tab-pill">{{ physio_record_count }} record{{ physio_record_count|pluralize }}</span>{% endif %}
+            </button>
+            <button type="button" class="mp-tab" data-tab="medical_record">
+                <div class="mp-tab-icon icon-record">📁</div>
+                <div class="mp-tab-title">Medical Record</div>
+                <div class="mp-tab-status{% if profile.allergies or profile.medical_history %} is-active-status{% endif %}">{% if profile.allergies or profile.medical_history %}Active{% else %}Inactive{% endif %}</div>
+            </button>
+            <button type="button" class="mp-tab" data-tab="nursing">
+                <div class="mp-tab-icon icon-nursing">🩺</div>
+                <div class="mp-tab-title">Nursing</div>
+                <div class="mp-tab-status{% if profile.nursing_vitals or profile.nursing_wound_catheter_care or profile.nursing_mobility_assistance %} is-active-status{% endif %}">{% if profile.nursing_vitals or profile.nursing_wound_catheter_care or profile.nursing_mobility_assistance %}Active{% else %}Inactive{% endif %}</div>
+            </button>
         </div>
 
         <!-- ===================== Medication ===================== -->
@@ -205,21 +255,8 @@
             </form>
         </div>
 
-        <!-- ===================== Medical History ===================== -->
-        <div class="mp-tab-panel mp-card" data-tab-panel="medical_history" hidden>
-            <form method="post">
-                {% csrf_token %}
-                <div class="mp-field">
-                    <label for="medical_history">Medical History</label>
-                    <div class="mp-hint">Past surgeries, chronic conditions, hospitalizations, family history.</div>
-                    <textarea id="medical_history" name="medical_history" placeholder="e.g. Appendectomy 2019, Type 2 Diabetes since 2021">{{ profile.medical_history }}</textarea>
-                </div>
-                <button type="submit" class="mp-save-btn">Save Medical History</button>
-            </form>
-        </div>
-
-        <!-- ===================== Medical Profile (Allergies) ===================== -->
-        <div class="mp-tab-panel mp-card" data-tab-panel="medical_profile" hidden>
+        <!-- ===================== Medical Record (Allergies + History) ===================== -->
+        <div class="mp-tab-panel mp-card" data-tab-panel="medical_record" hidden>
             <form method="post">
                 {% csrf_token %}
                 <div class="mp-field">
@@ -227,7 +264,12 @@
                     <div class="mp-hint">Any drug, food, or other allergies and what happens if exposed?</div>
                     <textarea id="allergies" name="allergies" placeholder="e.g. Penicillin — rash">{{ profile.allergies }}</textarea>
                 </div>
-                <button type="submit" class="mp-save-btn">Save Medical Profile</button>
+                <div class="mp-field">
+                    <label for="medical_history">Medical History</label>
+                    <div class="mp-hint">Past surgeries, chronic conditions, hospitalizations, family history.</div>
+                    <textarea id="medical_history" name="medical_history" placeholder="e.g. Appendectomy 2019, Type 2 Diabetes since 2021">{{ profile.medical_history }}</textarea>
+                </div>
+                <button type="submit" class="mp-save-btn">Save Medical Record</button>
             </form>
         </div>
 

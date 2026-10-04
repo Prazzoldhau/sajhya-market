@@ -318,6 +318,13 @@ def patient_medical_profile_page(request):
 
     aids = patient.aids.select_related('product')
 
+    # Counts for the tab-card badges at the top of the page -- real data
+    # only (no invented "pending refill"/"next session" stand-ins for
+    # things this app doesn't actually track).
+    medication_count = sum(len(v) for v in medications_by_time.values())
+    blood_test_count = blood_tests.count()
+    physio_record_count = assessments.count() + visit_notes.count() + aids.count()
+
     return render(request, 'patient-medical-profile.html', {
         'patient': patient,
         'profile': profile,
@@ -331,6 +338,9 @@ def patient_medical_profile_page(request):
         'manual_recs': manual_recs,
         'auto_recs': auto_recs,
         'matched_label': matched_label,
+        'medication_count': medication_count,
+        'blood_test_count': blood_test_count,
+        'physio_record_count': physio_record_count,
         'aids': aids,
     })
 
