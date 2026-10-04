@@ -97,6 +97,23 @@
         .mp-tile .mp-entry-name { display: block; margin-bottom: 4px; padding-right: 18px; }
         .mp-tile .mp-entry-del { position: absolute; top: 6px; right: 6px; }
         .mp-tile-play { color: #667eea; font-size: 0.7rem; font-weight: 700; }
+        button.mp-tile { width: 100%; font-family: inherit; text-align: left; }
+
+        /* Exercise detail modal */
+        .mp-modal-backdrop { position: fixed; inset: 0; background: rgba(17,24,39,.5); z-index: 50;
+            display: flex; align-items: flex-end; justify-content: center; }
+        .mp-modal-backdrop[hidden] { display: none; }
+        .mp-modal { background: white; border-radius: 16px 16px 0 0; padding: 20px; width: 100%; max-width: 480px;
+            max-height: 80vh; overflow-y: auto; position: relative; }
+        .mp-modal-close { position: absolute; top: 12px; right: 14px; background: none; border: none;
+            font-size: 1.4rem; line-height: 1; color: #9ca3af; cursor: pointer; }
+        .mp-modal h3 { margin: 0 24px 6px 0; font-size: 1.05rem; color: #374151; }
+        .mp-modal-desc { font-size: 0.85rem; color: #4b5563; line-height: 1.5; margin: 10px 0 0; white-space: pre-line; }
+        .mp-modal-desc:empty { display: none; }
+        @media (min-width: 560px) {
+            .mp-modal-backdrop { align-items: center; }
+            .mp-modal { border-radius: 16px; }
+        }
 
         /* Desktop/tablet: let the tab cards and tile grids use the extra
            width instead of staying pinned to a phone-sized column. */
@@ -330,18 +347,17 @@
                     <div class="mp-tile-grid">
                         {% for ex in prescribed_exercises %}
                         {% with video_url=ex.exercise.hosted_video_url|default:ex.exercise.youtube_url %}
-                        {% if video_url %}
-                        <a href="{{ video_url }}" target="_blank" rel="noopener" class="mp-tile">
+                        <button type="button" class="mp-tile mp-tile-btn"
+                            data-name="{{ ex.exercise_name }}"
+                            data-type="{{ ex.exercise.exercise_type|default:'' }}"
+                            data-sets="{{ ex.sets }}" data-reps="{{ ex.reps }}" data-hold="{{ ex.hold_time_sec|default:'' }}"
+                            data-description="{{ ex.exercise.exercise_description|default:'' }}"
+                            data-description-np="{{ ex.exercise.exercise_description_nepali|default:'' }}"
+                            data-video="{{ video_url|default:'' }}">
                             <div class="mp-entry-name">{{ ex.exercise_name }}</div>
                             <div class="mp-entry-sub">{{ ex.sets }} sets &times; {{ ex.reps }} reps</div>
-                            <div class="mp-tile-play">▶ Watch</div>
-                        </a>
-                        {% else %}
-                        <div class="mp-tile">
-                            <div class="mp-entry-name">{{ ex.exercise_name }}</div>
-                            <div class="mp-entry-sub">{{ ex.sets }} sets &times; {{ ex.reps }} reps</div>
-                        </div>
-                        {% endif %}
+                            {% if video_url %}<div class="mp-tile-play">▶ Watch</div>{% endif %}
+                        </button>
                         {% endwith %}
                         {% endfor %}
                     </div>
@@ -431,6 +447,21 @@
         {% if profile.updated_at %}
         <div class="mp-updated">Last updated {{ profile.updated_at|date:"d M Y, g:i A" }}</div>
         {% endif %}
+    </div>
+
+    <!-- Exercise detail modal -- every exercise tile (prescribed or
+         searched) opens this, not just ones with a video; video is one
+         field in the detail view, not the only reason a tile responds
+         to a click. -->
+    <div class="mp-modal-backdrop" id="mp-exercise-modal" hidden>
+        <div class="mp-modal">
+            <button type="button" class="mp-modal-close" id="mp-exercise-modal-close" aria-label="Close">&times;</button>
+            <h3 id="mp-modal-name"></h3>
+            <div class="mp-entry-sub" id="mp-modal-meta"></div>
+            <p id="mp-modal-description" class="mp-modal-desc"></p>
+            <p id="mp-modal-description-np" class="mp-modal-desc"></p>
+            <a href="#" target="_blank" rel="noopener" class="mp-save-btn" id="mp-modal-video" style="display:none;text-align:center;text-decoration:none;margin-top:10px;">▶ Watch Video</a>
+        </div>
     </div>
 
     <script>
@@ -574,13 +605,59 @@
             if (!aidInput.parentElement.contains(e.target)) aidBox.style.display = 'none';
         });
 
-        // ---- Exercise library search (debounced) -- each result is a
-        // clickable tile linking straight to its video, same as the
-        // "Currently Prescribed" tiles above, so results are actually
-        // selectable instead of inert text. ----
+        // ---- Exercise detail modal -- every exercise tile (prescribed or
+        // searched) opens this on click, so a result with no video is just
+        // as selectable as one with one; video is shown inside as one more
+        // detail, not the only thing that makes a tile clickable. ----
+        var exModal = document.getElementById('mp-exercise-modal');
+        var exModalName = document.getElementById('mp-modal-name');
+        var exModalMeta = document.getElementById('mp-modal-meta');
+        var exModalDesc = document.getElementById('mp-modal-description');
+        var exModalDescNp = document.getElementById('mp-modal-description-np');
+        var exModalVideo = document.getElementById('mp-modal-video');
+
+        function openExerciseModal(d) {
+            exModalName.textContent = d.name || '';
+            var metaParts = [];
+            if (d.type) metaParts.push(d.type);
+            var dose = (d.sets || '-') + ' sets × ' + (d.reps || '-') + ' reps';
+            if (d.hold) dose += ' × ' + d.hold + 's hold';
+            metaParts.push(dose);
+            exModalMeta.textContent = metaParts.join(' · ');
+            exModalDesc.textContent = d.description || '';
+            exModalDescNp.textContent = d.descriptionNp || '';
+            if (d.video) {
+                exModalVideo.href = d.video;
+                exModalVideo.style.display = 'block';
+            } else {
+                exModalVideo.style.display = 'none';
+            }
+            exModal.hidden = false;
+        }
+        function closeExerciseModal() { exModal.hidden = true; }
+
+        document.getElementById('mp-exercise-modal-close').addEventListener('click', closeExerciseModal);
+        exModal.addEventListener('click', function (e) { if (e.target === exModal) closeExerciseModal(); });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeExerciseModal(); });
+
+        // Server-rendered "Currently Prescribed" tiles -- read their data-* attributes.
+        document.querySelectorAll('.mp-tile-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                openExerciseModal({
+                    name: btn.dataset.name, type: btn.dataset.type,
+                    sets: btn.dataset.sets, reps: btn.dataset.reps, hold: btn.dataset.hold,
+                    description: btn.dataset.description, descriptionNp: btn.dataset.descriptionNp,
+                    video: btn.dataset.video,
+                });
+            });
+        });
+
+        // ---- Exercise library search (debounced) -- every result renders
+        // as a clickable tile opening the modal above. ----
         var exInput = document.getElementById('mp-exercise-search');
         var exBox = document.getElementById('mp-exercise-suggestions');
         var exTimer;
+        var exResultsCache = {};
         function escapeHtml(s) { return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
         exInput.addEventListener('input', function () {
             clearTimeout(exTimer);
@@ -595,16 +672,27 @@
                             exBox.innerHTML = '<div class="mp-empty">No exercises match "' + escapeHtml(q) + '"</div>';
                             return;
                         }
+                        exResultsCache = {};
+                        items.forEach(function (ex) { exResultsCache[ex.id] = ex; });
                         exBox.innerHTML = items.map(function (ex) {
                             var videoUrl = ex.hosted_video_url || ex.youtube_url;
                             var inner = '<div class="mp-entry-name">' + escapeHtml(ex.exercise_name) + '</div>' +
                                 '<div class="mp-entry-sub">' + (ex.default_sets || '-') + ' sets &times; ' + (ex.default_reps || '-') + ' reps</div>';
-                            if (videoUrl) {
-                                inner += '<div class="mp-tile-play">▶ Watch</div>';
-                                return '<a href="' + videoUrl + '" target="_blank" rel="noopener" class="mp-tile">' + inner + '</a>';
-                            }
-                            return '<div class="mp-tile">' + inner + '</div>';
+                            if (videoUrl) inner += '<div class="mp-tile-play">▶ Watch</div>';
+                            return '<button type="button" class="mp-tile mp-tile-search-result" data-id="' + ex.id + '">' + inner + '</button>';
                         }).join('');
+                        exBox.querySelectorAll('.mp-tile-search-result').forEach(function (el) {
+                            el.addEventListener('click', function () {
+                                var ex = exResultsCache[el.dataset.id];
+                                if (!ex) return;
+                                openExerciseModal({
+                                    name: ex.exercise_name, type: ex.exercise_type,
+                                    sets: ex.default_sets, reps: ex.default_reps, hold: ex.hold_time_sec,
+                                    description: ex.description, descriptionNp: ex.description_nepali,
+                                    video: ex.hosted_video_url || ex.youtube_url,
+                                });
+                            });
+                        });
                     });
             }, 250);
         });
