@@ -11,6 +11,8 @@ urlpatterns = [
     path('patient-medication/<int:medication_id>/delete/', views.patient_medication_delete, name='patient-medication-delete'),
     path('patient-bloodtest/add/', views.patient_bloodtest_add, name='patient-bloodtest-add'),
     path('patient-bloodtest/<int:bloodtest_id>/delete/', views.patient_bloodtest_delete, name='patient-bloodtest-delete'),
+    path('patient-aid/add/', views.patient_aid_add, name='patient-aid-add'),
+    path('patient-aid/<int:aid_id>/delete/', views.patient_aid_delete, name='patient-aid-delete'),
     path('patient-logout/', views.patient_logout_web, name='patient-logout-web'),
 
     # Auth
@@ -77,6 +79,8 @@ urlpatterns = [
     path('api/medical-profile/medication/<int:medication_id>/delete/', views.patient_api_medication_delete, name='patient_api_medication_delete'),
     path('api/medical-profile/bloodtest/add/', views.patient_api_bloodtest_add, name='patient_api_bloodtest_add'),
     path('api/medical-profile/bloodtest/<int:bloodtest_id>/delete/', views.patient_api_bloodtest_delete, name='patient_api_bloodtest_delete'),
+    path('api/medical-profile/aid/add/', views.patient_api_aid_add, name='patient_api_aid_add'),
+    path('api/medical-profile/aid/<int:aid_id>/delete/', views.patient_api_aid_delete, name='patient_api_aid_delete'),
     path('add-recs-to-cart/', views.add_recs_to_cart, name='add-recs-to-cart'),
 
     # Lab service (Blood Investigation)
