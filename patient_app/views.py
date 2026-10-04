@@ -100,10 +100,17 @@ def csrf_token_view(request):
 def patient_login(request):
     # If the browser sends a POST request (user clicked the button)
     if request.method == "POST":
-        patient_code = request.POST.get('username', '').strip()
+        identifier = request.POST.get('username', '').strip()
         pin_input = request.POST.get('password', '').strip()
 
-        patient = AddPatient.objects.filter(patient_code=patient_code).first()
+        # Already-enrolled patients still log in with their patient_code
+        # (never asked to pick a username); anyone who signed up after
+        # usernames existed logs in with that instead. Try username first
+        # since patient_code is a fixed PAT-XXXXXX shape that can't collide
+        # with a chosen one.
+        patient = AddPatient.objects.filter(username__iexact=identifier).first()
+        if not patient:
+            patient = AddPatient.objects.filter(patient_code=identifier).first()
         # Same rules as patient_api_login: refuse a soft-deleted account, and
         # a self-registered patient has a real hashed password while a
         # physio-created one still uses phone-as-PIN -- both paths must work
@@ -129,21 +136,30 @@ def patient_login(request):
 def patient_signup(request):
     """Web equivalent of patient_api_signup -- lets a patient create their
     own account straight from the website instead of only via the native
-    app. Same rules: name + password only, no physio involved yet."""
+    app. Unlike the API (kept accepting just name + password so an older
+    app build doesn't break), this form requires a username too -- it's
+    the login identifier going forward instead of the auto-generated,
+    never-shown-to-them patient_code."""
     if request.method == "POST":
         patient_name = request.POST.get('patient_name', '').strip()
+        username = request.POST.get('username', '').strip()
         password = request.POST.get('password', '')
         confirm_password = request.POST.get('confirm_password', '')
 
-        if not patient_name or not password:
-            return render(request, 'patient-signup.html', {'error': 'Name and password are required'})
+        if not patient_name or not username or not password:
+            return render(request, 'patient-signup.html', {'error': 'Name, username and password are required'})
+        if len(username) < 3:
+            return render(request, 'patient-signup.html', {'error': 'Username must be at least 3 characters'})
         if len(password) < 6:
             return render(request, 'patient-signup.html', {'error': 'Password must be at least 6 characters'})
         if password != confirm_password:
             return render(request, 'patient-signup.html', {'error': 'Passwords do not match'})
+        if AddPatient.objects.filter(username__iexact=username).exists():
+            return render(request, 'patient-signup.html', {'error': 'That username is already taken'})
 
         patient = AddPatient.objects.create(
             patient_name=patient_name,
+            username=username,
             patient_contact='',
             patient_diagnosis='Not specified',
             password=make_password(password),
@@ -319,13 +335,19 @@ def add_recs_to_cart(request):
 def patient_api_login(request):
     try:
         data = json.loads(request.body)
-        patient_code = data.get('username', '').strip()
+        identifier = data.get('username', '').strip()
         secret = data.get('password', '').strip()
 
-        if not patient_code or not secret:
-            return JsonResponse({'success': False, 'error': 'Patient Code and password are required'}, status=400)
+        if not identifier or not secret:
+            return JsonResponse({'success': False, 'error': 'Username and password are required'}, status=400)
 
-        patient = AddPatient.objects.filter(patient_code=patient_code).first()
+        # Already-enrolled patients still log in with their patient_code;
+        # anyone with a chosen username (see patient_signup/patient_api_signup)
+        # logs in with that instead -- try it first since patient_code's
+        # fixed PAT-XXXXXX shape can't collide with a chosen one.
+        patient = AddPatient.objects.filter(username__iexact=identifier).first()
+        if not patient:
+            patient = AddPatient.objects.filter(patient_code=identifier).first()
         if not patient:
             return JsonResponse({'success': False, 'error': 'Invalid credentials'}, status=401)
 
@@ -498,22 +520,32 @@ def patient_api_qr_login(request):
 def patient_api_signup(request):
     """Lets a patient create their own account from the app, with no physio
     involved yet -- they land unassigned and pair with a physio afterward via
-    patient_api_pair_physio (see AddPatient.created_by docstring). Their
-    login identifier is the auto-generated patient_code (same as
-    physio-created patients); what's different is they choose their own
-    password instead of using their phone number as the PIN."""
+    patient_api_pair_physio (see AddPatient.created_by docstring).
+
+    `username` is optional and accepted here only so an older app build
+    that doesn't send one keeps working unchanged -- it still gets a
+    patient_code and can log in with that. A build that does send one lets
+    the patient log in with it afterward instead (see patient_api_login),
+    same as the website's own signup form, which requires it outright."""
     try:
         data = json.loads(request.body)
         patient_name = data.get('patient_name', '').strip()
+        username = data.get('username', '').strip()
         password = data.get('password', '')
 
         if not patient_name or not password:
             return JsonResponse({'success': False, 'error': 'Name and password are required'}, status=400)
         if len(password) < 6:
             return JsonResponse({'success': False, 'error': 'Password must be at least 6 characters'}, status=400)
+        if username:
+            if len(username) < 3:
+                return JsonResponse({'success': False, 'error': 'Username must be at least 3 characters'}, status=400)
+            if AddPatient.objects.filter(username__iexact=username).exists():
+                return JsonResponse({'success': False, 'error': 'That username is already taken'}, status=400)
 
         patient = AddPatient.objects.create(
             patient_name=patient_name,
+            username=username or None,
             patient_contact='',
             patient_diagnosis='Not specified',
             password=make_password(password),
@@ -525,6 +557,7 @@ def patient_api_signup(request):
             'patient_id': patient.id,
             'patient_name': patient.patient_name,
             'patient_code': patient.patient_code,
+            'username': patient.username,
             'diagnosis': patient.patient_diagnosis,
             'latest_prescription': None,
             **_activation_status(patient),

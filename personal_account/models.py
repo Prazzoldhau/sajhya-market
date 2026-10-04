@@ -71,6 +71,14 @@ class AddPatient(models.Model):
     # check the hashed password instead of the legacy phone-as-PIN.
     password = models.CharField(max_length=128, null=True, blank=True, help_text='Hashed, never stored in plain text')
 
+    # Chosen at signup -- replaces the auto-generated patient_code as the
+    # login identifier for anyone who sets one, since nothing ever showed a
+    # patient their own patient_code after signup, so they had no way to
+    # know what to log back in with. Null for already-enrolled/physio-
+    # created patients, who keep using patient_code exactly as before;
+    # patient_login/patient_api_login accept either.
+    username = models.CharField(max_length=50, unique=True, null=True, blank=True)
+
     # Foreign key points to the user who created the patient. Nullable because
     # self-registered patients (from the patient-facing app) have no creating
     # physio -- they get linked via PatientPhysioPairing instead.
