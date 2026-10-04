@@ -14,6 +14,7 @@
                 <div class="patient-details">
                     <h1>{{ patient.patient_name }}</h1>
                     <p><strong>Diagnosis:</strong> {{ patient.diagnosis|default:"Not specified" }}</p>
+                    <p style="font-size:0.8rem;color:#9ca3af;">Login with: <strong>{{ patient.username|default:patient.patient_code }}</strong></p>
                 </div>
             </div>
             <button id="enableNotificationsBtn" style="display:none; padding:10px 16px; border-radius:8px; border:none; background:#667eea; color:white; cursor:pointer; font-size:0.9rem;">
