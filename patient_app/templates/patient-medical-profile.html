@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="{% static 'css/patient-portal.css' %}">
     <style>
         body { background: #f4f6fa; }
-        .container { max-width: 640px; margin: 0 auto; padding: 20px 16px 40px; }
+        .container { max-width: 720px; margin: 0 auto; padding: 20px 16px 40px; }
         .mp-header { margin-bottom: 18px; }
         .mp-header h1 { font-size: 1.3rem; margin: 0 0 4px; color: #374151; }
         .mp-header p { font-size: 0.85rem; color: #9ca3af; margin: 0; }
@@ -18,9 +18,10 @@
         .mp-field:last-child { margin-bottom: 0; }
         .mp-field label { display: block; font-weight: 700; font-size: 0.88rem; color: #374151; margin-bottom: 4px; }
         .mp-field .mp-hint { font-size: 0.75rem; color: #9ca3af; margin-bottom: 6px; }
-        .mp-field textarea { width: 100%; min-height: 80px; padding: 10px 12px; font-size: 0.92rem;
-            border: 1.5px solid #e5e7eb; border-radius: 10px; font-family: inherit; resize: vertical; box-sizing: border-box; }
-        .mp-field textarea:focus { outline: none; border-color: #667eea; }
+        .mp-field textarea, .mp-field input[type="text"] { width: 100%; padding: 10px 12px; font-size: 0.92rem;
+            border: 1.5px solid #e5e7eb; border-radius: 10px; font-family: inherit; box-sizing: border-box; }
+        .mp-field textarea { min-height: 80px; resize: vertical; }
+        .mp-field textarea:focus, .mp-field input:focus { outline: none; border-color: #667eea; }
         .mp-save-btn { display: block; width: 100%; padding: 13px; border: none; border-radius: 10px;
             background: linear-gradient(135deg,#667eea,#764ba2); color: white; font-size: 1rem; font-weight: 700; cursor: pointer; }
         .mp-save-btn:active { opacity: 0.9; }
@@ -29,6 +30,41 @@
         .mp-back { display: inline-block; margin-bottom: 14px; color: #667eea; font-size: 0.85rem;
             font-weight: 600; text-decoration: none; }
         .mp-updated { font-size: 0.72rem; color: #9ca3af; margin-top: 10px; }
+
+        /* Tabs */
+        .mp-tabs, .mp-subtabs { display: flex; gap: 6px; overflow-x: auto; margin-bottom: 16px; }
+        .mp-tab, .mp-subtab { flex: 0 0 auto; padding: 10px 14px; border-radius: 10px; border: 1.5px solid #e5e7eb;
+            background: white; color: #6b7280; font-size: 0.85rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
+        .mp-tab.active, .mp-subtab.active { background: linear-gradient(135deg,#667eea,#764ba2); color: white; border-color: transparent; }
+        .mp-tab-panel[hidden], .mp-subtab-panel[hidden] { display: none; }
+
+        /* Medication / blood test lists */
+        .mp-time-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+        .mp-time-col h3 { font-size: 0.9rem; margin: 0 0 8px; color: #374151; }
+        .mp-entry-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px;
+            background: #f8f9fb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px 10px; margin-bottom: 6px; }
+        .mp-entry-name { font-size: 0.85rem; font-weight: 600; color: #374151; }
+        .mp-entry-sub { font-size: 0.72rem; color: #9ca3af; }
+        .mp-entry-del button { background: none; border: none; color: #dc2626; cursor: pointer; font-size: 0.9rem; padding: 0 4px; }
+        .mp-empty { font-size: 0.78rem; color: #9ca3af; margin-bottom: 8px; }
+        .mp-add-form { position: relative; margin-top: 8px; }
+        .mp-suggestions { position: absolute; z-index: 5; top: 100%; left: 0; right: 0; background: white;
+            border: 1.5px solid #e5e7eb; border-radius: 8px; box-shadow: 0 4px 14px rgba(0,0,0,.1); display: none;
+            max-height: 180px; overflow-y: auto; }
+        .mp-suggest-item { padding: 8px 10px; font-size: 0.82rem; cursor: pointer; }
+        .mp-suggest-item:hover { background: #f0f2ff; }
+        .mp-suggest-empty { padding: 8px 10px; font-size: 0.78rem; color: #9ca3af; }
+        .mp-add-btn { margin-top: 6px; width: 100%; padding: 8px; border: 1.5px dashed #c7d2fe; border-radius: 8px;
+            background: #f8f9ff; color: #667eea; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
+
+        /* Physiotherapy */
+        .mp-assess-row { background: #f8f9fb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; }
+        .mp-assess-row strong { color: #667eea; }
+        .mp-exercise-row { display: flex; justify-content: space-between; gap: 8px; font-size: 0.85rem;
+            padding: 6px 0; border-bottom: 1px solid #f0f0f0; }
+        .mp-rec-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+        .mp-rec-card { background: #f8f9fb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px; }
+        .mp-rec-card .mp-entry-name { display: block; margin-bottom: 4px; }
     </style>
 </head>
 <body>
@@ -43,52 +79,327 @@
         <div class="mp-saved-banner">✓ Saved. Thanks for keeping this current.</div>
         {% endif %}
 
+        <!-- General -- always visible, not tabbed: allergies matter no matter which tab is open -->
         <form method="post" class="mp-card">
             {% csrf_token %}
-
-            <div class="mp-field">
-                <label for="current_medications">Current Medications</label>
-                <div class="mp-hint">What medicines are you taking right now, and how often?</div>
-                <textarea id="current_medications" name="current_medications"
-                    placeholder="e.g. Metformin 500mg twice daily, Atorvastatin 10mg at night">{{ profile.current_medications }}</textarea>
-            </div>
-
             <div class="mp-field">
                 <label for="allergies">Allergies</label>
                 <div class="mp-hint">Any drug, food, or other allergies and what happens if exposed?</div>
-                <textarea id="allergies" name="allergies"
-                    placeholder="e.g. Penicillin — rash">{{ profile.allergies }}</textarea>
+                <textarea id="allergies" name="allergies" placeholder="e.g. Penicillin — rash">{{ profile.allergies }}</textarea>
             </div>
-
-            <div class="mp-field">
-                <label for="routine_tests">Routine Blood / Other Tests</label>
-                <div class="mp-hint">Tests you get done periodically, and how often.</div>
-                <textarea id="routine_tests" name="routine_tests"
-                    placeholder="e.g. HbA1c every 3 months, Lipid profile every 6 months">{{ profile.routine_tests }}</textarea>
-            </div>
-
             <div class="mp-field">
                 <label for="medical_history">Medical History</label>
                 <div class="mp-hint">Past surgeries, chronic conditions, hospitalizations, family history.</div>
-                <textarea id="medical_history" name="medical_history"
-                    placeholder="e.g. Appendectomy 2019, Type 2 Diabetes since 2021">{{ profile.medical_history }}</textarea>
+                <textarea id="medical_history" name="medical_history" placeholder="e.g. Appendectomy 2019, Type 2 Diabetes since 2021">{{ profile.medical_history }}</textarea>
             </div>
-
-            <div class="mp-field">
-                <label for="physiotherapy_history">Physiotherapy History</label>
-                <div class="mp-hint">Past physiotherapy treatment, injuries, or surgeries relevant to movement/rehab.</div>
-                <textarea id="physiotherapy_history" name="physiotherapy_history"
-                    placeholder="e.g. ACL reconstruction 2022, 6 months of physio afterward">{{ profile.physiotherapy_history }}</textarea>
-            </div>
-
-            {% if profile.updated_at %}
-            <div class="mp-updated">Last updated {{ profile.updated_at|date:"d M Y, g:i A" }}</div>
-            {% endif %}
-
-            <div style="margin-top:18px;">
-                <button type="submit" class="mp-save-btn">Save Medical Profile</button>
-            </div>
+            <button type="submit" class="mp-save-btn">Save General Info</button>
         </form>
+
+        <div class="mp-tabs">
+            <button type="button" class="mp-tab active" data-tab="medication">💊 Medication</button>
+            <button type="button" class="mp-tab" data-tab="blood_tests">🩸 Blood Tests</button>
+            <button type="button" class="mp-tab" data-tab="physiotherapy">🏃 Physiotherapy</button>
+            <button type="button" class="mp-tab" data-tab="nursing">🧑‍⚕️ Nursing</button>
+        </div>
+
+        <!-- ===================== Medication ===================== -->
+        <div class="mp-tab-panel mp-card" data-tab-panel="medication">
+            <div class="mp-time-cols">
+                <div class="mp-time-col">
+                    <h3>Morning</h3>
+                    {% for med in medications_by_time.morning %}
+                    <div class="mp-entry-row">
+                        <div>
+                            <div class="mp-entry-name">{{ med.display_name }}</div>
+                            {% if med.instructions %}<div class="mp-entry-sub">{{ med.instructions }}</div>{% endif %}
+                        </div>
+                        <form class="mp-entry-del" method="post" action="{% url 'patient-medication-delete' med.id %}">
+                            {% csrf_token %}
+                            <button type="submit" title="Remove">✕</button>
+                        </form>
+                    </div>
+                    {% empty %}
+                    <div class="mp-empty">No medications added.</div>
+                    {% endfor %}
+                    <form class="mp-add-form" method="post" action="{% url 'patient-medication-add' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="time_of_day" value="morning">
+                        <input type="hidden" name="pharmacy_product_id" class="mp-med-pid">
+                        <input type="text" name="custom_name" class="mp-med-search" placeholder="Search medicine..." autocomplete="off">
+                        <div class="mp-suggestions mp-med-suggestions"></div>
+                        <input type="text" name="instructions" placeholder="Dosage / instructions (optional)" style="margin-top:6px;">
+                        <button type="submit" class="mp-add-btn">+ Add</button>
+                    </form>
+                </div>
+
+                <div class="mp-time-col">
+                    <h3>Evening</h3>
+                    {% for med in medications_by_time.evening %}
+                    <div class="mp-entry-row">
+                        <div>
+                            <div class="mp-entry-name">{{ med.display_name }}</div>
+                            {% if med.instructions %}<div class="mp-entry-sub">{{ med.instructions }}</div>{% endif %}
+                        </div>
+                        <form class="mp-entry-del" method="post" action="{% url 'patient-medication-delete' med.id %}">
+                            {% csrf_token %}
+                            <button type="submit" title="Remove">✕</button>
+                        </form>
+                    </div>
+                    {% empty %}
+                    <div class="mp-empty">No medications added.</div>
+                    {% endfor %}
+                    <form class="mp-add-form" method="post" action="{% url 'patient-medication-add' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="time_of_day" value="evening">
+                        <input type="hidden" name="pharmacy_product_id" class="mp-med-pid">
+                        <input type="text" name="custom_name" class="mp-med-search" placeholder="Search medicine..." autocomplete="off">
+                        <div class="mp-suggestions mp-med-suggestions"></div>
+                        <input type="text" name="instructions" placeholder="Dosage / instructions (optional)" style="margin-top:6px;">
+                        <button type="submit" class="mp-add-btn">+ Add</button>
+                    </form>
+                </div>
+
+                <div class="mp-time-col">
+                    <h3>Night</h3>
+                    {% for med in medications_by_time.night %}
+                    <div class="mp-entry-row">
+                        <div>
+                            <div class="mp-entry-name">{{ med.display_name }}</div>
+                            {% if med.instructions %}<div class="mp-entry-sub">{{ med.instructions }}</div>{% endif %}
+                        </div>
+                        <form class="mp-entry-del" method="post" action="{% url 'patient-medication-delete' med.id %}">
+                            {% csrf_token %}
+                            <button type="submit" title="Remove">✕</button>
+                        </form>
+                    </div>
+                    {% empty %}
+                    <div class="mp-empty">No medications added.</div>
+                    {% endfor %}
+                    <form class="mp-add-form" method="post" action="{% url 'patient-medication-add' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="time_of_day" value="night">
+                        <input type="hidden" name="pharmacy_product_id" class="mp-med-pid">
+                        <input type="text" name="custom_name" class="mp-med-search" placeholder="Search medicine..." autocomplete="off">
+                        <div class="mp-suggestions mp-med-suggestions"></div>
+                        <input type="text" name="instructions" placeholder="Dosage / instructions (optional)" style="margin-top:6px;">
+                        <button type="submit" class="mp-add-btn">+ Add</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===================== Blood Tests ===================== -->
+        <div class="mp-tab-panel mp-card" data-tab-panel="blood_tests" hidden>
+            {% for bt in blood_tests %}
+            <div class="mp-entry-row">
+                <div>
+                    <div class="mp-entry-name">{{ bt.display_name }}</div>
+                    {% if bt.notes %}<div class="mp-entry-sub">{{ bt.notes }}</div>{% endif %}
+                </div>
+                <form class="mp-entry-del" method="post" action="{% url 'patient-bloodtest-delete' bt.id %}">
+                    {% csrf_token %}
+                    <button type="submit" title="Remove">✕</button>
+                </form>
+            </div>
+            {% empty %}
+            <div class="mp-empty">No routine blood tests added.</div>
+            {% endfor %}
+
+            <form class="mp-add-form" method="post" action="{% url 'patient-bloodtest-add' %}">
+                {% csrf_token %}
+                <input type="hidden" name="lab_test_id" id="mp-lab-id">
+                <input type="text" name="custom_name" id="mp-lab-search" placeholder="Search blood/lab test..." autocomplete="off">
+                <div class="mp-suggestions" id="mp-lab-suggestions"></div>
+                <input type="text" name="notes" placeholder="How often, or a past result (optional)" style="margin-top:6px;">
+                <button type="submit" class="mp-add-btn">+ Add</button>
+            </form>
+        </div>
+
+        <!-- ===================== Physiotherapy ===================== -->
+        <div class="mp-tab-panel mp-card" data-tab-panel="physiotherapy" hidden>
+            <div class="mp-subtabs">
+                <button type="button" class="mp-subtab active" data-subtab="assessment">Assessment</button>
+                <button type="button" class="mp-subtab" data-subtab="exercises">Exercises</button>
+                <button type="button" class="mp-subtab" data-subtab="aids">Aids</button>
+            </div>
+
+            <div class="mp-subtab-panel" data-subtab-panel="assessment">
+                {% for a in assessments %}
+                <div class="mp-assess-row">
+                    <strong>{{ a.get_region_display }}</strong> &middot; {{ a.created_at|date:"d M Y" }}<br>
+                    {% if a.chief_complaint %}<span class="mp-entry-sub">{{ a.chief_complaint|truncatechars:100 }}</span>{% endif %}
+                </div>
+                {% empty %}
+                <div class="mp-empty">No assessments recorded yet by your physiotherapist.</div>
+                {% endfor %}
+            </div>
+
+            <div class="mp-subtab-panel" data-subtab-panel="exercises" hidden>
+                {% if prescribed_exercises %}
+                    {% for ex in prescribed_exercises %}
+                    <div class="mp-exercise-row">
+                        <span>{{ ex.exercise_name }}</span>
+                        <span class="mp-entry-sub">{{ ex.sets }} sets &times; {{ ex.reps }} reps</span>
+                    </div>
+                    {% endfor %}
+                    <a href="{% url 'patient-dashboard' %}" class="mp-add-btn" style="display:block;text-align:center;text-decoration:none;margin-top:10px;">View full tracker on Dashboard →</a>
+                {% else %}
+                <div class="mp-empty">No exercises prescribed yet.</div>
+                {% endif %}
+            </div>
+
+            <div class="mp-subtab-panel" data-subtab-panel="aids" hidden>
+                {% if manual_recs or auto_recs %}
+                <div class="mp-rec-grid">
+                    {% for rec in manual_recs %}
+                    <a href="{% url 'product-detail' rec.product.id %}" class="mp-rec-card" style="text-decoration:none;color:inherit;">
+                        <span class="mp-entry-name">{{ rec.product.name }}</span>
+                        <span class="mp-entry-sub">NPR {{ rec.product.price }} &middot; Physio Pick</span>
+                    </a>
+                    {% endfor %}
+                    {% for product in auto_recs %}
+                    <a href="{% url 'product-detail' product.id %}" class="mp-rec-card" style="text-decoration:none;color:inherit;">
+                        <span class="mp-entry-name">{{ product.name }}</span>
+                        <span class="mp-entry-sub">NPR {{ product.price }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="mp-empty">No aids or orthotic products recommended yet.</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- ===================== Nursing ===================== -->
+        <div class="mp-tab-panel mp-card" data-tab-panel="nursing" hidden>
+            <form method="post">
+                {% csrf_token %}
+                <div class="mp-field">
+                    <label for="nursing_vitals">Vitals Tracking</label>
+                    <div class="mp-hint">e.g. Blood pressure, pulse, temperature -- and how often checked.</div>
+                    <textarea id="nursing_vitals" name="nursing_vitals" placeholder="e.g. BP 120/80, Pulse 72, Temp 98.6F -- checked daily">{{ profile.nursing_vitals }}</textarea>
+                </div>
+                <div class="mp-field">
+                    <label for="nursing_wound_catheter_care">Wound / Catheter Care</label>
+                    <div class="mp-hint">Dressing changes, catheter, or ostomy care needs.</div>
+                    <textarea id="nursing_wound_catheter_care" name="nursing_wound_catheter_care" placeholder="e.g. Dressing change every 2 days">{{ profile.nursing_wound_catheter_care }}</textarea>
+                </div>
+                <div class="mp-field">
+                    <label for="nursing_mobility_assistance">Mobility Assistance Needs</label>
+                    <div class="mp-hint">Help needed with transfers, walking, toileting, etc.</div>
+                    <textarea id="nursing_mobility_assistance" name="nursing_mobility_assistance" placeholder="e.g. Needs assistance transferring from bed to wheelchair">{{ profile.nursing_mobility_assistance }}</textarea>
+                </div>
+                <button type="submit" class="mp-save-btn">Save Nursing Notes</button>
+            </form>
+        </div>
+
+        {% if profile.updated_at %}
+        <div class="mp-updated">Last updated {{ profile.updated_at|date:"d M Y, g:i A" }}</div>
+        {% endif %}
     </div>
+
+    <script>
+    (function () {
+        // ---- Main tabs ----
+        var tabs = document.querySelectorAll('.mp-tab');
+        var panels = document.querySelectorAll('.mp-tab-panel');
+        function activateTab(name) {
+            tabs.forEach(function (t) { t.classList.toggle('active', t.dataset.tab === name); });
+            panels.forEach(function (p) { p.hidden = p.dataset.tabPanel !== name; });
+            var url = new URL(window.location);
+            url.searchParams.set('tab', name);
+            window.history.replaceState({}, '', url);
+        }
+        tabs.forEach(function (t) { t.addEventListener('click', function () { activateTab(t.dataset.tab); }); });
+
+        var initial = new URLSearchParams(window.location.search).get('tab');
+        if (initial) activateTab(initial);
+
+        // ---- Physiotherapy sub-tabs ----
+        var subtabs = document.querySelectorAll('.mp-subtab');
+        var subpanels = document.querySelectorAll('.mp-subtab-panel');
+        subtabs.forEach(function (st) {
+            st.addEventListener('click', function () {
+                subtabs.forEach(function (t) { t.classList.toggle('active', t === st); });
+                subpanels.forEach(function (p) { p.hidden = p.dataset.subtabPanel !== st.dataset.subtab; });
+            });
+        });
+
+        // ---- Medicine search (debounced, server-side filter) ----
+        document.querySelectorAll('.mp-time-col').forEach(function (col) {
+            var input = col.querySelector('.mp-med-search');
+            var box = col.querySelector('.mp-med-suggestions');
+            var hiddenId = col.querySelector('.mp-med-pid');
+            var timer;
+            input.addEventListener('input', function () {
+                hiddenId.value = '';
+                clearTimeout(timer);
+                var q = input.value.trim();
+                if (q.length < 2) { box.style.display = 'none'; return; }
+                timer = setTimeout(function () {
+                    fetch('/patient-app/api/pharmacy/public-products/?search=' + encodeURIComponent(q))
+                        .then(function (r) { return r.json(); })
+                        .then(function (data) {
+                            var items = data.products || [];
+                            if (!items.length) {
+                                box.innerHTML = '<div class="mp-suggest-empty">No match in Pharmacy -- will be saved as a plain entry</div>';
+                            } else {
+                                box.innerHTML = items.map(function (it) {
+                                    return '<div class="mp-suggest-item" data-id="' + it.id + '" data-name="' + it.name.replace(/"/g, '&quot;') + '">' + it.name + '</div>';
+                                }).join('');
+                            }
+                            box.style.display = 'block';
+                            box.querySelectorAll('.mp-suggest-item').forEach(function (el) {
+                                el.addEventListener('click', function () {
+                                    input.value = el.dataset.name;
+                                    hiddenId.value = el.dataset.id;
+                                    box.style.display = 'none';
+                                });
+                            });
+                        });
+                }, 250);
+            });
+            document.addEventListener('click', function (e) {
+                if (!col.contains(e.target)) box.style.display = 'none';
+            });
+        });
+
+        // ---- Blood test search (client-side filter over the full catalog) ----
+        var labInput = document.getElementById('mp-lab-search');
+        var labBox = document.getElementById('mp-lab-suggestions');
+        var labHiddenId = document.getElementById('mp-lab-id');
+        var labTestsCache = null;
+        labInput.addEventListener('input', function () {
+            labHiddenId.value = '';
+            var q = labInput.value.trim().toLowerCase();
+            if (q.length < 2) { labBox.style.display = 'none'; return; }
+            var render = function () {
+                var matches = labTestsCache.filter(function (t) { return t.name.toLowerCase().indexOf(q) !== -1; }).slice(0, 10);
+                if (!matches.length) {
+                    labBox.innerHTML = '<div class="mp-suggest-empty">No match in Lab Tests -- will be saved as a plain entry</div>';
+                } else {
+                    labBox.innerHTML = matches.map(function (t) {
+                        return '<div class="mp-suggest-item" data-id="' + t.id + '" data-name="' + t.name.replace(/"/g, '&quot;') + '">' + t.name + '</div>';
+                    }).join('');
+                }
+                labBox.style.display = 'block';
+                labBox.querySelectorAll('.mp-suggest-item').forEach(function (el) {
+                    el.addEventListener('click', function () {
+                        labInput.value = el.dataset.name;
+                        labHiddenId.value = el.dataset.id;
+                        labBox.style.display = 'none';
+                    });
+                });
+            };
+            if (labTestsCache) { render(); return; }
+            fetch('/patient-app/api/lab/public-tests/')
+                .then(function (r) { return r.json(); })
+                .then(function (data) { labTestsCache = data.lab_tests || []; render(); });
+        });
+        document.addEventListener('click', function (e) {
+            if (!labInput.parentElement.contains(e.target)) labBox.style.display = 'none';
+        });
+    }());
+    </script>
 </body>
 </html>

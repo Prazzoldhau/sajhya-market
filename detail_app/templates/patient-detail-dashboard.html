@@ -16,16 +16,18 @@
         <a href="{% url 'refer-to' patient_id=patient.id %}" class="btn-gradient-a">Refer To</a>
     </div>
 
-    {% if medical_profile.current_medications or medical_profile.allergies or medical_profile.routine_tests or medical_profile.medical_history or medical_profile.physiotherapy_history %}
+    {% if medications or blood_tests or medical_profile.allergies or medical_profile.medical_history or medical_profile.nursing_vitals or medical_profile.nursing_wound_catheter_care or medical_profile.nursing_mobility_assistance %}
     <div style="background:white;border-radius:12px;padding:1rem 1.2rem;margin-bottom:1.2rem;
                 box-shadow:0 2px 10px rgba(0,0,0,.07);border:1.5px solid #e5e7eb;">
         <h3 style="font-size:1rem;font-weight:700;color:#374151;margin:0 0 0.6rem;">🩺 Medical Profile</h3>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0.6rem;font-size:0.85rem;color:#374151;">
-            {% if medical_profile.current_medications %}<div><strong style="color:#667eea;">Medications:</strong> {{ medical_profile.current_medications|linebreaksbr }}</div>{% endif %}
+            {% if medications %}<div><strong style="color:#667eea;">Medications:</strong> {% for m in medications %}{{ m.display_name }} ({{ m.get_time_of_day_display }}){% if m.instructions %} - {{ m.instructions }}{% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}</div>{% endif %}
             {% if medical_profile.allergies %}<div><strong style="color:#dc2626;">Allergies:</strong> {{ medical_profile.allergies|linebreaksbr }}</div>{% endif %}
-            {% if medical_profile.routine_tests %}<div><strong style="color:#667eea;">Routine Tests:</strong> {{ medical_profile.routine_tests|linebreaksbr }}</div>{% endif %}
+            {% if blood_tests %}<div><strong style="color:#667eea;">Routine Blood Tests:</strong> {% for b in blood_tests %}{{ b.display_name }}{% if b.notes %} ({{ b.notes }}){% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}</div>{% endif %}
             {% if medical_profile.medical_history %}<div><strong style="color:#667eea;">History:</strong> {{ medical_profile.medical_history|linebreaksbr }}</div>{% endif %}
-            {% if medical_profile.physiotherapy_history %}<div><strong style="color:#667eea;">Physiotherapy History:</strong> {{ medical_profile.physiotherapy_history|linebreaksbr }}</div>{% endif %}
+            {% if medical_profile.nursing_vitals %}<div><strong style="color:#667eea;">Nursing - Vitals:</strong> {{ medical_profile.nursing_vitals|linebreaksbr }}</div>{% endif %}
+            {% if medical_profile.nursing_wound_catheter_care %}<div><strong style="color:#667eea;">Nursing - Wound/Catheter Care:</strong> {{ medical_profile.nursing_wound_catheter_care|linebreaksbr }}</div>{% endif %}
+            {% if medical_profile.nursing_mobility_assistance %}<div><strong style="color:#667eea;">Nursing - Mobility Assistance:</strong> {{ medical_profile.nursing_mobility_assistance|linebreaksbr }}</div>{% endif %}
         </div>
         <p style="font-size:0.72rem;color:#9ca3af;margin:0.6rem 0 0;">Self-reported by the patient{% if medical_profile.updated_at %} · updated {{ medical_profile.updated_at|date:"d M Y" }}{% endif %}</p>
     </div>

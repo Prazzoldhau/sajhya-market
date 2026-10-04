@@ -37,6 +37,8 @@ def patient_detail(request, patient_id):
         "auto_recommended": auto_recommended,
         "matched_label": matched_label,
         "medical_profile": getattr(patient, 'medical_profile', None),
+        "medications": patient.medications.select_related('pharmacy_product'),
+        "blood_tests": patient.blood_test_entries.select_related('lab_test'),
     }
     return render(request, 'patient-detail-dashboard.html', context)
 

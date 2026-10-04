@@ -7,6 +7,10 @@ urlpatterns = [
     path('patient-signup/', views.patient_signup, name='patient-signup'),
     path('patient-dashboard/', views.patient_dashboard, name='patient-dashboard'),
     path('patient-medical-profile/', views.patient_medical_profile_page, name='patient-medical-profile'),
+    path('patient-medication/add/', views.patient_medication_add, name='patient-medication-add'),
+    path('patient-medication/<int:medication_id>/delete/', views.patient_medication_delete, name='patient-medication-delete'),
+    path('patient-bloodtest/add/', views.patient_bloodtest_add, name='patient-bloodtest-add'),
+    path('patient-bloodtest/<int:bloodtest_id>/delete/', views.patient_bloodtest_delete, name='patient-bloodtest-delete'),
     path('patient-logout/', views.patient_logout_web, name='patient-logout-web'),
 
     # Auth
@@ -69,6 +73,10 @@ urlpatterns = [
     path('api/recommended/', views.patient_api_recommended, name='patient_api_recommended'),
     path('api/medical-profile/', views.patient_api_medical_profile, name='patient_api_medical_profile'),
     path('api/medical-profile/update/', views.patient_api_medical_profile_update, name='patient_api_medical_profile_update'),
+    path('api/medical-profile/medication/add/', views.patient_api_medication_add, name='patient_api_medication_add'),
+    path('api/medical-profile/medication/<int:medication_id>/delete/', views.patient_api_medication_delete, name='patient_api_medication_delete'),
+    path('api/medical-profile/bloodtest/add/', views.patient_api_bloodtest_add, name='patient_api_bloodtest_add'),
+    path('api/medical-profile/bloodtest/<int:bloodtest_id>/delete/', views.patient_api_bloodtest_delete, name='patient_api_bloodtest_delete'),
     path('add-recs-to-cart/', views.add_recs_to_cart, name='add-recs-to-cart'),
 
     # Lab service (Blood Investigation)

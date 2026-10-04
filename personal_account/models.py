@@ -190,35 +190,98 @@ class AddPatient(models.Model):
 
 
 class PatientMedicalProfile(models.Model):
-    """Standing medical info the patient keeps up to date themselves --
-    current medications, allergies, routine tests, and history -- as
-    opposed to VisitNote.medication_changes etc., which is what changed
-    in one specific visit. A physio should check this before treating or
-    prescribing; it isn't tied to any single session."""
+    """Standing medical info the patient keeps up to date themselves, as
+    opposed to VisitNote.medication_changes etc., which is what changed in
+    one specific visit. A physio should check this before treating or
+    prescribing; it isn't tied to any single session.
+
+    Medications and routine/periodic blood tests used to be flat text
+    fields here -- superseded by the structured PatientMedication/
+    PatientBloodTest models below (searchable against the Pharmacy/Lab
+    catalogs instead of free text). Physiotherapy history similarly gave
+    way to the Physiotherapy tab's Assessment/Exercises/Aids, which pull
+    from assessment_app.RegionalAssessment, the patient's active
+    prescription, and PatientProductRecommendation instead of a text box.
+    Allergies and general medical history stay here as plain text --
+    nothing to search against for those."""
 
     patient = models.OneToOneField(AddPatient, on_delete=models.CASCADE, related_name='medical_profile')
-    current_medications = models.TextField(
-        blank=True, default='',
-        help_text='e.g. "Metformin 500mg twice daily, Atorvastatin 10mg at night"',
-    )
     allergies = models.TextField(blank=True, default='', help_text='Drug, food, or other allergies and reactions')
-    routine_tests = models.TextField(
-        blank=True, default='',
-        help_text='Tests done periodically, e.g. "HbA1c every 3 months, Lipid profile every 6 months"',
-    )
     medical_history = models.TextField(
         blank=True, default='',
         help_text='Past surgeries, chronic conditions, hospitalizations, family history',
     )
-    physiotherapy_history = models.TextField(
+
+    # --- Nursing tab ---
+    nursing_vitals = models.TextField(
         blank=True, default='',
-        help_text='Past physiotherapy treatment, injuries, or surgeries relevant to movement/rehab -- '
-                   'e.g. "ACL reconstruction 2022, 6 months of physio afterward"',
+        help_text='Vitals tracking, e.g. "BP 120/80, Pulse 72, Temp 98.6F -- checked daily"',
     )
+    nursing_wound_catheter_care = models.TextField(blank=True, default='', help_text='Wound dressing, catheter, or ostomy care needs')
+    nursing_mobility_assistance = models.TextField(blank=True, default='', help_text='Help needed with transfers, walking, toileting, etc.')
+
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"Medical profile: {self.patient.patient_name}"
+
+
+class PatientMedication(models.Model):
+    """One medication entry under the Medical Profile's Medication tab,
+    timed to a part of the day. `pharmacy_product` is set when the
+    patient found it in the Pharmacy search (the "pharmacy library");
+    `custom_name` is a plain-text fallback when they didn't -- an admin
+    can add it to PharmacyProduct via Django admin later so it's
+    searchable from then on, but that's a catalog-maintenance step, not
+    something this entry waits on."""
+
+    TIME_CHOICES = [
+        ('morning', 'Morning'),
+        ('evening', 'Evening'),
+        ('night', 'Night'),
+    ]
+
+    patient = models.ForeignKey(AddPatient, on_delete=models.CASCADE, related_name='medications')
+    time_of_day = models.CharField(max_length=10, choices=TIME_CHOICES)
+    pharmacy_product = models.ForeignKey(
+        'marketplace_app.PharmacyProduct', on_delete=models.SET_NULL, null=True, blank=True,
+    )
+    custom_name = models.CharField(max_length=200, blank=True, default='')
+    instructions = models.CharField(max_length=255, blank=True, default='', help_text='e.g. "500mg, after food"')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['time_of_day', 'created_at']
+
+    @property
+    def display_name(self):
+        return self.pharmacy_product.name if self.pharmacy_product else self.custom_name
+
+    def __str__(self):
+        return f"{self.display_name} ({self.get_time_of_day_display()}) - {self.patient.patient_name}"
+
+
+class PatientBloodTest(models.Model):
+    """One entry under the Medical Profile's Blood Tests tab -- tests the
+    patient gets done routinely, not a booking (see lab_app.LabTestRequest
+    for that). `lab_test` is set when found in the Lab Tests search (the
+    "lab test library"); `custom_name` is a plain-text fallback."""
+
+    patient = models.ForeignKey(AddPatient, on_delete=models.CASCADE, related_name='blood_test_entries')
+    lab_test = models.ForeignKey('lab_app.LabTest', on_delete=models.SET_NULL, null=True, blank=True)
+    custom_name = models.CharField(max_length=200, blank=True, default='')
+    notes = models.CharField(max_length=255, blank=True, default='', help_text='e.g. "every 3 months", or a past result')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    @property
+    def display_name(self):
+        return self.lab_test.name if self.lab_test else self.custom_name
+
+    def __str__(self):
+        return f"{self.display_name} - {self.patient.patient_name}"
 
 
 class ActivationCard(models.Model):
