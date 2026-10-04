@@ -309,6 +309,27 @@ class PatientAid(models.Model):
         return f"{self.display_name} - {self.patient.patient_name}"
 
 
+class PatientExercise(models.Model):
+    """One exercise the patient has saved to their own list from the
+    Physiotherapy tab's exercise-library search -- picked straight from
+    the library (always a real ExerciseMain, no custom-name fallback the
+    way Medication/Blood Tests/Aids have, since there's no open-ended
+    "any exercise name" case here). Distinct from PrescriptionExercise,
+    which is what a physio actually prescribes with real dosage; this is
+    just what the patient has flagged as wanting to keep handy."""
+
+    patient = models.ForeignKey(AddPatient, on_delete=models.CASCADE, related_name='saved_exercises')
+    exercise = models.ForeignKey('exercise_app.ExerciseMain', on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        unique_together = ['patient', 'exercise']
+
+    def __str__(self):
+        return f"{self.exercise.exercise_name} - {self.patient.patient_name}"
+
+
 class ActivationCard(models.Model):
     """A single-use recharge-card-style code that grants a patient
     `duration_days` of app access when redeemed (see AddPatient.

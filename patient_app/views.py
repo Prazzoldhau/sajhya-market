@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.db.models import Prefetch, F, Count
-from personal_account.models import AddPatient, ActivationCard, PatientPhysioPairing, PatientMedicalProfile, PatientMedication, PatientBloodTest, PatientAid, get_nepal_time
+from personal_account.models import AddPatient, ActivationCard, PatientPhysioPairing, PatientMedicalProfile, PatientMedication, PatientBloodTest, PatientAid, PatientExercise, get_nepal_time
 from visit_notes_app.models import VisitNote
 from exercise_app.models import Prescription, PrescriptionExercise, ExerciseFeedback, Region, SubRegion, ExerciseMain
 from marketplace_app.models import Category, Product, ProductImage, ProductVariant, Order, OrderItem, Commission, CommissionRate, PatientProductRecommendation, PharmacyProduct
@@ -317,13 +317,14 @@ def patient_medical_profile_page(request):
     auto_recs = auto_recs.exclude(id__in=manual_ids).select_related('category')[:8]
 
     aids = patient.aids.select_related('product')
+    saved_exercises = patient.saved_exercises.select_related('exercise')
 
     # Counts for the tab-card badges at the top of the page -- real data
     # only (no invented "pending refill"/"next session" stand-ins for
     # things this app doesn't actually track).
     medication_count = sum(len(v) for v in medications_by_time.values())
     blood_test_count = blood_tests.count()
-    physio_record_count = assessments.count() + visit_notes.count() + aids.count()
+    physio_record_count = assessments.count() + visit_notes.count() + aids.count() + saved_exercises.count()
 
     return render(request, 'patient-medical-profile.html', {
         'patient': patient,
@@ -342,6 +343,7 @@ def patient_medical_profile_page(request):
         'blood_test_count': blood_test_count,
         'physio_record_count': physio_record_count,
         'aids': aids,
+        'saved_exercises': saved_exercises,
     })
 
 
@@ -429,6 +431,34 @@ def patient_aid_delete(request, aid_id):
         patient_id = request.session.get('patient_id')
         PatientAid.objects.filter(id=aid_id, patient_id=patient_id).delete()
     return redirect(f"{reverse('patient-medical-profile')}?tab=physiotherapy&subtab=aids")
+
+
+@patient_login_required
+def patient_exercise_add_bulk(request):
+    """Adds every ticked exercise from a library search to the patient's
+    own saved list in one go -- multi-select, unlike Medication/Blood
+    Tests/Aids's one-at-a-time add, since picking several exercises at
+    once from a search is the whole point here."""
+    if request.method == "POST":
+        patient_id = request.session.get('patient_id')
+        patient = get_object_or_404(AddPatient, id=patient_id)
+        exercise_ids = request.POST.getlist('exercise_ids')
+        existing_ids = set(patient.saved_exercises.values_list('exercise_id', flat=True))
+        valid_ids = ExerciseMain.objects.filter(id__in=exercise_ids).values_list('id', flat=True)
+        new_rows = [
+            PatientExercise(patient=patient, exercise_id=eid)
+            for eid in valid_ids if eid not in existing_ids
+        ]
+        PatientExercise.objects.bulk_create(new_rows)
+    return redirect(f"{reverse('patient-medical-profile')}?tab=physiotherapy&subtab=exercises")
+
+
+@patient_login_required
+def patient_exercise_delete(request, saved_exercise_id):
+    if request.method == "POST":
+        patient_id = request.session.get('patient_id')
+        PatientExercise.objects.filter(id=saved_exercise_id, patient_id=patient_id).delete()
+    return redirect(f"{reverse('patient-medical-profile')}?tab=physiotherapy&subtab=exercises")
 
 
 def add_recs_to_cart(request):
@@ -2135,6 +2165,13 @@ def _medical_profile_dict(profile):
                 'notes': a.notes,
             } for a in patient.aids.select_related('product')
         ],
+        'saved_exercises': [
+            {
+                'id': se.id,
+                'exercise_id': se.exercise_id,
+                'name': se.exercise.exercise_name,
+            } for se in patient.saved_exercises.select_related('exercise')
+        ],
     }
 
 
@@ -2285,4 +2322,33 @@ def patient_api_aid_delete(request, aid_id):
     if err:
         return err
     PatientAid.objects.filter(id=aid_id, patient=patient).delete()
+    return JsonResponse({'success': True})
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def patient_api_exercise_add_bulk(request):
+    patient, err = _patient_required(request)
+    if err:
+        return err
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON'}, status=400)
+
+    exercise_ids = data.get('exercise_ids') or []
+    existing_ids = set(patient.saved_exercises.values_list('exercise_id', flat=True))
+    valid_ids = ExerciseMain.objects.filter(id__in=exercise_ids).values_list('id', flat=True)
+    new_rows = [PatientExercise(patient=patient, exercise_id=eid) for eid in valid_ids if eid not in existing_ids]
+    PatientExercise.objects.bulk_create(new_rows)
+    return JsonResponse({'success': True, 'added': len(new_rows)}, status=201)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def patient_api_exercise_delete(request, saved_exercise_id):
+    patient, err = _patient_required(request)
+    if err:
+        return err
+    PatientExercise.objects.filter(id=saved_exercise_id, patient=patient).delete()
     return JsonResponse({'success': True})

@@ -98,6 +98,10 @@
         .mp-tile .mp-entry-del { position: absolute; top: 6px; right: 6px; }
         .mp-tile-play { color: #667eea; font-size: 0.7rem; font-weight: 700; }
         button.mp-tile { width: 100%; font-family: inherit; text-align: left; }
+        .mp-tile-exercise { padding-right: 30px; }
+        .mp-ex-checkbox-wrap { position: absolute; top: 8px; right: 8px; z-index: 1; }
+        .mp-ex-checkbox-wrap input { width: 17px; height: 17px; cursor: pointer; }
+        .mp-ex-open { cursor: pointer; }
 
         /* Exercise detail modal */
         .mp-modal-backdrop { position: fixed; inset: 0; background: rgba(17,24,39,.5); z-index: 50;
@@ -366,11 +370,31 @@
                 <div class="mp-empty">No exercises prescribed yet.</div>
                 {% endif %}
 
-                <h4 style="font-size:0.85rem;color:#374151;margin:18px 0 8px;">Search Exercise Library</h4>
-                <div class="mp-add-form">
-                    <input type="text" id="mp-exercise-search" placeholder="Search exercises by name..." autocomplete="off">
-                    <div class="mp-tile-grid" id="mp-exercise-suggestions" style="margin-top:10px;"></div>
+                <h4 style="font-size:0.85rem;color:#374151;margin:18px 0 8px;">My Exercises</h4>
+                <div class="mp-tile-grid" id="mp-my-exercises-grid">
+                    {% for se in saved_exercises %}
+                    <div class="mp-tile">
+                        <div class="mp-entry-name">{{ se.exercise.exercise_name }}</div>
+                        {% if se.exercise.default_sets %}<div class="mp-entry-sub">{{ se.exercise.default_sets }} sets &times; {{ se.exercise.default_reps }} reps</div>{% endif %}
+                        <form class="mp-entry-del" method="post" action="{% url 'patient-exercise-delete' se.id %}">
+                            {% csrf_token %}
+                            <button type="submit" title="Remove">✕</button>
+                        </form>
+                    </div>
+                    {% empty %}
+                    <div class="mp-empty" id="mp-my-exercises-empty">No exercises saved yet -- search below and tick the ones you want.</div>
+                    {% endfor %}
                 </div>
+
+                <h4 style="font-size:0.85rem;color:#374151;margin:18px 0 8px;">Search Exercise Library</h4>
+                <form id="mp-exercise-bulk-form" method="post" action="{% url 'patient-exercise-add-bulk' %}">
+                    {% csrf_token %}
+                    <div class="mp-add-form">
+                        <input type="text" id="mp-exercise-search" placeholder="Search exercises by name..." autocomplete="off">
+                        <div class="mp-tile-grid" id="mp-exercise-suggestions" style="margin-top:10px;"></div>
+                    </div>
+                    <button type="submit" class="mp-add-btn" id="mp-exercise-add-selected" hidden>+ Add Selected (<span id="mp-exercise-selected-count">0</span>)</button>
+                </form>
             </div>
 
             <div class="mp-subtab-panel" data-subtab-panel="aids" hidden>
@@ -652,17 +676,29 @@
             });
         });
 
-        // ---- Exercise library search (debounced) -- every result renders
-        // as a clickable tile opening the modal above. ----
+        // ---- Exercise library search (debounced) -- every result is a
+        // tile: clicking its body opens the detail modal, its checkbox
+        // (inside the bulk-add form, native name="exercise_ids") lets you
+        // tick several and add them all to "My Exercises" at once. ----
         var exInput = document.getElementById('mp-exercise-search');
         var exBox = document.getElementById('mp-exercise-suggestions');
+        var exAddBtn = document.getElementById('mp-exercise-add-selected');
+        var exSelectedCount = document.getElementById('mp-exercise-selected-count');
         var exTimer;
         var exResultsCache = {};
         function escapeHtml(s) { return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+        function updateSelectedCount() {
+            var n = exBox.querySelectorAll('.mp-ex-checkbox-wrap input:checked').length;
+            exSelectedCount.textContent = n;
+            exAddBtn.hidden = n === 0;
+        }
+        // Search box lives inside the bulk-add <form> (so checked boxes
+        // submit with it) -- stop Enter from submitting it while typing.
+        exInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') e.preventDefault(); });
         exInput.addEventListener('input', function () {
             clearTimeout(exTimer);
             var q = exInput.value.trim();
-            if (q.length < 2) { exBox.innerHTML = ''; return; }
+            if (q.length < 2) { exBox.innerHTML = ''; updateSelectedCount(); return; }
             exTimer = setTimeout(function () {
                 fetch('/patient-app/api/browse/public-exercises/search/?q=' + encodeURIComponent(q))
                     .then(function (r) { return r.json(); })
@@ -670,18 +706,21 @@
                         var items = data.exercises || [];
                         if (!items.length) {
                             exBox.innerHTML = '<div class="mp-empty">No exercises match "' + escapeHtml(q) + '"</div>';
+                            updateSelectedCount();
                             return;
                         }
                         exResultsCache = {};
                         items.forEach(function (ex) { exResultsCache[ex.id] = ex; });
                         exBox.innerHTML = items.map(function (ex) {
                             var videoUrl = ex.hosted_video_url || ex.youtube_url;
-                            var inner = '<div class="mp-entry-name">' + escapeHtml(ex.exercise_name) + '</div>' +
+                            var inner = '<div class="mp-ex-checkbox-wrap"><input type="checkbox" name="exercise_ids" value="' + ex.id + '"></div>' +
+                                '<div class="mp-ex-open" data-id="' + ex.id + '"><div class="mp-entry-name">' + escapeHtml(ex.exercise_name) + '</div>' +
                                 '<div class="mp-entry-sub">' + (ex.default_sets || '-') + ' sets &times; ' + (ex.default_reps || '-') + ' reps</div>';
                             if (videoUrl) inner += '<div class="mp-tile-play">▶ Watch</div>';
-                            return '<button type="button" class="mp-tile mp-tile-search-result" data-id="' + ex.id + '">' + inner + '</button>';
+                            inner += '</div>';
+                            return '<div class="mp-tile mp-tile-exercise">' + inner + '</div>';
                         }).join('');
-                        exBox.querySelectorAll('.mp-tile-search-result').forEach(function (el) {
+                        exBox.querySelectorAll('.mp-ex-open').forEach(function (el) {
                             el.addEventListener('click', function () {
                                 var ex = exResultsCache[el.dataset.id];
                                 if (!ex) return;
@@ -693,6 +732,10 @@
                                 });
                             });
                         });
+                        exBox.querySelectorAll('.mp-ex-checkbox-wrap input').forEach(function (cb) {
+                            cb.addEventListener('change', updateSelectedCount);
+                        });
+                        updateSelectedCount();
                     });
             }, 250);
         });
