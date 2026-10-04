@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .models import LabTest, LabTestPanel, LabTestRequest, LabTestRequestItem
+from personal_account.models import AddPatient
 
 # LabTestRequest/LabTestRequestItem, not marketplace_app.Order -- this is
 # the same request model the patient mobile app already books through
@@ -19,6 +20,17 @@ from .models import LabTest, LabTestPanel, LabTestRequest, LabTestRequestItem
 # several, one submit, no per-item page hops). One POST here books
 # everything checked as a single LabTestRequest with one LabTestRequestItem
 # per test/panel.
+
+
+def _logged_in_patient(request):
+    """The session-based patient login (see patient_app.patient_login) is
+    shared across the whole site, not just /patient-app/ -- this lets any
+    storefront recognise a logged-in patient and skip asking for details
+    it already has on file."""
+    patient_id = request.session.get('patient_id')
+    if not patient_id:
+        return None
+    return AddPatient.objects.filter(id=patient_id, is_deleted=False).first()
 
 
 def lab_tests(request):
@@ -47,25 +59,32 @@ def lab_tests(request):
         'panels': panels,
         'categorized_tests': categorized_tests,
         'search': search,
+        'patient': _logged_in_patient(request),
     }
     return render(request, 'lab/lab_tests.html', context)
 
 
 def _handle_bulk_booking(request):
     selected_keys = request.POST.getlist('items')
-    customer_name = request.POST.get('customer_name', '').strip()
-    customer_email = request.POST.get('customer_email', '').strip()
-    customer_phone = request.POST.get('customer_phone', '').strip()
-    delivery_address = request.POST.get('delivery_address', '').strip()
     notes = request.POST.get('notes', '').strip()
+    patient = _logged_in_patient(request)
 
     if not selected_keys:
         messages.error(request, 'Select at least one test or panel first.')
         return redirect('lab-tests')
 
-    if not all([customer_name, customer_email, customer_phone, delivery_address]):
-        messages.error(request, 'Please fill in all required fields.')
-        return redirect('lab-tests')
+    # A logged-in patient already has name/phone on file -- same as the
+    # native app's own booking flow (patient_api_lab_request_create), which
+    # never asks for these either. Anonymous website visitors still need
+    # to tell us who they are and where to collect the sample.
+    if not patient:
+        customer_name = request.POST.get('customer_name', '').strip()
+        customer_email = request.POST.get('customer_email', '').strip()
+        customer_phone = request.POST.get('customer_phone', '').strip()
+        delivery_address = request.POST.get('delivery_address', '').strip()
+        if not all([customer_name, customer_email, customer_phone, delivery_address]):
+            messages.error(request, 'Please fill in all required fields.')
+            return redirect('lab-tests')
 
     items = []  # (lab_test_or_None, lab_panel_or_None, name, price)
     for key in selected_keys:
@@ -85,14 +104,21 @@ def _handle_bulk_booking(request):
 
     total = sum((price for _, _, _, price in items), Decimal('0.00'))
 
-    lab_request = LabTestRequest.objects.create(
-        customer_name=customer_name,
-        customer_email=customer_email,
-        customer_phone=customer_phone,
-        collection_address=delivery_address,
-        notes=notes,
-        total_amount=total,
-    )
+    if patient:
+        lab_request = LabTestRequest.objects.create(
+            patient=patient,
+            notes=notes,
+            total_amount=total,
+        )
+    else:
+        lab_request = LabTestRequest.objects.create(
+            customer_name=customer_name,
+            customer_email=customer_email,
+            customer_phone=customer_phone,
+            collection_address=delivery_address,
+            notes=notes,
+            total_amount=total,
+        )
     for lab_test, lab_panel, name, price in items:
         LabTestRequestItem.objects.create(
             request=lab_request,

@@ -34,25 +34,18 @@
                     <h2>Test Panels</h2>
                     <span class="store-sub">Bundled tests at a discount</span>
                 </div>
-                <div class="vacancy-list">
+                <div class="store-lab-grid">
                     {% for panel in panels %}
-                    <div class="vacancy-card store-lab-selectable">
+                    <div class="store-lab-card store-lab-selectable">
                         <label class="store-lab-check">
                             <input type="checkbox" name="items" value="panel-{{ panel.id }}" data-name="{{ panel.name }}" data-price="{{ panel.price }}">
                             <span></span>
                         </label>
                         <a href="{% url 'lab-panel-detail' panel.id %}" class="store-lab-card-link">
-                            <h3>{{ panel.name }}</h3>
-                            {% if panel.description %}<p class="store-lab-panel-desc">{{ panel.description }}</p>{% endif %}
-                            <div class="vacancy-tags">
-                                <span class="vacancy-tag">{{ panel.tests.count }} tests included</span>
-                                {% if panel.is_featured %}<span class="vacancy-tag">Popular</span>{% endif %}
-                            </div>
+                            <p class="store-lab-card-name">{{ panel.name }}</p>
+                            <p class="store-lab-card-meta">{{ panel.tests.count }} tests{% if panel.is_featured %} · Popular{% endif %}{% if panel.savings > 0 %} · Save NPR {{ panel.savings }}{% endif %}</p>
+                            <div class="store-lab-card-price">NPR {{ panel.price }}</div>
                         </a>
-                        <div class="vacancy-card-footer">
-                            {% if panel.savings > 0 %}<span class="store-lab-savings">Save NPR {{ panel.savings }}</span>{% else %}<span></span>{% endif %}
-                            <span class="vacancy-apply-cta">NPR {{ panel.price }}</span>
-                        </div>
                     </div>
                     {% endfor %}
                 </div>
@@ -108,6 +101,9 @@
                     <div id="lab-empty-msg" class="store-sub" style="margin-bottom:1rem">Nothing selected yet — tick the tests or panels above you'd like to book.</div>
                     <div id="lab-selected-list" class="store-lab-selected-list"></div>
 
+                    {% if patient %}
+                    <p class="store-sub" style="margin-bottom:1rem">Booking as <strong>{{ patient.patient_name }}</strong> ({{ patient.patient_code }}) — no other details needed.</p>
+                    {% else %}
                     <div class="store-form-group">
                         <label class="store-label">Full Name <span class="store-required">*</span></label>
                         <input type="text" name="customer_name" class="store-input" placeholder="Your full name" required
@@ -131,6 +127,7 @@
                         <textarea name="delivery_address" class="store-input store-textarea" rows="2"
                                   placeholder="Where should our phlebotomist collect your sample?" required></textarea>
                     </div>
+                    {% endif %}
 
                     <div class="store-form-group">
                         <label class="store-label">Notes</label>

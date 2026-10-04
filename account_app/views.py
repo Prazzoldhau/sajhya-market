@@ -143,6 +143,33 @@ def login_view_enterprise(request):
     return render(request, 'accounts_app/login-enterprise.html')
 
 
+def login_chooser(request):
+    """The site's one global "Sign in" link (header nav on the homepage,
+    Marketplace, Pharmacy, Lab Tests, Donate, Careers) used to go straight
+    to login_view below, which only ever authenticates against this app's
+    own User table (physio/clinic/enterprise). A patient -- a completely
+    separate, session-based account (personal_account.AddPatient, see
+    patient_app.patient_login) -- has no row there at all, so landing on
+    that form and entering a real patient_code/password always failed with
+    "Invalid credentials", however correct those details were.
+
+    This page is the fork in the road instead: already logged in either
+    way, skip straight past it; otherwise ask which kind of account this
+    is before going to the login form that actually matches it."""
+    if request.session.get('patient_id'):
+        return redirect('patient-dashboard')
+    if request.user.is_authenticated:
+        if request.user.user_type == 'clinic':
+            return redirect('clinic-dashboard')
+        elif request.user.user_type == 'personal':
+            return redirect('personal-dashboard')
+        elif request.user.user_type == 'enterprise':
+            return redirect('enterprise-dashboard')
+        elif request.user.user_type == 'rider':
+            return redirect('rider-dashboard')
+    return render(request, 'login-chooser.html')
+
+
 def login_view(request):
     if request.method == 'POST':
         username = request.POST.get('username')
