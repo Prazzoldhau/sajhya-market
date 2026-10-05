@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .patientform import PatientForm
-from .models import AddPatient
+from .models import AddPatient, PatientPhysioPairing
 from datetime import datetime
 from django.db.models import Q, Sum
 from django.http import JsonResponse
@@ -29,12 +29,69 @@ def create_patient(request):
     return render(request, 'patients/create-patient.html', {'patient_form': form})
 
 
+def _dashboard_url_name(user):
+    return {'clinic': 'clinic-dashboard', 'enterprise': 'enterprise-dashboard'}.get(user.user_type, 'personal-dashboard')
+
+
+@login_required
+def pair_existing_patient(request):
+    """Lets a physio link themselves to an already-existing patient --
+    most often a self-registered one with no created_by -- by their
+    Patient Code or username, instead of only being reachable by the
+    patient scanning the physio's QR from the app (patient_api_pair_physio,
+    the only way this could happen before). Purely additive: creates a
+    PatientPhysioPairing row and never touches AddPatient.created_by, so
+    it can't take a patient away from whoever already has access."""
+    if request.method == 'POST':
+        identifier = request.POST.get('identifier', '').strip()
+        patient = AddPatient.objects.filter(patient_code=identifier, is_deleted=False).first()
+        if not patient:
+            patient = AddPatient.objects.filter(username__iexact=identifier, is_deleted=False).first()
+
+        if not patient:
+            messages.error(request, f'No patient found with code or username "{identifier}".')
+            return redirect('pair-existing-patient')
+
+        pairing, created = PatientPhysioPairing.objects.get_or_create(
+            patient=patient, physio=request.user,
+            defaults={'source': 'physio_claimed'},
+        )
+        if created:
+            messages.success(request, f'{patient.patient_name} ({patient.patient_code}) is now linked to your patient list.')
+        else:
+            messages.info(request, f'{patient.patient_name} was already linked to you.')
+        return redirect(_dashboard_url_name(request.user))
+
+    pairings = PatientPhysioPairing.objects.filter(physio=request.user).select_related('patient').order_by('-paired_at')
+    return render(request, 'patients/pair-existing-patient.html', {'pairings': pairings})
+
+
+@login_required
+def unpair_patient(request, pairing_id):
+    """Undoes pair_existing_patient (or an app-side QR pairing) -- a
+    correction path for mistyped codes or a patient who shouldn't have
+    been linked. Only ever deletes the PatientPhysioPairing row, never
+    the patient record itself, and only this physio's own pairing."""
+    if request.method == 'POST':
+        pairing = PatientPhysioPairing.objects.filter(id=pairing_id, physio=request.user).first()
+        if pairing:
+            patient_name = pairing.patient.patient_name
+            pairing.delete()
+            messages.success(request, f'{patient_name} removed from your patient list.')
+    return redirect(_dashboard_url_name(request.user))
+
+
 @login_required
 def personal_dashboard(request):
-    # Base queryset: only patients created by the logged-in user
+    # Patients this user either created directly, or has been linked to
+    # via PatientPhysioPairing (self-registered patients paired by QR
+    # from the app, or added here by code/username) -- created_by alone
+    # used to miss every paired-but-not-created patient entirely.
+    paired_ids = PatientPhysioPairing.objects.filter(physio=request.user).values_list('patient_id', flat=True)
     patients = AddPatient.objects.filter(
-        created_by=request.user, origin_clinic__isnull=True, origin_enterprise__isnull=True
-    ).order_by('-created_at')
+        Q(created_by=request.user) | Q(id__in=paired_ids),
+        origin_clinic__isnull=True, origin_enterprise__isnull=True,
+    ).distinct().order_by('-created_at')
 
     # --- Search handling ---
     search_type = request.GET.get('search_type')

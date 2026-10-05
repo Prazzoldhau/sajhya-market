@@ -423,6 +423,7 @@ class PatientPhysioPairing(models.Model):
         ('self_registered_qr', 'Self-registered via QR'),
         ('physio_created', 'Physio-created'),
         ('referral', 'Referral'),
+        ('physio_claimed', 'Physio Added Existing Patient'),
     )
 
     patient = models.ForeignKey(AddPatient, on_delete=models.CASCADE, related_name='pairings')
