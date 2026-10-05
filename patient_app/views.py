@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.db.models import Prefetch, F, Count
-from personal_account.models import AddPatient, ActivationCard, PatientPhysioPairing, PatientMedicalProfile, PatientMedication, PatientBloodTest, PatientAid, PatientExercise, PatientAssessmentEntry, get_nepal_time
+from personal_account.models import AddPatient, ActivationCard, PatientPhysioPairing, PatientMedicalProfile, PatientMedication, PatientBloodTest, PatientAid, PatientExercise, PatientAssessmentEntry, PatientDietEntry, get_nepal_time
 from visit_notes_app.models import VisitNote
 from assessment_app.models import SpecialTestReference
 from exercise_app.models import Prescription, PrescriptionExercise, ExerciseFeedback, Region, SubRegion, ExerciseMain
@@ -272,6 +272,14 @@ def _medical_profile_context(patient):
 
     blood_tests = patient.blood_test_entries.select_related('lab_test', 'recorded_by')
 
+    diet_entries_by_meal = {'breakfast': [], 'lunch': [], 'dinner': [], 'snacks': []}
+    for d in patient.diet_entries.select_related('recorded_by'):
+        diet_entries_by_meal[d.meal_time].append(d)
+    diet_columns = [
+        {'key': key, 'label': label, 'entries': diet_entries_by_meal[key]}
+        for key, label in PatientDietEntry.MEAL_CHOICES
+    ]
+
     # Physiotherapy sub-tabs -- Assessment (read-only feed of physio-
     # recorded assessment_app records + the patient/physio-added
     # reference-tool list), Exercises (prescribed summary + a search of
@@ -303,6 +311,7 @@ def _medical_profile_context(patient):
     # things this app doesn't actually track).
     medication_count = sum(len(v) for v in medications_by_time.values())
     blood_test_count = blood_tests.count()
+    diet_count = sum(len(v) for v in diet_entries_by_meal.values())
     physio_record_count = (
         assessments.count() + visit_notes.count() + aids.count()
         + saved_exercises.count() + assessment_entries.count() + scale_assessments.count()
@@ -322,10 +331,12 @@ def _medical_profile_context(patient):
         'matched_label': matched_label,
         'medication_count': medication_count,
         'blood_test_count': blood_test_count,
+        'diet_count': diet_count,
         'physio_record_count': physio_record_count,
         'aids': aids,
         'saved_exercises': saved_exercises,
         'assessment_entries': assessment_entries,
+        'diet_columns': diet_columns,
     }
 
 
@@ -342,20 +353,24 @@ def _attach_medical_profile_urls(context, patient, is_physio):
         context['bloodtest_add_url'] = reverse('physio-bloodtest-add', kwargs=pid)
         context['aid_add_url'] = reverse('physio-aid-add', kwargs=pid)
         context['assessment_entry_add_url'] = reverse('physio-assessment-entry-add', kwargs=pid)
+        context['diet_add_url'] = reverse('physio-diet-add', kwargs=pid)
         med_delete = lambda mid: reverse('physio-medication-delete', kwargs={**pid, 'medication_id': mid})
         bt_delete = lambda bid: reverse('physio-bloodtest-delete', kwargs={**pid, 'bloodtest_id': bid})
         aid_delete = lambda aid: reverse('physio-aid-delete', kwargs={**pid, 'aid_id': aid})
         entry_delete = lambda eid: reverse('physio-assessment-entry-delete', kwargs={**pid, 'entry_id': eid})
+        diet_delete = lambda did: reverse('physio-diet-delete', kwargs={**pid, 'diet_id': did})
     else:
         context['medical_profile_save_url'] = reverse('patient-medical-profile')
         context['medication_add_url'] = reverse('patient-medication-add')
         context['bloodtest_add_url'] = reverse('patient-bloodtest-add')
         context['aid_add_url'] = reverse('patient-aid-add')
         context['assessment_entry_add_url'] = reverse('patient-assessment-entry-add')
+        context['diet_add_url'] = reverse('patient-diet-add')
         med_delete = lambda mid: reverse('patient-medication-delete', kwargs={'medication_id': mid})
         bt_delete = lambda bid: reverse('patient-bloodtest-delete', kwargs={'bloodtest_id': bid})
         aid_delete = lambda aid: reverse('patient-aid-delete', kwargs={'aid_id': aid})
         entry_delete = lambda eid: reverse('patient-assessment-entry-delete', kwargs={'entry_id': eid})
+        diet_delete = lambda did: reverse('patient-diet-delete', kwargs={'diet_id': did})
 
     for bucket in context['medications_by_time'].values():
         for m in bucket:
@@ -366,6 +381,9 @@ def _attach_medical_profile_urls(context, patient, is_physio):
         aid.delete_url = aid_delete(aid.id)
     for entry in context['assessment_entries']:
         entry.delete_url = entry_delete(entry.id)
+    for col in context['diet_columns']:
+        for d in col['entries']:
+            d.delete_url = diet_delete(d.id)
 
 
 @patient_login_required
@@ -538,6 +556,27 @@ def patient_assessment_entry_delete(request, entry_id):
         patient_id = request.session.get('patient_id')
         PatientAssessmentEntry.objects.filter(id=entry_id, patient_id=patient_id).delete()
     return redirect(f"{reverse('patient-medical-profile')}?tab=physiotherapy&subtab=assessment")
+
+
+@patient_login_required
+def patient_diet_add(request):
+    if request.method == "POST":
+        patient_id = request.session.get('patient_id')
+        patient = get_object_or_404(AddPatient, id=patient_id)
+        meal_time = request.POST.get('meal_time', '').strip()
+        food_item = request.POST.get('food_item', '').strip()
+        notes = request.POST.get('notes', '').strip()
+        if meal_time in dict(PatientDietEntry.MEAL_CHOICES) and food_item:
+            PatientDietEntry.objects.create(patient=patient, meal_time=meal_time, food_item=food_item, notes=notes)
+    return redirect(f"{reverse('patient-medical-profile')}?tab=diet")
+
+
+@patient_login_required
+def patient_diet_delete(request, diet_id):
+    if request.method == "POST":
+        patient_id = request.session.get('patient_id')
+        PatientDietEntry.objects.filter(id=diet_id, patient_id=patient_id).delete()
+    return redirect(f"{reverse('patient-medical-profile')}?tab=diet")
 
 
 def add_recs_to_cart(request):
@@ -2277,6 +2316,14 @@ def _medical_profile_dict(profile):
                 'notes': ae.notes,
             } for ae in patient.assessment_entries.select_related('reference')
         ],
+        'diet_entries': [
+            {
+                'id': d.id,
+                'meal_time': d.meal_time,
+                'food_item': d.food_item,
+                'notes': d.notes,
+            } for d in patient.diet_entries.all()
+        ],
     }
 
 
@@ -2487,4 +2534,37 @@ def patient_api_assessment_entry_delete(request, entry_id):
     if err:
         return err
     PatientAssessmentEntry.objects.filter(id=entry_id, patient=patient).delete()
+    return JsonResponse({'success': True})
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def patient_api_diet_add(request):
+    patient, err = _patient_required(request)
+    if err:
+        return err
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON'}, status=400)
+
+    meal_time = data.get('meal_time', '').strip()
+    food_item = data.get('food_item', '').strip()
+    notes = data.get('notes', '').strip()
+    if meal_time not in dict(PatientDietEntry.MEAL_CHOICES):
+        return JsonResponse({'success': False, 'error': 'Invalid meal_time'}, status=400)
+    if not food_item:
+        return JsonResponse({'success': False, 'error': 'food_item required'}, status=400)
+
+    entry = PatientDietEntry.objects.create(patient=patient, meal_time=meal_time, food_item=food_item, notes=notes)
+    return JsonResponse({'success': True, 'id': entry.id, 'food_item': entry.food_item}, status=201)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def patient_api_diet_delete(request, diet_id):
+    patient, err = _patient_required(request)
+    if err:
+        return err
+    PatientDietEntry.objects.filter(id=diet_id, patient=patient).delete()
     return JsonResponse({'success': True})

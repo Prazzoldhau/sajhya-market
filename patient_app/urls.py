@@ -17,6 +17,8 @@ urlpatterns = [
     path('patient-exercise/<int:saved_exercise_id>/delete/', views.patient_exercise_delete, name='patient-exercise-delete'),
     path('patient-assessment-entry/add/', views.patient_assessment_entry_add, name='patient-assessment-entry-add'),
     path('patient-assessment-entry/<int:entry_id>/delete/', views.patient_assessment_entry_delete, name='patient-assessment-entry-delete'),
+    path('patient-diet/add/', views.patient_diet_add, name='patient-diet-add'),
+    path('patient-diet/<int:diet_id>/delete/', views.patient_diet_delete, name='patient-diet-delete'),
     path('patient-logout/', views.patient_logout_web, name='patient-logout-web'),
 
     # Auth
@@ -89,6 +91,8 @@ urlpatterns = [
     path('api/medical-profile/exercise/<int:saved_exercise_id>/delete/', views.patient_api_exercise_delete, name='patient_api_exercise_delete'),
     path('api/medical-profile/assessment-entry/add/', views.patient_api_assessment_entry_add, name='patient_api_assessment_entry_add'),
     path('api/medical-profile/assessment-entry/<int:entry_id>/delete/', views.patient_api_assessment_entry_delete, name='patient_api_assessment_entry_delete'),
+    path('api/medical-profile/diet/add/', views.patient_api_diet_add, name='patient_api_diet_add'),
+    path('api/medical-profile/diet/<int:diet_id>/delete/', views.patient_api_diet_delete, name='patient_api_diet_delete'),
     path('add-recs-to-cart/', views.add_recs_to_cart, name='add-recs-to-cart'),
 
     # Lab service (Blood Investigation)

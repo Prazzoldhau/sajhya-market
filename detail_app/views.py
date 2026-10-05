@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from datetime import date
 from personal_account.models import (
     AddPatient, Clinic, PatientMedicalProfile, PatientMedication,
-    PatientBloodTest, PatientAid, PatientAssessmentEntry,
+    PatientBloodTest, PatientAid, PatientAssessmentEntry, PatientDietEntry,
 )
 from exercise_app.models import Prescription, PrescriptionExercise, ExerciseFeedback
 from django.http import JsonResponse
@@ -386,3 +386,25 @@ def physio_assessment_entry_delete(request, patient_id, entry_id):
     if request.method == "POST":
         PatientAssessmentEntry.objects.filter(id=entry_id, patient_id=patient_id).delete()
     return _physio_tab_redirect(patient_id, 'physiotherapy', 'assessment')
+
+
+@login_required
+def physio_diet_add(request, patient_id):
+    patient = get_object_or_404(AddPatient, id=patient_id)
+    if request.method == "POST":
+        meal_time = request.POST.get('meal_time', '').strip()
+        food_item = request.POST.get('food_item', '').strip()
+        notes = request.POST.get('notes', '').strip()
+        if meal_time in dict(PatientDietEntry.MEAL_CHOICES) and food_item:
+            PatientDietEntry.objects.create(
+                patient=patient, meal_time=meal_time, food_item=food_item, notes=notes,
+                recorded_by=request.user,
+            )
+    return _physio_tab_redirect(patient_id, 'diet')
+
+
+@login_required
+def physio_diet_delete(request, patient_id, diet_id):
+    if request.method == "POST":
+        PatientDietEntry.objects.filter(id=diet_id, patient_id=patient_id).delete()
+    return _physio_tab_redirect(patient_id, 'diet')
