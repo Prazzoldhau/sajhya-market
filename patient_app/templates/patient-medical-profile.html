@@ -324,6 +324,7 @@
             </div>
 
             <div class="mp-subtab-panel" data-subtab-panel="assessment">
+                <h4 style="font-size:0.85rem;color:#374151;margin:0 0 8px;">Recorded by Your Physiotherapist</h4>
                 <div class="mp-tile-grid">
                     {% for a in assessments %}
                     <div class="mp-tile">
@@ -343,6 +344,32 @@
                     <div class="mp-empty">No assessments recorded yet by your physiotherapist.</div>
                     {% endif %}
                 </div>
+
+                <h4 style="font-size:0.85rem;color:#374151;margin:18px 0 8px;">My Assessment Tools</h4>
+                <div class="mp-tile-grid">
+                    {% for entry in assessment_entries %}
+                    <div class="mp-tile">
+                        <div class="mp-entry-name">{{ entry.reference.name }}</div>
+                        <div class="mp-entry-sub">{{ entry.reference.get_region_display }}</div>
+                        {% if entry.notes %}<div class="mp-entry-sub">{{ entry.notes }}</div>{% endif %}
+                        <form class="mp-entry-del" method="post" action="{% url 'patient-assessment-entry-delete' entry.id %}">
+                            {% csrf_token %}
+                            <button type="submit" title="Remove">✕</button>
+                        </form>
+                    </div>
+                    {% empty %}
+                    <div class="mp-empty">No assessment tools added yet.</div>
+                    {% endfor %}
+                </div>
+
+                <form class="mp-add-form" method="post" action="{% url 'patient-assessment-entry-add' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="reference_id" id="mp-assessment-id">
+                    <input type="text" name="reference_search" id="mp-assessment-search" placeholder="Search assessment tools (e.g. Berg Balance, TUG...)" autocomplete="off">
+                    <div class="mp-suggestions" id="mp-assessment-suggestions"></div>
+                    <input type="text" name="notes" placeholder="Notes (optional)" style="margin-top:6px;">
+                    <button type="submit" class="mp-add-btn">+ Add</button>
+                </form>
             </div>
 
             <div class="mp-subtab-panel" data-subtab-panel="exercises" hidden>
@@ -590,6 +617,53 @@
         });
         document.addEventListener('click', function (e) {
             if (!labInput.parentElement.contains(e.target)) labBox.style.display = 'none';
+        });
+
+        // ---- Assessment tool search (client-side filter, same pattern as
+        // Blood Tests above) -- unlike Medication/Blood Tests/Aids, there's
+        // no custom-entry fallback: assessment tools are a fixed, curated
+        // list of named scales, not an open-ended "any name" search, so a
+        // non-match just can't be added. ----
+        var assessInput = document.getElementById('mp-assessment-search');
+        var assessBox = document.getElementById('mp-assessment-suggestions');
+        var assessHiddenId = document.getElementById('mp-assessment-id');
+        var assessTestsCache = null;
+        assessInput.addEventListener('input', function () {
+            assessHiddenId.value = '';
+            var q = assessInput.value.trim().toLowerCase();
+            if (q.length < 2) { assessBox.style.display = 'none'; return; }
+            var render = function () {
+                var matches = assessTestsCache.filter(function (t) { return t.name.toLowerCase().indexOf(q) !== -1; }).slice(0, 10);
+                if (!matches.length) {
+                    assessBox.innerHTML = '<div class="mp-suggest-empty">No match -- pick one from the list to add it</div>';
+                } else {
+                    assessBox.innerHTML = matches.map(function (t) {
+                        return '<div class="mp-suggest-item" data-id="' + t.id + '" data-name="' + t.name.replace(/"/g, '&quot;') + '">' + t.name +
+                            ' <span style="color:#9ca3af;font-size:0.72rem;">(' + t.region_display + ')</span></div>';
+                    }).join('');
+                }
+                assessBox.style.display = 'block';
+                assessBox.querySelectorAll('.mp-suggest-item').forEach(function (el) {
+                    el.addEventListener('click', function () {
+                        assessInput.value = el.dataset.name;
+                        assessHiddenId.value = el.dataset.id;
+                        assessBox.style.display = 'none';
+                    });
+                });
+            };
+            if (assessTestsCache) { render(); return; }
+            fetch('/patient-app/api/assessment/public-tests/')
+                .then(function (r) { return r.json(); })
+                .then(function (data) { assessTestsCache = data.assessment_tests || []; render(); });
+        });
+        document.addEventListener('click', function (e) {
+            if (!assessInput.parentElement.contains(e.target)) assessBox.style.display = 'none';
+        });
+        assessInput.closest('form').addEventListener('submit', function (e) {
+            if (!assessHiddenId.value) {
+                e.preventDefault();
+                assessInput.focus();
+            }
         });
 
         // ---- Aid search (debounced, server-side filter over Marketplace products) ----

@@ -330,6 +330,29 @@ class PatientExercise(models.Model):
         return f"{self.exercise.exercise_name} - {self.patient.patient_name}"
 
 
+class PatientAssessmentEntry(models.Model):
+    """One assessment/outcome-measure tool the patient has added to their
+    own list under Physiotherapy > Assessment, searched against
+    assessment_app.SpecialTestReference's reference catalog -- same
+    search-and-add pattern as Medication/Blood Tests/Aids. Distinct from
+    assessment_app.RegionalAssessment, which is the physio's own clinical
+    record with real findings; this is just the patient flagging which
+    assessment tools are relevant to them (e.g. "my physio uses the Berg
+    Balance Scale with me")."""
+
+    patient = models.ForeignKey(AddPatient, on_delete=models.CASCADE, related_name='assessment_entries')
+    reference = models.ForeignKey('assessment_app.SpecialTestReference', on_delete=models.CASCADE)
+    notes = models.CharField(max_length=255, blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        unique_together = ['patient', 'reference']
+
+    def __str__(self):
+        return f"{self.reference.name} - {self.patient.patient_name}"
+
+
 class ActivationCard(models.Model):
     """A single-use recharge-card-style code that grants a patient
     `duration_days` of app access when redeemed (see AddPatient.
