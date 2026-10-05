@@ -340,7 +340,14 @@
                         {% if v.chief_complaint_today %}<div class="mp-entry-sub">{{ v.chief_complaint_today|truncatechars:100 }}</div>{% endif %}
                     </div>
                     {% endfor %}
-                    {% if not assessments and not visit_notes %}
+                    {% for sa in scale_assessments %}
+                    <div class="mp-tile">
+                        <div class="mp-entry-name">{{ sa.get_scale_label }}</div>
+                        <div class="mp-entry-sub">{{ sa.created_at|date:"d M Y" }}</div>
+                        <div class="mp-entry-sub"><strong>{{ sa.total_score }}</strong>{% if sa.interpretation %} &middot; {{ sa.interpretation }}{% endif %}</div>
+                    </div>
+                    {% endfor %}
+                    {% if not assessments and not visit_notes and not scale_assessments %}
                     <div class="mp-empty">No assessments recorded yet by your physiotherapist.</div>
                     {% endif %}
                 </div>
