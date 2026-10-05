@@ -22,4 +22,6 @@ urlpatterns = [
     path('patient/<int:patient_id>/medical-profile/aid/<int:aid_id>/delete/', views.physio_aid_delete, name='physio-aid-delete'),
     path('patient/<int:patient_id>/medical-profile/assessment-entry/add/', views.physio_assessment_entry_add, name='physio-assessment-entry-add'),
     path('patient/<int:patient_id>/medical-profile/assessment-entry/<int:entry_id>/delete/', views.physio_assessment_entry_delete, name='physio-assessment-entry-delete'),
+    path('patient/<int:patient_id>/medical-profile/diet/add/', views.physio_diet_add, name='physio-diet-add'),
+    path('patient/<int:patient_id>/medical-profile/diet/<int:diet_id>/delete/', views.physio_diet_delete, name='physio-diet-delete'),
 ]

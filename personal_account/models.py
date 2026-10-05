@@ -232,6 +232,36 @@ class PatientMedicalProfile(models.Model):
         return f"Medical profile: {self.patient.patient_name}"
 
 
+class PatientDietEntry(models.Model):
+    """One food/meal item under the Medical Profile's Diet Chart tab,
+    organized by meal time -- same column-per-slot shape as
+    PatientMedication's time_of_day, but free text throughout: unlike
+    Pharmacy/Lab/Marketplace backing Medication/Blood Tests/Aids, there's
+    no food/nutrition catalog in this app to search against. Same
+    two-sided editing as the rest of the Medical Profile (recorded_by:
+    null means the patient added it, set means that physio did)."""
+
+    MEAL_CHOICES = [
+        ('breakfast', 'Breakfast'),
+        ('lunch', 'Lunch'),
+        ('dinner', 'Dinner'),
+        ('snacks', 'Snacks'),
+    ]
+
+    patient = models.ForeignKey(AddPatient, on_delete=models.CASCADE, related_name='diet_entries')
+    meal_time = models.CharField(max_length=10, choices=MEAL_CHOICES)
+    food_item = models.CharField(max_length=255, help_text='e.g. "Oatmeal with fruits and nuts"')
+    notes = models.CharField(max_length=255, blank=True, default='', help_text='e.g. "avoid added sugar", "small portion"')
+    created_at = models.DateTimeField(auto_now_add=True)
+    recorded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+
+    class Meta:
+        ordering = ['meal_time', 'created_at']
+
+    def __str__(self):
+        return f"{self.food_item} ({self.get_meal_time_display()}) - {self.patient.patient_name}"
+
+
 class PatientMedication(models.Model):
     """One medication entry under the Medical Profile's Medication tab,
     timed to a part of the day. `pharmacy_product` is set when the

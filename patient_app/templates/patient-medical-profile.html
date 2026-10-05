@@ -53,9 +53,10 @@
         .mp-tab-icon.icon-physio { background: #e0e7ff; }
         .mp-tab-icon.icon-record { background: #fef3c7; }
         .mp-tab-icon.icon-nursing { background: #ccfbf1; }
+        .mp-tab-icon.icon-diet { background: #dcfce7; }
         .mp-tab.active .mp-tab-icon.icon-medicine, .mp-tab.active .mp-tab-icon.icon-lab,
         .mp-tab.active .mp-tab-icon.icon-physio, .mp-tab.active .mp-tab-icon.icon-record,
-        .mp-tab.active .mp-tab-icon.icon-nursing { background: rgba(255,255,255,.22); }
+        .mp-tab.active .mp-tab-icon.icon-nursing, .mp-tab.active .mp-tab-icon.icon-diet { background: rgba(255,255,255,.22); }
         .mp-tab-title { font-weight: 700; font-size: 0.92rem; color: #374151; }
         .mp-tab.active .mp-tab-title { color: white; }
         .mp-tab-status { font-size: 0.78rem; color: #9ca3af; margin-top: 2px; }
@@ -190,6 +191,12 @@
                 <div class="mp-tab-icon icon-nursing">🩺</div>
                 <div class="mp-tab-title">Nursing</div>
                 <div class="mp-tab-status{% if profile.nursing_vitals or profile.nursing_wound_catheter_care or profile.nursing_mobility_assistance %} is-active-status{% endif %}">{% if profile.nursing_vitals or profile.nursing_wound_catheter_care or profile.nursing_mobility_assistance %}Active{% else %}Inactive{% endif %}</div>
+            </button>
+            <button type="button" class="mp-tab" data-tab="diet">
+                <div class="mp-tab-icon icon-diet">🍎</div>
+                <div class="mp-tab-title">Diet Chart</div>
+                <div class="mp-tab-status{% if diet_count %} is-active-status{% endif %}">{% if diet_count %}Active{% else %}Inactive{% endif %}</div>
+                {% if diet_count %}<span class="mp-tab-pill">{{ diet_count }} item{{ diet_count|pluralize }}</span>{% endif %}
             </button>
         </div>
 
@@ -519,6 +526,39 @@
                 </div>
                 <button type="submit" class="mp-save-btn">Save Nursing Notes</button>
             </form>
+        </div>
+
+        <!-- ===================== Diet Chart ===================== -->
+        <div class="mp-tab-panel mp-card" data-tab-panel="diet" hidden>
+            <div class="mp-time-cols">
+                {% for col in diet_columns %}
+                <div class="mp-time-col">
+                    <h3>{{ col.label }}</h3>
+                    <div class="mp-tile-grid">
+                        {% for d in col.entries %}
+                        <div class="mp-tile">
+                            <div class="mp-entry-name">{{ d.food_item }}</div>
+                            {% if d.notes %}<div class="mp-entry-sub">{{ d.notes }}</div>{% endif %}
+                            {% if d.recorded_by %}<div class="mp-entry-by">Added by Dr. {{ d.recorded_by.get_full_name|default:d.recorded_by.username }}</div>{% endif %}
+                            <form class="mp-entry-del" method="post" action="{{ d.delete_url }}">
+                                {% csrf_token %}
+                                <button type="submit" title="Remove">✕</button>
+                            </form>
+                        </div>
+                        {% empty %}
+                        <div class="mp-empty">No items added.</div>
+                        {% endfor %}
+                    </div>
+                    <form class="mp-add-form" method="post" action="{{ diet_add_url }}">
+                        {% csrf_token %}
+                        <input type="hidden" name="meal_time" value="{{ col.key }}">
+                        <input type="text" name="food_item" placeholder="e.g. Oatmeal with fruits and nuts" autocomplete="off">
+                        <input type="text" name="notes" placeholder="Notes (optional)" style="margin-top:6px;">
+                        <button type="submit" class="mp-add-btn">+ Add</button>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
         </div>
 
         {% if profile.updated_at %}
