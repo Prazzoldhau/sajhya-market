@@ -15,6 +15,8 @@ urlpatterns = [
     path('patient-aid/<int:aid_id>/delete/', views.patient_aid_delete, name='patient-aid-delete'),
     path('patient-exercise/add-bulk/', views.patient_exercise_add_bulk, name='patient-exercise-add-bulk'),
     path('patient-exercise/<int:saved_exercise_id>/delete/', views.patient_exercise_delete, name='patient-exercise-delete'),
+    path('patient-assessment-entry/add/', views.patient_assessment_entry_add, name='patient-assessment-entry-add'),
+    path('patient-assessment-entry/<int:entry_id>/delete/', views.patient_assessment_entry_delete, name='patient-assessment-entry-delete'),
     path('patient-logout/', views.patient_logout_web, name='patient-logout-web'),
 
     # Auth
@@ -85,6 +87,8 @@ urlpatterns = [
     path('api/medical-profile/aid/<int:aid_id>/delete/', views.patient_api_aid_delete, name='patient_api_aid_delete'),
     path('api/medical-profile/exercise/add-bulk/', views.patient_api_exercise_add_bulk, name='patient_api_exercise_add_bulk'),
     path('api/medical-profile/exercise/<int:saved_exercise_id>/delete/', views.patient_api_exercise_delete, name='patient_api_exercise_delete'),
+    path('api/medical-profile/assessment-entry/add/', views.patient_api_assessment_entry_add, name='patient_api_assessment_entry_add'),
+    path('api/medical-profile/assessment-entry/<int:entry_id>/delete/', views.patient_api_assessment_entry_delete, name='patient_api_assessment_entry_delete'),
     path('add-recs-to-cart/', views.add_recs_to_cart, name='add-recs-to-cart'),
 
     # Lab service (Blood Investigation)
@@ -93,4 +97,7 @@ urlpatterns = [
     path('api/lab/public-panels/', views.patient_api_lab_panels_public, name='patient_api_lab_panels_public'),
     path('api/lab/request/', views.patient_api_lab_request_create, name='patient_api_lab_request_create'),
     path('api/lab/requests/', views.patient_api_lab_requests, name='patient_api_lab_requests'),
+
+    # Assessment reference catalog (browse, independent of physio-recorded assessments)
+    path('api/assessment/public-tests/', views.patient_api_assessment_tests_public, name='patient_api_assessment_tests_public'),
 ]

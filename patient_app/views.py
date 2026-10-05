@@ -1,8 +1,9 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.db.models import Prefetch, F, Count
-from personal_account.models import AddPatient, ActivationCard, PatientPhysioPairing, PatientMedicalProfile, PatientMedication, PatientBloodTest, PatientAid, PatientExercise, get_nepal_time
+from personal_account.models import AddPatient, ActivationCard, PatientPhysioPairing, PatientMedicalProfile, PatientMedication, PatientBloodTest, PatientAid, PatientExercise, PatientAssessmentEntry, get_nepal_time
 from visit_notes_app.models import VisitNote
+from assessment_app.models import SpecialTestReference
 from exercise_app.models import Prescription, PrescriptionExercise, ExerciseFeedback, Region, SubRegion, ExerciseMain
 from marketplace_app.models import Category, Product, ProductImage, ProductVariant, Order, OrderItem, Commission, CommissionRate, PatientProductRecommendation, PharmacyProduct
 from lab_app.models import LabTest, LabTestPanel, LabTestRequest, LabTestRequestItem
@@ -318,13 +319,17 @@ def patient_medical_profile_page(request):
 
     aids = patient.aids.select_related('product')
     saved_exercises = patient.saved_exercises.select_related('exercise')
+    assessment_entries = patient.assessment_entries.select_related('reference')
 
     # Counts for the tab-card badges at the top of the page -- real data
     # only (no invented "pending refill"/"next session" stand-ins for
     # things this app doesn't actually track).
     medication_count = sum(len(v) for v in medications_by_time.values())
     blood_test_count = blood_tests.count()
-    physio_record_count = assessments.count() + visit_notes.count() + aids.count() + saved_exercises.count()
+    physio_record_count = (
+        assessments.count() + visit_notes.count() + aids.count()
+        + saved_exercises.count() + assessment_entries.count()
+    )
 
     return render(request, 'patient-medical-profile.html', {
         'patient': patient,
@@ -344,6 +349,7 @@ def patient_medical_profile_page(request):
         'physio_record_count': physio_record_count,
         'aids': aids,
         'saved_exercises': saved_exercises,
+        'assessment_entries': assessment_entries,
     })
 
 
@@ -459,6 +465,27 @@ def patient_exercise_delete(request, saved_exercise_id):
         patient_id = request.session.get('patient_id')
         PatientExercise.objects.filter(id=saved_exercise_id, patient_id=patient_id).delete()
     return redirect(f"{reverse('patient-medical-profile')}?tab=physiotherapy&subtab=exercises")
+
+
+@patient_login_required
+def patient_assessment_entry_add(request):
+    if request.method == "POST":
+        patient_id = request.session.get('patient_id')
+        patient = get_object_or_404(AddPatient, id=patient_id)
+        reference_id = request.POST.get('reference_id', '').strip()
+        notes = request.POST.get('notes', '').strip()
+        reference = SpecialTestReference.objects.filter(id=reference_id, is_active=True).first()
+        if reference:
+            PatientAssessmentEntry.objects.get_or_create(patient=patient, reference=reference, defaults={'notes': notes})
+    return redirect(f"{reverse('patient-medical-profile')}?tab=physiotherapy&subtab=assessment")
+
+
+@patient_login_required
+def patient_assessment_entry_delete(request, entry_id):
+    if request.method == "POST":
+        patient_id = request.session.get('patient_id')
+        PatientAssessmentEntry.objects.filter(id=entry_id, patient_id=patient_id).delete()
+    return redirect(f"{reverse('patient-medical-profile')}?tab=physiotherapy&subtab=assessment")
 
 
 def add_recs_to_cart(request):
@@ -1982,6 +2009,24 @@ def patient_api_lab_tests_public(request):
     ]})
 
 
+def patient_api_assessment_tests_public(request):
+    """assessment_app's SpecialTestReference catalog (standardized
+    assessment tools/special tests, e.g. Berg Balance Scale, TUG, SLR
+    Test), browse-only -- same idea as patient_api_lab_tests_public,
+    powers the Physiotherapy > Assessment tab's search-and-add."""
+    tests = SpecialTestReference.objects.filter(is_active=True)
+    return JsonResponse({'assessment_tests': [
+        {
+            'id': t.id,
+            'name': t.name,
+            'region': t.region,
+            'region_display': t.get_region_display(),
+            'purpose': t.purpose,
+        }
+        for t in tests
+    ]})
+
+
 @csrf_exempt
 @require_http_methods(["GET"])
 def patient_api_lab_panels_public(request):
@@ -2172,6 +2217,14 @@ def _medical_profile_dict(profile):
                 'name': se.exercise.exercise_name,
             } for se in patient.saved_exercises.select_related('exercise')
         ],
+        'assessment_entries': [
+            {
+                'id': ae.id,
+                'reference_id': ae.reference_id,
+                'name': ae.reference.name,
+                'notes': ae.notes,
+            } for ae in patient.assessment_entries.select_related('reference')
+        ],
     }
 
 
@@ -2351,4 +2404,35 @@ def patient_api_exercise_delete(request, saved_exercise_id):
     if err:
         return err
     PatientExercise.objects.filter(id=saved_exercise_id, patient=patient).delete()
+    return JsonResponse({'success': True})
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def patient_api_assessment_entry_add(request):
+    patient, err = _patient_required(request)
+    if err:
+        return err
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON'}, status=400)
+
+    reference_id = data.get('reference_id')
+    notes = data.get('notes', '').strip()
+    reference = SpecialTestReference.objects.filter(id=reference_id, is_active=True).first()
+    if not reference:
+        return JsonResponse({'success': False, 'error': 'reference_id required'}, status=400)
+
+    entry, _ = PatientAssessmentEntry.objects.get_or_create(patient=patient, reference=reference, defaults={'notes': notes})
+    return JsonResponse({'success': True, 'id': entry.id, 'name': entry.reference.name}, status=201)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def patient_api_assessment_entry_delete(request, entry_id):
+    patient, err = _patient_required(request)
+    if err:
+        return err
+    PatientAssessmentEntry.objects.filter(id=entry_id, patient=patient).delete()
     return JsonResponse({'success': True})

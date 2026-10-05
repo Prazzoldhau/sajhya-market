@@ -7,6 +7,7 @@ REGION_CHOICES = [
     ('low_back', 'Low Back Pain'),
     ('cervical', 'Cervical'),
     ('knee', 'Knee'),
+    ('parkinsons', "Parkinson's Disease"),
 ]
 
 
