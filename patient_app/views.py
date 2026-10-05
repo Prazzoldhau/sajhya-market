@@ -304,6 +304,7 @@ def patient_medical_profile_page(request):
     # search-and-add aid entries).
     assessments = patient.regional_assessments.all()[:10]
     visit_notes = patient.visit_notes.filter(case_type__in=['neuro', 'geriatric']).order_by('-created_at')[:10]
+    scale_assessments = patient.scale_assessments.all()[:10]
 
     latest_prescription = Prescription.objects.filter(patient=patient).order_by('-created_at').first()
     prescribed_exercises = latest_prescription.exercises.all().order_by('order') if latest_prescription else []
@@ -328,7 +329,7 @@ def patient_medical_profile_page(request):
     blood_test_count = blood_tests.count()
     physio_record_count = (
         assessments.count() + visit_notes.count() + aids.count()
-        + saved_exercises.count() + assessment_entries.count()
+        + saved_exercises.count() + assessment_entries.count() + scale_assessments.count()
     )
 
     return render(request, 'patient-medical-profile.html', {
@@ -339,6 +340,7 @@ def patient_medical_profile_page(request):
         'blood_tests': blood_tests,
         'assessments': assessments,
         'visit_notes': visit_notes,
+        'scale_assessments': scale_assessments,
         'latest_prescription': latest_prescription,
         'prescribed_exercises': prescribed_exercises,
         'manual_recs': manual_recs,

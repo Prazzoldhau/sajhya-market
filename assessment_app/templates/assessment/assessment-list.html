@@ -40,9 +40,49 @@
     {% else %}
     <div class="empty-state">
         <h3>No Assessments Yet</h3>
-        <p>Record a region-specific assessment (Low Back, Cervical, Knee) for this patient here.</p>
+        <p>Record a region-specific assessment (Low Back, Cervical, Knee, Parkinson's) for this patient here.</p>
         <a href="{% url 'create-assessment' patient_id=patient.id %}" class="btn btn-primary" style="margin-top: 15px;">+ New Assessment</a>
     </div>
     {% endif %}
+
+    <div style="margin-top:2rem;">
+        <h3 style="font-size:1.1rem;font-weight:700;color:#374151;margin-bottom:0.6rem;">Standardized Scales</h3>
+        <div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:1rem;">
+            {% for scale_key, scale_label in scale_choices %}
+            <a href="{% url 'create-scale-assessment' patient_id=patient.id scale=scale_key %}" class="btn btn-info">+ {{ scale_label }}</a>
+            {% endfor %}
+        </div>
+
+        {% if scale_assessments %}
+        <div class="table-responsive">
+            <table class="patient-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Scale</th>
+                        <th>Result</th>
+                        <th>Interpretation</th>
+                        <th>Recorded By</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sa in scale_assessments %}
+                    <tr>
+                        <td>{{ sa.created_at|date:"d M Y, H:i" }}</td>
+                        <td>{{ sa.get_scale_label }}</td>
+                        <td>{{ sa.total_score|default:"-" }}</td>
+                        <td>{{ sa.interpretation|default:"-" }}</td>
+                        <td>{{ sa.created_by.username|default:"-" }}</td>
+                        <td><a href="{% url 'scale-assessment-detail' assessment_id=sa.id %}" class="btn btn-info">View</a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted" style="font-size:0.88rem;">No standardized scale assessments recorded yet.</p>
+        {% endif %}
+    </div>
 </div>
 {% endblock %}

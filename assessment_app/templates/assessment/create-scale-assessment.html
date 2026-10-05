@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ definition.label }} - {{ patient.patient_name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="header">
+        <br>
+        <h2>{{ definition.label }}</h2>
+        <p class="text-muted">{{ patient.patient_name }} ({{ patient.patient_code }})</p>
+        <a href="{% url 'assessment-list' patient_id=patient.id %}">&larr; Back to Assessments</a>
+    </div>
+
+    <form method="post" novalidate>
+        {% csrf_token %}
+
+        {% if definition.note %}
+        <div class="auth-card" style="margin-bottom:1.5rem;background:#fef3c7;border-color:#fde68a;">
+            <p style="margin:0;font-size:0.85rem;color:#92400e;">⚠ {{ definition.note }}</p>
+        </div>
+        {% endif %}
+
+        <div class="auth-card" style="margin-bottom:1.5rem;">
+            <div class="auth-header"><h3>{{ definition.label }}</h3></div>
+            <div class="auth-body">
+                {% if definition.instructions %}<p class="text-muted" style="font-size:0.85rem;margin-bottom:1rem;">{{ definition.instructions }}</p>{% endif %}
+
+                {% if definition.type == 'single_choice' %}
+                    {% for value, label in definition.options %}
+                    <div class="form-group">
+                        <label style="display:block;font-weight:normal;">
+                            <input type="radio" name="value" value="{{ value }}" required> {{ label }}
+                        </label>
+                    </div>
+                    {% endfor %}
+
+                {% elif definition.type == 'single_number' %}
+                    <div class="form-group">
+                        <label class="form-label">Result ({{ definition.unit }})</label>
+                        <input type="number" step="0.1" min="0" name="value" class="form-control" required
+                               placeholder="e.g. 12.5" style="max-width:200px;">
+                    </div>
+
+                {% elif definition.type == 'scored_items' %}
+                    <table class="patient-table">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Score (0-{{ definition.item_max }})</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for key, label in definition.items %}
+                            <tr>
+                                <td>{{ label }}</td>
+                                <td>
+                                    <select name="item_{{ key }}" class="form-control" required style="max-width:100px;">
+                                        <option value="">-</option>
+                                        {% for n in score_options %}
+                                        <option value="{{ n }}">{{ n }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% endif %}
+
+                <div class="form-group" style="margin-top:1.2rem;">
+                    <label class="form-label">Notes</label>
+                    <textarea name="notes" class="form-control" rows="2" placeholder="Any context for this administration"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Save {{ definition.label }}</button>
+    </form>
+</div>
+{% endblock %}
