@@ -1,14 +1,14 @@
 from django.shortcuts import render, redirect
 from personal_account import patientform
 from django.contrib import messages
-from personal_account.models import AddPatient
+from personal_account.models import AddPatient, PatientPhysioPairing
 from datetime import datetime
 from .clinicform import ClinicForm
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET, require_POST
 from account_app.models import User
 from django.db import models
-from django.db.models import Sum
+from django.db.models import Sum, Q
 from django.shortcuts import get_object_or_404
 from .models import Clinic, ClinicPhysio, QueueEntry
 from django.contrib.auth.decorators import login_required
@@ -64,10 +64,15 @@ def add_patient_by_clinicuser(request, clinic_id):
 
 @login_required 
 def clinic_dashboard(request):
-    # Base queryset: only patients created by the logged-in user
+    # Patients this user either created directly, or has been linked to
+    # via PatientPhysioPairing (self-registered patients paired by QR or
+    # added by code/username) -- created_by alone missed every
+    # paired-but-not-created patient entirely.
+    paired_ids = PatientPhysioPairing.objects.filter(physio=request.user).values_list('patient_id', flat=True)
     patients = AddPatient.objects.filter(
-        created_by=request.user, origin_clinic__isnull=True, origin_enterprise__isnull=True
-    ).order_by('-created_at')
+        Q(created_by=request.user) | Q(id__in=paired_ids),
+        origin_clinic__isnull=True, origin_enterprise__isnull=True,
+    ).distinct().order_by('-created_at')
 
     # --- Search handling ---
     search_type = request.GET.get('search_type')

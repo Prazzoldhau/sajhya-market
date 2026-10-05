@@ -3,7 +3,7 @@ from django.urls import reverse
 from django.templatetags.static import static
 from personal_account import patientform
 from django.contrib import messages
-from personal_account.models import AddPatient
+from personal_account.models import AddPatient, PatientPhysioPairing
 from datetime import datetime
 from .enterpriseform import EnterpriseForm, WardForm, PhysioRequestForm, PhysioRequestFormSet, PhysioRequestStatusForm
 from django.http import JsonResponse, HttpResponse
@@ -71,9 +71,15 @@ def add_patient_by_enterpriseuser(request, enterprise_id):
 
 @login_required
 def enterprise_dashboard(request):
+    # Patients this user either created directly, or has been linked to
+    # via PatientPhysioPairing (self-registered patients paired by QR or
+    # added by code/username) -- created_by alone missed every
+    # paired-but-not-created patient entirely.
+    paired_ids = PatientPhysioPairing.objects.filter(physio=request.user).values_list('patient_id', flat=True)
     patients = AddPatient.objects.filter(
-        created_by=request.user, origin_clinic__isnull=True, origin_enterprise__isnull=True
-    ).order_by('-created_at')
+        Q(created_by=request.user) | Q(id__in=paired_ids),
+        origin_clinic__isnull=True, origin_enterprise__isnull=True,
+    ).distinct().order_by('-created_at')
 
     search_type = request.GET.get('search_type')
     search_value = request.GET.get('search_value')

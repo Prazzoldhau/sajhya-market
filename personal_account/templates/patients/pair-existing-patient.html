@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Add Existing Patient{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <i class="fas fa-link fa-2x mb-2"></i>
+                <h3>Add Existing Patient</h3>
+                <p>Link a patient who already has their own account -- ask them for their Account Code or username.</p>
+            </div>
+            <div class="auth-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+
+                    <div class="form-group">
+                        <label for="identifier" class="form-label">Patient Code or Username <span class="text-danger">*</span></label>
+                        <input type="text" name="identifier" id="identifier" class="form-control" placeholder="e.g. PAT-7NB7Z4 or their username" required autofocus>
+                        <small class="form-text text-muted">This only links the patient to your list -- it doesn't change their login or anyone else's access.</small>
+                    </div>
+
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn-gradient">
+                            Link Patient <i class="fas fa-link"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {% if pairings %}
+        <div class="auth-card" style="margin-top:1.5rem;">
+            <div class="auth-header"><h3>Patients Linked to You</h3></div>
+            <div class="auth-body">
+                {% for pairing in pairings %}
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:0.75rem;
+                            padding:0.6rem 0;border-bottom:1px solid #e5e7eb;">
+                    <div>
+                        <strong>{{ pairing.patient.patient_name }}</strong>
+                        <span class="text-muted" style="font-size:0.82rem;"> ({{ pairing.patient.patient_code }}) &middot; {{ pairing.get_source_display }}</span>
+                    </div>
+                    <form method="post" action="{% url 'unpair-patient' pairing.id %}" onsubmit="return confirm('Remove {{ pairing.patient.patient_name }} from your patient list?');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Unlink</button>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

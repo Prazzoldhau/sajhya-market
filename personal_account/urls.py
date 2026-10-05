@@ -3,6 +3,8 @@ from .import views
 
 urlpatterns = [
     path ('create-patient/', views.create_patient, name = 'create-patient'),
+    path ('pair-existing-patient/', views.pair_existing_patient, name = 'pair-existing-patient'),
+    path ('unpair-patient/<int:pairing_id>/', views.unpair_patient, name = 'unpair-patient'),
     path ('personal-dashboard/', views.personal_dashboard, name = 'personal-dashboard'),
     path ('assigned-clinic-dashboard/<int:clinic_id>/', views.assigned_clinic_dashboard, name= "assigned-clinic-dashboard"),
     path ('my-clinics/', views.get_my_clinics, name='my-clinics'),
