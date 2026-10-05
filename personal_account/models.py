@@ -221,6 +221,12 @@ class PatientMedicalProfile(models.Model):
     nursing_mobility_assistance = models.TextField(blank=True, default='', help_text='Help needed with transfers, walking, toileting, etc.')
 
     updated_at = models.DateTimeField(auto_now=True)
+    # Null means the patient themselves saved it last; set means a physio
+    # did (editing is now two-sided -- see PatientMedication etc.'s own
+    # recorded_by for the same idea on the list-style tabs). One field for
+    # the whole row, not per-field, since General/Nursing are each saved
+    # as one small form anyway.
+    last_updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
 
     def __str__(self):
         return f"Medical profile: {self.patient.patient_name}"
@@ -249,6 +255,10 @@ class PatientMedication(models.Model):
     custom_name = models.CharField(max_length=200, blank=True, default='')
     instructions = models.CharField(max_length=255, blank=True, default='', help_text='e.g. "500mg, after food"')
     created_at = models.DateTimeField(auto_now_add=True)
+    # Null = the patient added this themselves; set = that physio did, on
+    # the patient's behalf (same physio-facing "profiling" pages that
+    # edit PatientMedicalProfile's General/Nursing tabs can add these too).
+    recorded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
 
     class Meta:
         ordering = ['time_of_day', 'created_at']
@@ -272,6 +282,7 @@ class PatientBloodTest(models.Model):
     custom_name = models.CharField(max_length=200, blank=True, default='')
     notes = models.CharField(max_length=255, blank=True, default='', help_text='e.g. "every 3 months", or a past result')
     created_at = models.DateTimeField(auto_now_add=True)
+    recorded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
 
     class Meta:
         ordering = ['-created_at']
@@ -297,6 +308,7 @@ class PatientAid(models.Model):
     custom_name = models.CharField(max_length=200, blank=True, default='')
     notes = models.CharField(max_length=255, blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
+    recorded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
 
     class Meta:
         ordering = ['-created_at']
@@ -344,6 +356,7 @@ class PatientAssessmentEntry(models.Model):
     reference = models.ForeignKey('assessment_app.SpecialTestReference', on_delete=models.CASCADE)
     notes = models.CharField(max_length=255, blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
+    recorded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
 
     class Meta:
         ordering = ['-created_at']

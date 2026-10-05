@@ -262,46 +262,22 @@ def patient_dashboard(request):
     return render(request, 'patient-dashboard-image.html', context)
 
 
-@patient_login_required
-def patient_medical_profile_page(request):
-    """Lets a patient view/edit their own standing medical info across four
-    tabs -- Medication, Blood Tests, Physiotherapy, Nursing (see
-    PatientMedicalProfile docstring for why medications/blood tests/
-    physiotherapy history moved out of plain text fields into this).
-    This view only handles the General (allergies/history) + Nursing
-    tab's save -- medication/blood test add/delete are their own small
-    endpoints below, and Physiotherapy's sub-tabs are read-only here."""
-    patient_id = request.session.get('patient_id')
-    patient = get_object_or_404(AddPatient, id=patient_id)
-    profile, _ = PatientMedicalProfile.objects.get_or_create(patient=patient)
-
-    saved = False
-    if request.method == "POST":
-        # General and Nursing are separate <form> elements on the page (so
-        # each tab only submits its own fields) -- only touch a field if
-        # its form actually sent it, or the other form's submission would
-        # blank it out.
-        for field in ('allergies', 'medical_history', 'nursing_vitals',
-                      'nursing_wound_catheter_care', 'nursing_mobility_assistance'):
-            if field in request.POST:
-                setattr(profile, field, request.POST.get(field, '').strip())
-        profile.save()
-        saved = True
-
+def _medical_profile_context(patient):
+    """Shared by the patient's own medical profile page and the physio-
+    facing editor (detail_app) -- same data, same template either way,
+    only who's allowed to submit the forms differs."""
     medications_by_time = {'morning': [], 'evening': [], 'night': []}
-    for m in patient.medications.select_related('pharmacy_product'):
+    for m in patient.medications.select_related('pharmacy_product', 'recorded_by'):
         medications_by_time[m.time_of_day].append(m)
 
-    blood_tests = patient.blood_test_entries.select_related('lab_test')
+    blood_tests = patient.blood_test_entries.select_related('lab_test', 'recorded_by')
 
-    # Physiotherapy sub-tabs -- Assessment (read-only, physio-recorded: both
-    # assessment_app's region-scoped assessments AND the fuller VisitNote
-    # SOAP note for neuro/geriatric cases, which already has its own much
-    # richer structured fields for those two case types -- see VisitNote's
-    # docstring), Exercises (prescribed summary + a search of the exercise
-    # library), Aids (physio-picked/diagnosis-match recs, same query the
-    # dashboard's "Recommended for You" runs, plus the patient's own
-    # search-and-add aid entries).
+    # Physiotherapy sub-tabs -- Assessment (read-only feed of physio-
+    # recorded assessment_app records + the patient/physio-added
+    # reference-tool list), Exercises (prescribed summary + a search of
+    # the exercise library), Aids (physio-picked/diagnosis-match recs,
+    # same query the dashboard's "Recommended for You" runs, plus the
+    # patient/physio-added aid entries).
     assessments = patient.regional_assessments.all()[:10]
     visit_notes = patient.visit_notes.filter(case_type__in=['neuro', 'geriatric']).order_by('-created_at')[:10]
     scale_assessments = patient.scale_assessments.all()[:10]
@@ -318,9 +294,9 @@ def patient_medical_profile_page(request):
     auto_recs, matched_label = get_recommended_for_diagnosis(patient.patient_diagnosis)
     auto_recs = auto_recs.exclude(id__in=manual_ids).select_related('category')[:8]
 
-    aids = patient.aids.select_related('product')
+    aids = patient.aids.select_related('product', 'recorded_by')
     saved_exercises = patient.saved_exercises.select_related('exercise')
-    assessment_entries = patient.assessment_entries.select_related('reference')
+    assessment_entries = patient.assessment_entries.select_related('reference', 'recorded_by')
 
     # Counts for the tab-card badges at the top of the page -- real data
     # only (no invented "pending refill"/"next session" stand-ins for
@@ -332,10 +308,8 @@ def patient_medical_profile_page(request):
         + saved_exercises.count() + assessment_entries.count() + scale_assessments.count()
     )
 
-    return render(request, 'patient-medical-profile.html', {
+    return {
         'patient': patient,
-        'profile': profile,
-        'saved': saved,
         'medications_by_time': medications_by_time,
         'blood_tests': blood_tests,
         'assessments': assessments,
@@ -352,7 +326,83 @@ def patient_medical_profile_page(request):
         'aids': aids,
         'saved_exercises': saved_exercises,
         'assessment_entries': assessment_entries,
-    })
+    }
+
+
+def _attach_medical_profile_urls(context, patient, is_physio):
+    """Computes every add/delete/save URL the template needs once, here,
+    instead of the template branching on editing_patient_id at every
+    single form action -- the only difference between the patient's own
+    page and the physio-facing editor (detail_app.physio_medical_profile_page)
+    is which set of URLs (session-based vs patient_id-in-path) gets used."""
+    if is_physio:
+        pid = {'patient_id': patient.id}
+        context['medical_profile_save_url'] = reverse('physio-medical-profile', kwargs=pid)
+        context['medication_add_url'] = reverse('physio-medication-add', kwargs=pid)
+        context['bloodtest_add_url'] = reverse('physio-bloodtest-add', kwargs=pid)
+        context['aid_add_url'] = reverse('physio-aid-add', kwargs=pid)
+        context['assessment_entry_add_url'] = reverse('physio-assessment-entry-add', kwargs=pid)
+        med_delete = lambda mid: reverse('physio-medication-delete', kwargs={**pid, 'medication_id': mid})
+        bt_delete = lambda bid: reverse('physio-bloodtest-delete', kwargs={**pid, 'bloodtest_id': bid})
+        aid_delete = lambda aid: reverse('physio-aid-delete', kwargs={**pid, 'aid_id': aid})
+        entry_delete = lambda eid: reverse('physio-assessment-entry-delete', kwargs={**pid, 'entry_id': eid})
+    else:
+        context['medical_profile_save_url'] = reverse('patient-medical-profile')
+        context['medication_add_url'] = reverse('patient-medication-add')
+        context['bloodtest_add_url'] = reverse('patient-bloodtest-add')
+        context['aid_add_url'] = reverse('patient-aid-add')
+        context['assessment_entry_add_url'] = reverse('patient-assessment-entry-add')
+        med_delete = lambda mid: reverse('patient-medication-delete', kwargs={'medication_id': mid})
+        bt_delete = lambda bid: reverse('patient-bloodtest-delete', kwargs={'bloodtest_id': bid})
+        aid_delete = lambda aid: reverse('patient-aid-delete', kwargs={'aid_id': aid})
+        entry_delete = lambda eid: reverse('patient-assessment-entry-delete', kwargs={'entry_id': eid})
+
+    for bucket in context['medications_by_time'].values():
+        for m in bucket:
+            m.delete_url = med_delete(m.id)
+    for bt in context['blood_tests']:
+        bt.delete_url = bt_delete(bt.id)
+    for aid in context['aids']:
+        aid.delete_url = aid_delete(aid.id)
+    for entry in context['assessment_entries']:
+        entry.delete_url = entry_delete(entry.id)
+
+
+@patient_login_required
+def patient_medical_profile_page(request):
+    """Lets a patient view/edit their own standing medical info across
+    six tabs (see PatientMedicalProfile docstring for why medications/
+    blood tests/physiotherapy history moved out of plain text fields
+    into this). This view only handles the Medical Record (allergies/
+    history) + Nursing tab's save -- medication/blood test/aid/
+    assessment-tool add/delete are their own small endpoints below.
+
+    A physio can edit all the same data for a given patient at
+    detail_app's physio_medical_profile_page -- same template, same
+    underlying models, just a different actor (see recorded_by/
+    last_updated_by on the models this page edits)."""
+    patient_id = request.session.get('patient_id')
+    patient = get_object_or_404(AddPatient, id=patient_id)
+    profile, _ = PatientMedicalProfile.objects.get_or_create(patient=patient)
+
+    saved = False
+    if request.method == "POST":
+        # Medical Record and Nursing are separate <form> elements on the
+        # page (so each tab only submits its own fields) -- only touch a
+        # field if its form actually sent it, or the other form's
+        # submission would blank it out.
+        for field in ('allergies', 'medical_history', 'nursing_vitals',
+                      'nursing_wound_catheter_care', 'nursing_mobility_assistance'):
+            if field in request.POST:
+                setattr(profile, field, request.POST.get(field, '').strip())
+        profile.last_updated_by = None
+        profile.save()
+        saved = True
+
+    context = _medical_profile_context(patient)
+    context.update({'profile': profile, 'saved': saved})
+    _attach_medical_profile_urls(context, patient, is_physio=False)
+    return render(request, 'patient-medical-profile.html', context)
 
 
 @patient_login_required

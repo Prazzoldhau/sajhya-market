@@ -71,6 +71,7 @@
         .mp-time-col h3 { font-size: 0.9rem; margin: 0 0 8px; color: #374151; }
         .mp-entry-name { font-size: 0.85rem; font-weight: 600; color: #374151; }
         .mp-entry-sub { font-size: 0.72rem; color: #9ca3af; }
+        .mp-entry-by { font-size: 0.68rem; color: #667eea; font-weight: 600; margin-top: 2px; }
         .mp-entry-del button { background: none; border: none; color: #dc2626; cursor: pointer; font-size: 0.9rem; padding: 0 4px; }
         .mp-empty { font-size: 0.78rem; color: #9ca3af; margin-bottom: 8px; }
         .mp-add-form { position: relative; margin-top: 8px; }
@@ -143,11 +144,19 @@
 </head>
 <body>
     <div class="container">
+        {% if editing_patient_id %}
+        <a href="{% url 'patient-detail' patient_id=editing_patient_id %}" class="mp-back">&larr; Back to {{ patient.patient_name }}</a>
+        <div class="mp-header">
+            <h1>🩺 Medical Profile — {{ patient.patient_name }}</h1>
+            <p>Editing as their physiotherapist. Entries you add are marked with your name so the patient can tell what they entered themselves.</p>
+        </div>
+        {% else %}
         <a href="{% url 'patient-dashboard' %}" class="mp-back">&larr; Back to Dashboard</a>
         <div class="mp-header">
             <h1>🩺 Medical Profile</h1>
             <p>Keep this up to date so your physiotherapist always has an accurate picture.</p>
         </div>
+        {% endif %}
 
         {% if saved %}
         <div class="mp-saved-banner">✓ Saved. Thanks for keeping this current.</div>
@@ -194,7 +203,8 @@
                         <div class="mp-tile">
                             <div class="mp-entry-name">{{ med.display_name }}</div>
                             {% if med.instructions %}<div class="mp-entry-sub">{{ med.instructions }}</div>{% endif %}
-                            <form class="mp-entry-del" method="post" action="{% url 'patient-medication-delete' med.id %}">
+                            {% if med.recorded_by %}<div class="mp-entry-by">Added by Dr. {{ med.recorded_by.get_full_name|default:med.recorded_by.username }}</div>{% endif %}
+                            <form class="mp-entry-del" method="post" action="{{ med.delete_url }}">
                                 {% csrf_token %}
                                 <button type="submit" title="Remove">✕</button>
                             </form>
@@ -203,7 +213,7 @@
                         <div class="mp-empty">No medications added.</div>
                         {% endfor %}
                     </div>
-                    <form class="mp-add-form" method="post" action="{% url 'patient-medication-add' %}">
+                    <form class="mp-add-form" method="post" action="{{ medication_add_url }}">
                         {% csrf_token %}
                         <input type="hidden" name="time_of_day" value="morning">
                         <input type="hidden" name="pharmacy_product_id" class="mp-med-pid">
@@ -221,7 +231,8 @@
                         <div class="mp-tile">
                             <div class="mp-entry-name">{{ med.display_name }}</div>
                             {% if med.instructions %}<div class="mp-entry-sub">{{ med.instructions }}</div>{% endif %}
-                            <form class="mp-entry-del" method="post" action="{% url 'patient-medication-delete' med.id %}">
+                            {% if med.recorded_by %}<div class="mp-entry-by">Added by Dr. {{ med.recorded_by.get_full_name|default:med.recorded_by.username }}</div>{% endif %}
+                            <form class="mp-entry-del" method="post" action="{{ med.delete_url }}">
                                 {% csrf_token %}
                                 <button type="submit" title="Remove">✕</button>
                             </form>
@@ -230,7 +241,7 @@
                         <div class="mp-empty">No medications added.</div>
                         {% endfor %}
                     </div>
-                    <form class="mp-add-form" method="post" action="{% url 'patient-medication-add' %}">
+                    <form class="mp-add-form" method="post" action="{{ medication_add_url }}">
                         {% csrf_token %}
                         <input type="hidden" name="time_of_day" value="evening">
                         <input type="hidden" name="pharmacy_product_id" class="mp-med-pid">
@@ -248,7 +259,8 @@
                         <div class="mp-tile">
                             <div class="mp-entry-name">{{ med.display_name }}</div>
                             {% if med.instructions %}<div class="mp-entry-sub">{{ med.instructions }}</div>{% endif %}
-                            <form class="mp-entry-del" method="post" action="{% url 'patient-medication-delete' med.id %}">
+                            {% if med.recorded_by %}<div class="mp-entry-by">Added by Dr. {{ med.recorded_by.get_full_name|default:med.recorded_by.username }}</div>{% endif %}
+                            <form class="mp-entry-del" method="post" action="{{ med.delete_url }}">
                                 {% csrf_token %}
                                 <button type="submit" title="Remove">✕</button>
                             </form>
@@ -257,7 +269,7 @@
                         <div class="mp-empty">No medications added.</div>
                         {% endfor %}
                     </div>
-                    <form class="mp-add-form" method="post" action="{% url 'patient-medication-add' %}">
+                    <form class="mp-add-form" method="post" action="{{ medication_add_url }}">
                         {% csrf_token %}
                         <input type="hidden" name="time_of_day" value="night">
                         <input type="hidden" name="pharmacy_product_id" class="mp-med-pid">
@@ -277,7 +289,8 @@
                 <div class="mp-tile">
                     <div class="mp-entry-name">{{ bt.display_name }}</div>
                     {% if bt.notes %}<div class="mp-entry-sub">{{ bt.notes }}</div>{% endif %}
-                    <form class="mp-entry-del" method="post" action="{% url 'patient-bloodtest-delete' bt.id %}">
+                    {% if bt.recorded_by %}<div class="mp-entry-by">Added by Dr. {{ bt.recorded_by.get_full_name|default:bt.recorded_by.username }}</div>{% endif %}
+                    <form class="mp-entry-del" method="post" action="{{ bt.delete_url }}">
                         {% csrf_token %}
                         <button type="submit" title="Remove">✕</button>
                     </form>
@@ -287,7 +300,7 @@
                 {% endfor %}
             </div>
 
-            <form class="mp-add-form" method="post" action="{% url 'patient-bloodtest-add' %}">
+            <form class="mp-add-form" method="post" action="{{ bloodtest_add_url }}">
                 {% csrf_token %}
                 <input type="hidden" name="lab_test_id" id="mp-lab-id">
                 <input type="text" name="custom_name" id="mp-lab-search" placeholder="Search blood/lab test..." autocomplete="off">
@@ -359,7 +372,8 @@
                         <div class="mp-entry-name">{{ entry.reference.name }}</div>
                         <div class="mp-entry-sub">{{ entry.reference.get_region_display }}</div>
                         {% if entry.notes %}<div class="mp-entry-sub">{{ entry.notes }}</div>{% endif %}
-                        <form class="mp-entry-del" method="post" action="{% url 'patient-assessment-entry-delete' entry.id %}">
+                        {% if entry.recorded_by %}<div class="mp-entry-by">Added by Dr. {{ entry.recorded_by.get_full_name|default:entry.recorded_by.username }}</div>{% endif %}
+                        <form class="mp-entry-del" method="post" action="{{ entry.delete_url }}">
                             {% csrf_token %}
                             <button type="submit" title="Remove">✕</button>
                         </form>
@@ -369,7 +383,7 @@
                     {% endfor %}
                 </div>
 
-                <form class="mp-add-form" method="post" action="{% url 'patient-assessment-entry-add' %}">
+                <form class="mp-add-form" method="post" action="{{ assessment_entry_add_url }}">
                     {% csrf_token %}
                     <input type="hidden" name="reference_id" id="mp-assessment-id">
                     <input type="text" name="reference_search" id="mp-assessment-search" placeholder="Search assessment tools (e.g. Berg Balance, TUG...)" autocomplete="off">
@@ -399,11 +413,12 @@
                         {% endwith %}
                         {% endfor %}
                     </div>
-                    <a href="{% url 'patient-dashboard' %}" class="mp-add-btn" style="display:block;text-align:center;text-decoration:none;margin-top:10px;">View full tracker on Dashboard →</a>
+                    {% if not editing_patient_id %}<a href="{% url 'patient-dashboard' %}" class="mp-add-btn" style="display:block;text-align:center;text-decoration:none;margin-top:10px;">View full tracker on Dashboard →</a>{% endif %}
                 {% else %}
                 <div class="mp-empty">No exercises prescribed yet.</div>
                 {% endif %}
 
+                {% if not editing_patient_id %}
                 <h4 style="font-size:0.85rem;color:#374151;margin:18px 0 8px;">My Exercises</h4>
                 <div class="mp-tile-grid" id="mp-my-exercises-grid">
                     {% for se in saved_exercises %}
@@ -429,6 +444,9 @@
                     </div>
                     <button type="submit" class="mp-add-btn" id="mp-exercise-add-selected" hidden>+ Add Selected (<span id="mp-exercise-selected-count">0</span>)</button>
                 </form>
+                {% else %}
+                <p class="mp-empty" style="margin-top:18px;">Patients manage their own saved-exercise list here -- prescribe exercises through the regular Exercise tool instead.</p>
+                {% endif %}
             </div>
 
             <div class="mp-subtab-panel" data-subtab-panel="aids" hidden>
@@ -438,7 +456,8 @@
                     <div class="mp-tile">
                         <div class="mp-entry-name">{{ aid.display_name }}</div>
                         {% if aid.notes %}<div class="mp-entry-sub">{{ aid.notes }}</div>{% endif %}
-                        <form class="mp-entry-del" method="post" action="{% url 'patient-aid-delete' aid.id %}">
+                        {% if aid.recorded_by %}<div class="mp-entry-by">Added by Dr. {{ aid.recorded_by.get_full_name|default:aid.recorded_by.username }}</div>{% endif %}
+                        <form class="mp-entry-del" method="post" action="{{ aid.delete_url }}">
                             {% csrf_token %}
                             <button type="submit" title="Remove">✕</button>
                         </form>
@@ -448,7 +467,7 @@
                     {% endfor %}
                 </div>
 
-                <form class="mp-add-form" method="post" action="{% url 'patient-aid-add' %}">
+                <form class="mp-add-form" method="post" action="{{ aid_add_url }}">
                     {% csrf_token %}
                     <input type="hidden" name="product_id" id="mp-aid-pid">
                     <input type="text" name="custom_name" id="mp-aid-search" placeholder="Search aids (crutches, braces, walkers...)" autocomplete="off">
@@ -761,65 +780,70 @@
         // tile: clicking its body opens the detail modal, its checkbox
         // (inside the bulk-add form, native name="exercise_ids") lets you
         // tick several and add them all to "My Exercises" at once. ----
+        // Only present in patient mode -- the physio-facing editor hides
+        // this whole sub-section (see the template's editing_patient_id
+        // check), so guard the wiring instead of assuming it's there.
         var exInput = document.getElementById('mp-exercise-search');
-        var exBox = document.getElementById('mp-exercise-suggestions');
-        var exAddBtn = document.getElementById('mp-exercise-add-selected');
-        var exSelectedCount = document.getElementById('mp-exercise-selected-count');
-        var exTimer;
-        var exResultsCache = {};
-        function escapeHtml(s) { return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
-        function updateSelectedCount() {
-            var n = exBox.querySelectorAll('.mp-ex-checkbox-wrap input:checked').length;
-            exSelectedCount.textContent = n;
-            exAddBtn.hidden = n === 0;
-        }
-        // Search box lives inside the bulk-add <form> (so checked boxes
-        // submit with it) -- stop Enter from submitting it while typing.
-        exInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') e.preventDefault(); });
-        exInput.addEventListener('input', function () {
-            clearTimeout(exTimer);
-            var q = exInput.value.trim();
-            if (q.length < 2) { exBox.innerHTML = ''; updateSelectedCount(); return; }
-            exTimer = setTimeout(function () {
-                fetch('/patient-app/api/browse/public-exercises/search/?q=' + encodeURIComponent(q))
-                    .then(function (r) { return r.json(); })
-                    .then(function (data) {
-                        var items = data.exercises || [];
-                        if (!items.length) {
-                            exBox.innerHTML = '<div class="mp-empty">No exercises match "' + escapeHtml(q) + '"</div>';
-                            updateSelectedCount();
-                            return;
-                        }
-                        exResultsCache = {};
-                        items.forEach(function (ex) { exResultsCache[ex.id] = ex; });
-                        exBox.innerHTML = items.map(function (ex) {
-                            var videoUrl = ex.hosted_video_url || ex.youtube_url;
-                            var inner = '<div class="mp-ex-checkbox-wrap"><input type="checkbox" name="exercise_ids" value="' + ex.id + '"></div>' +
-                                '<div class="mp-ex-open" data-id="' + ex.id + '"><div class="mp-entry-name">' + escapeHtml(ex.exercise_name) + '</div>' +
-                                '<div class="mp-entry-sub">' + (ex.default_sets || '-') + ' sets &times; ' + (ex.default_reps || '-') + ' reps</div>';
-                            if (videoUrl) inner += '<div class="mp-tile-play">▶ Watch</div>';
-                            inner += '</div>';
-                            return '<div class="mp-tile mp-tile-exercise">' + inner + '</div>';
-                        }).join('');
-                        exBox.querySelectorAll('.mp-ex-open').forEach(function (el) {
-                            el.addEventListener('click', function () {
-                                var ex = exResultsCache[el.dataset.id];
-                                if (!ex) return;
-                                openExerciseModal({
-                                    name: ex.exercise_name, type: ex.exercise_type,
-                                    sets: ex.default_sets, reps: ex.default_reps, hold: ex.hold_time_sec,
-                                    description: ex.description, descriptionNp: ex.description_nepali,
-                                    video: ex.hosted_video_url || ex.youtube_url,
+        if (exInput) {
+            var exBox = document.getElementById('mp-exercise-suggestions');
+            var exAddBtn = document.getElementById('mp-exercise-add-selected');
+            var exSelectedCount = document.getElementById('mp-exercise-selected-count');
+            var exTimer;
+            var exResultsCache = {};
+            var escapeHtml = function (s) { return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); };
+            var updateSelectedCount = function () {
+                var n = exBox.querySelectorAll('.mp-ex-checkbox-wrap input:checked').length;
+                exSelectedCount.textContent = n;
+                exAddBtn.hidden = n === 0;
+            };
+            // Search box lives inside the bulk-add <form> (so checked boxes
+            // submit with it) -- stop Enter from submitting it while typing.
+            exInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') e.preventDefault(); });
+            exInput.addEventListener('input', function () {
+                clearTimeout(exTimer);
+                var q = exInput.value.trim();
+                if (q.length < 2) { exBox.innerHTML = ''; updateSelectedCount(); return; }
+                exTimer = setTimeout(function () {
+                    fetch('/patient-app/api/browse/public-exercises/search/?q=' + encodeURIComponent(q))
+                        .then(function (r) { return r.json(); })
+                        .then(function (data) {
+                            var items = data.exercises || [];
+                            if (!items.length) {
+                                exBox.innerHTML = '<div class="mp-empty">No exercises match "' + escapeHtml(q) + '"</div>';
+                                updateSelectedCount();
+                                return;
+                            }
+                            exResultsCache = {};
+                            items.forEach(function (ex) { exResultsCache[ex.id] = ex; });
+                            exBox.innerHTML = items.map(function (ex) {
+                                var videoUrl = ex.hosted_video_url || ex.youtube_url;
+                                var inner = '<div class="mp-ex-checkbox-wrap"><input type="checkbox" name="exercise_ids" value="' + ex.id + '"></div>' +
+                                    '<div class="mp-ex-open" data-id="' + ex.id + '"><div class="mp-entry-name">' + escapeHtml(ex.exercise_name) + '</div>' +
+                                    '<div class="mp-entry-sub">' + (ex.default_sets || '-') + ' sets &times; ' + (ex.default_reps || '-') + ' reps</div>';
+                                if (videoUrl) inner += '<div class="mp-tile-play">▶ Watch</div>';
+                                inner += '</div>';
+                                return '<div class="mp-tile mp-tile-exercise">' + inner + '</div>';
+                            }).join('');
+                            exBox.querySelectorAll('.mp-ex-open').forEach(function (el) {
+                                el.addEventListener('click', function () {
+                                    var ex = exResultsCache[el.dataset.id];
+                                    if (!ex) return;
+                                    openExerciseModal({
+                                        name: ex.exercise_name, type: ex.exercise_type,
+                                        sets: ex.default_sets, reps: ex.default_reps, hold: ex.hold_time_sec,
+                                        description: ex.description, descriptionNp: ex.description_nepali,
+                                        video: ex.hosted_video_url || ex.youtube_url,
+                                    });
                                 });
                             });
+                            exBox.querySelectorAll('.mp-ex-checkbox-wrap input').forEach(function (cb) {
+                                cb.addEventListener('change', updateSelectedCount);
+                            });
+                            updateSelectedCount();
                         });
-                        exBox.querySelectorAll('.mp-ex-checkbox-wrap input').forEach(function (cb) {
-                            cb.addEventListener('change', updateSelectedCount);
-                        });
-                        updateSelectedCount();
-                    });
-            }, 250);
-        });
+                }, 250);
+            });
+        }
     }());
     </script>
 </body>
