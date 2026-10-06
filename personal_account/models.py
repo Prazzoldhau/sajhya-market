@@ -262,6 +262,30 @@ class PatientDietEntry(models.Model):
         return f"{self.food_item} ({self.get_meal_time_display()}) - {self.patient.patient_name}"
 
 
+class PatientConsultation(models.Model):
+    """A doctor/specialist visit logged under the Medical Profile's
+    Consultation tab -- free text throughout, same as PatientDietEntry,
+    since there's no consultant directory in this app to search against.
+    follow_up_date drives the "Follow-up due" badge shown once that date
+    arrives; no automatic push notification for it yet, just the
+    always-visible flag (recorded_by: null means the patient added it,
+    set means that physio did)."""
+
+    patient = models.ForeignKey(AddPatient, on_delete=models.CASCADE, related_name='consultations')
+    doctor_name = models.CharField(max_length=255, help_text='e.g. "Dr. Shrestha, Orthopedics"')
+    visit_date = models.DateField()
+    notes = models.CharField(max_length=500, blank=True, default='', help_text='Findings, advice, prescriptions, etc.')
+    follow_up_date = models.DateField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    recorded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+
+    class Meta:
+        ordering = ['-visit_date', '-created_at']
+
+    def __str__(self):
+        return f"{self.doctor_name} ({self.visit_date}) - {self.patient.patient_name}"
+
+
 class PatientMedication(models.Model):
     """One medication entry under the Medical Profile's Medication tab,
     timed to a part of the day. `pharmacy_product` is set when the

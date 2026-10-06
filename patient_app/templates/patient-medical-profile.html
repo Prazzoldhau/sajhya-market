@@ -54,9 +54,13 @@
         .mp-tab-icon.icon-record { background: #fef3c7; }
         .mp-tab-icon.icon-nursing { background: #ccfbf1; }
         .mp-tab-icon.icon-diet { background: #dcfce7; }
+        .mp-tab-icon.icon-consultation { background: #ede9fe; }
         .mp-tab.active .mp-tab-icon.icon-medicine, .mp-tab.active .mp-tab-icon.icon-lab,
         .mp-tab.active .mp-tab-icon.icon-physio, .mp-tab.active .mp-tab-icon.icon-record,
-        .mp-tab.active .mp-tab-icon.icon-nursing, .mp-tab.active .mp-tab-icon.icon-diet { background: rgba(255,255,255,.22); }
+        .mp-tab.active .mp-tab-icon.icon-nursing, .mp-tab.active .mp-tab-icon.icon-diet,
+        .mp-tab.active .mp-tab-icon.icon-consultation { background: rgba(255,255,255,.22); }
+        .mp-tab-pill.is-due, .mp-followup-due { background: #fee2e2; color: #b91c1c; }
+        .mp-followup-due { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 600; margin-top: 4px; }
         .mp-tab-title { font-weight: 700; font-size: 0.92rem; color: #374151; }
         .mp-tab.active .mp-tab-title { color: white; }
         .mp-tab-status { font-size: 0.78rem; color: #9ca3af; margin-top: 2px; }
@@ -197,6 +201,13 @@
                 <div class="mp-tab-title">Diet Chart</div>
                 <div class="mp-tab-status{% if diet_count %} is-active-status{% endif %}">{% if diet_count %}Active{% else %}Inactive{% endif %}</div>
                 {% if diet_count %}<span class="mp-tab-pill">{{ diet_count }} item{{ diet_count|pluralize }}</span>{% endif %}
+            </button>
+            <button type="button" class="mp-tab" data-tab="consultation">
+                <div class="mp-tab-icon icon-consultation">🗓️</div>
+                <div class="mp-tab-title">Consultation</div>
+                <div class="mp-tab-status{% if consultation_count %} is-active-status{% endif %}">{% if consultation_count %}Active{% else %}Inactive{% endif %}</div>
+                {% if followup_due_count %}<span class="mp-tab-pill is-due">{{ followup_due_count }} follow-up{{ followup_due_count|pluralize }} due</span>
+                {% elif consultation_count %}<span class="mp-tab-pill">{{ consultation_count }} visit{{ consultation_count|pluralize }}</span>{% endif %}
             </button>
         </div>
 
@@ -559,6 +570,42 @@
                 </div>
                 {% endfor %}
             </div>
+        </div>
+
+        <!-- ===================== Consultation ===================== -->
+        <div class="mp-tab-panel mp-card" data-tab-panel="consultation" hidden>
+            <div class="mp-tile-grid">
+                {% for con in consultations %}
+                <div class="mp-tile">
+                    <div class="mp-entry-name">{{ con.doctor_name }}</div>
+                    <div class="mp-entry-sub">Visited {{ con.visit_date|date:"d M Y" }}</div>
+                    {% if con.notes %}<div class="mp-entry-sub">{{ con.notes }}</div>{% endif %}
+                    {% if con.follow_up_date %}
+                    <div class="mp-entry-sub{% if con.followup_due %} mp-followup-due{% endif %}">
+                        {% if con.followup_due %}Follow-up due: {% else %}Follow-up: {% endif %}{{ con.follow_up_date|date:"d M Y" }}
+                    </div>
+                    {% endif %}
+                    {% if con.recorded_by %}<div class="mp-entry-by">Added by Dr. {{ con.recorded_by.get_full_name|default:con.recorded_by.username }}</div>{% endif %}
+                    <form class="mp-entry-del" method="post" action="{{ con.delete_url }}">
+                        {% csrf_token %}
+                        <button type="submit" title="Remove">✕</button>
+                    </form>
+                </div>
+                {% empty %}
+                <div class="mp-empty">No consultations logged yet.</div>
+                {% endfor %}
+            </div>
+
+            <form class="mp-add-form" method="post" action="{{ consultation_add_url }}">
+                {% csrf_token %}
+                <input type="text" name="doctor_name" placeholder="Doctor / specialist name" autocomplete="off">
+                <label class="mp-hint" style="display:block;margin-top:6px;">Visit date</label>
+                <input type="date" name="visit_date">
+                <input type="text" name="notes" placeholder="Notes (optional)" style="margin-top:6px;">
+                <label class="mp-hint" style="display:block;margin-top:6px;">Follow-up date (optional)</label>
+                <input type="date" name="follow_up_date">
+                <button type="submit" class="mp-add-btn">+ Add</button>
+            </form>
         </div>
 
         {% if profile.updated_at %}
