@@ -61,6 +61,14 @@
         .mp-tab.active .mp-tab-icon.icon-consultation { background: rgba(255,255,255,.22); }
         .mp-tab-pill.is-due, .mp-followup-due { background: #fee2e2; color: #b91c1c; }
         .mp-followup-due { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 600; margin-top: 4px; }
+        .mp-next-dose { background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 10px; padding: 10px 14px; margin-bottom: 16px; font-size: 0.85rem; color: #065f46; }
+        .mp-rx-status { display: inline-block; margin-top: 6px; padding: 2px 9px; border-radius: 999px; font-size: 0.72rem; font-weight: 600; }
+        .mp-rx-status-active { background: #d1fae5; color: #065f46; }
+        .mp-rx-status-completed { background: #e5e7eb; color: #374151; }
+        .mp-rx-status-discontinued { background: #fee2e2; color: #b91c1c; }
+        .mp-rx-actions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+        .mp-rx-action-btn { font-size: 0.72rem; padding: 4px 8px; border-radius: 6px; border: 1px solid #d1d5db; background: #fff; cursor: pointer; }
+        .mp-rx-action-btn:hover { background: #f3f4f6; }
         .mp-tab-title { font-weight: 700; font-size: 0.92rem; color: #374151; }
         .mp-tab.active .mp-tab-title { color: white; }
         .mp-tab-status { font-size: 0.78rem; color: #9ca3af; margin-top: 2px; }
@@ -171,8 +179,8 @@
             <button type="button" class="mp-tab active" data-tab="medication">
                 <div class="mp-tab-icon icon-medicine">💊</div>
                 <div class="mp-tab-title">Medicine</div>
-                <div class="mp-tab-status{% if medication_count %} is-active-status{% endif %}">{% if medication_count %}Active{% else %}Inactive{% endif %}</div>
-                {% if medication_count %}<span class="mp-tab-pill">{{ medication_count }} medicine{{ medication_count|pluralize }}</span>{% endif %}
+                <div class="mp-tab-status{% if medication_count or active_rx_count %} is-active-status{% endif %}">{% if medication_count or active_rx_count %}Active{% else %}Inactive{% endif %}</div>
+                {% if active_rx_count %}<span class="mp-tab-pill">{{ active_rx_count }} Rx</span>{% elif medication_count %}<span class="mp-tab-pill">{{ medication_count }} medicine{{ medication_count|pluralize }}</span>{% endif %}
             </button>
             <button type="button" class="mp-tab" data-tab="blood_tests">
                 <div class="mp-tab-icon icon-lab">🧪</div>
@@ -213,6 +221,70 @@
 
         <!-- ===================== Medication ===================== -->
         <div class="mp-tab-panel mp-card" data-tab-panel="medication">
+            {% if upcoming_doses %}
+            <div class="mp-next-dose">
+                <strong>Next dose:</strong>
+                {% with d=upcoming_doses.0 %}{{ d.rx.display_name }}{% if d.rx.dosage %} ({{ d.rx.dosage }}){% endif %} &middot; {{ d.slot_label }}, {{ d.dose_at|date:"d M, g:i A" }}{% endwith %}
+                {% if upcoming_doses|length > 1 %}<span class="mp-entry-sub">+ {{ upcoming_doses|length|add:"-1" }} more dose{{ upcoming_doses|length|add:"-1"|pluralize }} in the next 24h</span>{% endif %}
+            </div>
+            {% endif %}
+
+            <h4 style="font-size:0.85rem;color:#374151;margin:0 0 8px;">Prescriptions {% if not editing_patient_id %}(from your doctor){% endif %}</h4>
+            <div class="mp-tile-grid">
+                {% for rx in rx_list %}
+                <div class="mp-tile">
+                    <div class="mp-entry-name">{{ rx.display_name }}{% if rx.dosage %} <span class="mp-entry-sub">({{ rx.dosage }})</span>{% endif %}</div>
+                    <div class="mp-entry-sub">{{ rx.get_time_of_day_display }} &middot; since {{ rx.start_date|date:"d M Y" }}{% if rx.end_date %}, until {{ rx.end_date|date:"d M Y" }}{% endif %}</div>
+                    {% if rx.notes %}<div class="mp-entry-sub">{{ rx.notes }}</div>{% endif %}
+                    <span class="mp-rx-status mp-rx-status-{{ rx.effective_status }}">{{ rx.get_status_display }}</span>
+                    {% if rx.issued_by %}<div class="mp-entry-by">Issued by Dr. {{ rx.issued_by.get_full_name|default:rx.issued_by.username }}</div>{% endif %}
+                    {% if editing_patient_id %}
+                    <div class="mp-rx-actions">
+                        {% if rx.status == 'active' %}
+                        <form method="post" action="{{ rx.status_url }}">
+                            {% csrf_token %}
+                            <input type="hidden" name="status" value="completed">
+                            <button type="submit" class="mp-rx-action-btn">Mark Completed</button>
+                        </form>
+                        <form method="post" action="{{ rx.status_url }}">
+                            {% csrf_token %}
+                            <input type="hidden" name="status" value="discontinued">
+                            <button type="submit" class="mp-rx-action-btn">Discontinue</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                    <form class="mp-entry-del" method="post" action="{{ rx.delete_url }}">
+                        {% csrf_token %}
+                        <button type="submit" title="Remove">✕</button>
+                    </form>
+                    {% endif %}
+                </div>
+                {% empty %}
+                <div class="mp-empty">{% if editing_patient_id %}No prescriptions issued yet.{% else %}No prescriptions from your doctor yet.{% endif %}</div>
+                {% endfor %}
+            </div>
+
+            {% if editing_patient_id %}
+            <form class="mp-add-form" method="post" action="{{ rx_add_url }}">
+                {% csrf_token %}
+                <input type="hidden" name="pharmacy_product_id" id="mp-rx-pid">
+                <input type="text" name="custom_name" id="mp-rx-search" placeholder="Search medicine..." autocomplete="off">
+                <div class="mp-suggestions" id="mp-rx-suggestions"></div>
+                <input type="text" name="dosage" placeholder="Dosage (e.g. 500mg, 1 tablet)" style="margin-top:6px;">
+                <select name="time_of_day" style="margin-top:6px;">
+                    <option value="morning">Morning</option>
+                    <option value="evening">Evening</option>
+                    <option value="night">Night</option>
+                </select>
+                <label class="mp-hint" style="display:block;margin-top:6px;">Start date</label>
+                <input type="date" name="start_date" value="{{ today_iso }}">
+                <input type="number" name="duration_days" placeholder="Duration in days (leave blank if ongoing)" style="margin-top:6px;" min="1">
+                <input type="text" name="notes" placeholder="Notes (optional)" style="margin-top:6px;">
+                <button type="submit" class="mp-add-btn">+ Issue Prescription</button>
+            </form>
+            {% endif %}
+
+            <h4 style="font-size:0.85rem;color:#374151;margin:18px 0 8px;">Medicine Reminders</h4>
             <div class="mp-time-cols">
                 <div class="mp-time-col">
                     <h3>Morning</h3>
@@ -778,6 +850,46 @@
                 assessInput.focus();
             }
         });
+
+        // ---- Rx issuance medicine search (physio-only form; same Pharmacy
+        // endpoint the Medicine-reminder add-forms use) ----
+        var rxInput = document.getElementById('mp-rx-search');
+        if (rxInput) {
+            var rxBox = document.getElementById('mp-rx-suggestions');
+            var rxHiddenId = document.getElementById('mp-rx-pid');
+            var rxTimer;
+            rxInput.addEventListener('input', function () {
+                rxHiddenId.value = '';
+                clearTimeout(rxTimer);
+                var q = rxInput.value.trim();
+                if (q.length < 2) { rxBox.style.display = 'none'; return; }
+                rxTimer = setTimeout(function () {
+                    fetch('/patient-app/api/pharmacy/public-products/?search=' + encodeURIComponent(q))
+                        .then(function (r) { return r.json(); })
+                        .then(function (data) {
+                            var items = data.products || [];
+                            if (!items.length) {
+                                rxBox.innerHTML = '<div class="mp-suggest-empty">No match in Pharmacy -- will be saved as a plain entry</div>';
+                            } else {
+                                rxBox.innerHTML = items.map(function (it) {
+                                    return '<div class="mp-suggest-item" data-id="' + it.id + '" data-name="' + it.name.replace(/"/g, '&quot;') + '">' + it.name + '</div>';
+                                }).join('');
+                            }
+                            rxBox.style.display = 'block';
+                            rxBox.querySelectorAll('.mp-suggest-item').forEach(function (el) {
+                                el.addEventListener('click', function () {
+                                    rxInput.value = el.dataset.name;
+                                    rxHiddenId.value = el.dataset.id;
+                                    rxBox.style.display = 'none';
+                                });
+                            });
+                        });
+                }, 250);
+            });
+            document.addEventListener('click', function (e) {
+                if (!rxInput.parentElement.contains(e.target)) rxBox.style.display = 'none';
+            });
+        }
 
         // ---- Aid search (debounced, server-side filter over Marketplace products) ----
         var aidInput = document.getElementById('mp-aid-search');

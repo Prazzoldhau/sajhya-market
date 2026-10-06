@@ -97,6 +97,7 @@ urlpatterns = [
     path('api/medical-profile/diet/<int:diet_id>/delete/', views.patient_api_diet_delete, name='patient_api_diet_delete'),
     path('api/medical-profile/consultation/add/', views.patient_api_consultation_add, name='patient_api_consultation_add'),
     path('api/medical-profile/consultation/<int:consultation_id>/delete/', views.patient_api_consultation_delete, name='patient_api_consultation_delete'),
+    path('api/medical-profile/upcoming-doses/', views.patient_api_upcoming_doses, name='patient_api_upcoming_doses'),
     path('add-recs-to-cart/', views.add_recs_to_cart, name='add-recs-to-cart'),
 
     # Lab service (Blood Investigation)
