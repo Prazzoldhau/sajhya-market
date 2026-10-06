@@ -6,7 +6,7 @@ from django.utils.dateparse import parse_date
 from personal_account.models import (
     AddPatient, Clinic, PatientMedicalProfile, PatientMedication,
     PatientBloodTest, PatientAid, PatientAssessmentEntry, PatientDietEntry,
-    PatientConsultation,
+    PatientConsultation, Rx,
 )
 from exercise_app.models import Prescription, PrescriptionExercise, ExerciseFeedback
 from django.http import JsonResponse
@@ -434,3 +434,45 @@ def physio_consultation_delete(request, patient_id, consultation_id):
     if request.method == "POST":
         PatientConsultation.objects.filter(id=consultation_id, patient_id=patient_id).delete()
     return _physio_tab_redirect(patient_id, 'consultation')
+
+
+@login_required
+def physio_rx_add(request, patient_id):
+    """Issues a new digital prescription -- unlike every other Medical
+    Profile entry, there is no patient-facing equivalent of this view:
+    only a physio/doctor can create an Rx."""
+    patient = get_object_or_404(AddPatient, id=patient_id)
+    if request.method == "POST":
+        pharmacy_product_id = request.POST.get('pharmacy_product_id', '').strip()
+        custom_name = request.POST.get('custom_name', '').strip()
+        dosage = request.POST.get('dosage', '').strip()
+        time_of_day = request.POST.get('time_of_day', '').strip()
+        start_date = parse_date(request.POST.get('start_date', '').strip()) or date.today()
+        duration_raw = request.POST.get('duration_days', '').strip()
+        duration_days = int(duration_raw) if duration_raw.isdigit() else None
+        notes = request.POST.get('notes', '').strip()
+        if time_of_day in dict(Rx.TIME_CHOICES) and (pharmacy_product_id or custom_name):
+            pharmacy_product = PharmacyProduct.objects.filter(id=pharmacy_product_id).first() if pharmacy_product_id else None
+            Rx.objects.create(
+                patient=patient, issued_by=request.user, pharmacy_product=pharmacy_product,
+                custom_name='' if pharmacy_product else custom_name, dosage=dosage,
+                time_of_day=time_of_day, start_date=start_date, duration_days=duration_days,
+                notes=notes,
+            )
+    return _physio_tab_redirect(patient_id, 'medication')
+
+
+@login_required
+def physio_rx_status(request, patient_id, rx_id):
+    if request.method == "POST":
+        status = request.POST.get('status', '').strip()
+        if status in dict(Rx.STATUS_CHOICES):
+            Rx.objects.filter(id=rx_id, patient_id=patient_id).update(status=status)
+    return _physio_tab_redirect(patient_id, 'medication')
+
+
+@login_required
+def physio_rx_delete(request, patient_id, rx_id):
+    if request.method == "POST":
+        Rx.objects.filter(id=rx_id, patient_id=patient_id).delete()
+    return _physio_tab_redirect(patient_id, 'medication')

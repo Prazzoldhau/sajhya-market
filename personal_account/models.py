@@ -1,7 +1,7 @@
 from django.db import models, IntegrityError, transaction
 from django.conf import settings
 import secrets, string,pytz
-from datetime import datetime
+from datetime import datetime, date, time, timedelta
 from clinic_account.models import Clinic
 from enterprise_account.models import Enterprise
 from django.db import models
@@ -323,6 +323,105 @@ class PatientMedication(models.Model):
 
     def __str__(self):
         return f"{self.display_name} ({self.get_time_of_day_display()}) - {self.patient.patient_name}"
+
+
+# Default clock time each PatientMedication/Rx time-of-day slot resolves to,
+# for computing "upcoming dose" countdowns -- this app has no per-patient
+# custom dose-time setting, so these three fixed times are the shared
+# assumption every dose calculation (web, JSON API) is built on.
+DOSE_SLOT_TIMES = {
+    'morning': time(8, 0),
+    'evening': time(18, 0),
+    'night': time(21, 0),
+}
+
+
+def get_upcoming_doses(patient, hours_ahead=24):
+    """Active, non-expired Rx entries due for a dose within `hours_ahead`
+    hours from now (Nepal time), soonest first. Each dict: rx, dose_at
+    (aware datetime), slot_label. Used by both the Medicine tab's "Next
+    dose" banner and the native app's JSON payload -- there's no cron job
+    or push notification wired to this yet, it's a point-in-time query."""
+    now = get_nepal_time()
+    today = now.date()
+    tz = now.tzinfo
+    doses = []
+    for rx in patient.rx_list.filter(status='active').select_related('pharmacy_product', 'issued_by'):
+        if rx.is_expired:
+            continue
+        slot_time = DOSE_SLOT_TIMES.get(rx.time_of_day)
+        if not slot_time:
+            continue
+        dose_at = datetime.combine(today, slot_time, tzinfo=tz)
+        if dose_at < now:
+            dose_at += timedelta(days=1)
+        if dose_at - now <= timedelta(hours=hours_ahead):
+            doses.append({'rx': rx, 'dose_at': dose_at, 'slot_label': rx.get_time_of_day_display()})
+    doses.sort(key=lambda d: d['dose_at'])
+    return doses
+
+
+class Rx(models.Model):
+    """A doctor-issued digital prescription for a single medicine, shown
+    inside the Medical Profile's Medicine tab alongside -- but kept
+    separate from -- PatientMedication's own free-text "what I take"
+    list. Unlike every other Medical Profile entry, only a physio/doctor
+    can create or change one (issued_by is always set on creation; there
+    is deliberately no patient-facing add/delete path) because a real
+    prescription has a clinical lifecycle (status, duration) that a plain
+    medication reminder doesn't need."""
+
+    STATUS_CHOICES = [
+        ('active', 'Active'),
+        ('completed', 'Completed'),
+        ('discontinued', 'Discontinued'),
+    ]
+    TIME_CHOICES = PatientMedication.TIME_CHOICES
+
+    patient = models.ForeignKey(AddPatient, on_delete=models.CASCADE, related_name='rx_list')
+    issued_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='+')
+    pharmacy_product = models.ForeignKey(
+        'marketplace_app.PharmacyProduct', on_delete=models.SET_NULL, null=True, blank=True,
+    )
+    custom_name = models.CharField(max_length=200, blank=True, default='')
+    dosage = models.CharField(max_length=100, blank=True, default='', help_text='e.g. "500mg, 1 tablet"')
+    time_of_day = models.CharField(max_length=10, choices=TIME_CHOICES)
+    start_date = models.DateField()
+    duration_days = models.PositiveIntegerField(null=True, blank=True, help_text='Leave blank for ongoing / as-needed')
+    status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='active')
+    notes = models.CharField(max_length=255, blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-start_date', '-created_at']
+
+    @property
+    def display_name(self):
+        return self.pharmacy_product.name if self.pharmacy_product else self.custom_name
+
+    @property
+    def end_date(self):
+        if self.duration_days:
+            return self.start_date + timedelta(days=self.duration_days)
+        return None
+
+    @property
+    def is_expired(self):
+        end = self.end_date
+        return bool(end and end < date.today())
+
+    @property
+    def effective_status(self):
+        """status, but auto-showing "completed" once an active Rx's own
+        duration has run out -- avoids needing a scheduled job just to
+        flip a field for something already derivable from start_date +
+        duration_days."""
+        if self.status == 'active' and self.is_expired:
+            return 'completed'
+        return self.status
+
+    def __str__(self):
+        return f"{self.display_name} ({self.get_status_display()}) - {self.patient.patient_name}"
 
 
 class PatientBloodTest(models.Model):

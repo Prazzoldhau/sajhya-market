@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.db.models import Prefetch, F, Count
-from personal_account.models import AddPatient, ActivationCard, PatientPhysioPairing, PatientMedicalProfile, PatientMedication, PatientBloodTest, PatientAid, PatientExercise, PatientAssessmentEntry, PatientDietEntry, PatientConsultation, get_nepal_time
+from personal_account.models import AddPatient, ActivationCard, PatientPhysioPairing, PatientMedicalProfile, PatientMedication, PatientBloodTest, PatientAid, PatientExercise, PatientAssessmentEntry, PatientDietEntry, PatientConsultation, Rx, get_upcoming_doses, get_nepal_time
 from visit_notes_app.models import VisitNote
 from assessment_app.models import SpecialTestReference
 from exercise_app.models import Prescription, PrescriptionExercise, ExerciseFeedback, Region, SubRegion, ExerciseMain
@@ -271,6 +271,9 @@ def _medical_profile_context(patient):
     for m in patient.medications.select_related('pharmacy_product', 'recorded_by'):
         medications_by_time[m.time_of_day].append(m)
 
+    prescriptions = patient.rx_list.select_related('pharmacy_product', 'issued_by')
+    upcoming_doses = get_upcoming_doses(patient)
+
     blood_tests = patient.blood_test_entries.select_related('lab_test', 'recorded_by')
 
     diet_entries_by_meal = {'breakfast': [], 'lunch': [], 'dinner': [], 'snacks': []}
@@ -316,6 +319,7 @@ def _medical_profile_context(patient):
     # only (no invented "pending refill"/"next session" stand-ins for
     # things this app doesn't actually track).
     medication_count = sum(len(v) for v in medications_by_time.values())
+    active_rx_count = sum(1 for rx in prescriptions if rx.effective_status == 'active')
     blood_test_count = blood_tests.count()
     diet_count = sum(len(v) for v in diet_entries_by_meal.values())
     consultation_count = consultations.count()
@@ -338,6 +342,9 @@ def _medical_profile_context(patient):
         'auto_recs': auto_recs,
         'matched_label': matched_label,
         'medication_count': medication_count,
+        'active_rx_count': active_rx_count,
+        'rx_list': prescriptions,
+        'upcoming_doses': upcoming_doses,
         'blood_test_count': blood_test_count,
         'diet_count': diet_count,
         'physio_record_count': physio_record_count,
@@ -348,6 +355,7 @@ def _medical_profile_context(patient):
         'consultations': consultations,
         'consultation_count': consultation_count,
         'followup_due_count': followup_due_count,
+        'today_iso': today.isoformat(),
     }
 
 
@@ -366,12 +374,15 @@ def _attach_medical_profile_urls(context, patient, is_physio):
         context['assessment_entry_add_url'] = reverse('physio-assessment-entry-add', kwargs=pid)
         context['diet_add_url'] = reverse('physio-diet-add', kwargs=pid)
         context['consultation_add_url'] = reverse('physio-consultation-add', kwargs=pid)
+        context['rx_add_url'] = reverse('physio-rx-add', kwargs=pid)
         med_delete = lambda mid: reverse('physio-medication-delete', kwargs={**pid, 'medication_id': mid})
         bt_delete = lambda bid: reverse('physio-bloodtest-delete', kwargs={**pid, 'bloodtest_id': bid})
         aid_delete = lambda aid: reverse('physio-aid-delete', kwargs={**pid, 'aid_id': aid})
         entry_delete = lambda eid: reverse('physio-assessment-entry-delete', kwargs={**pid, 'entry_id': eid})
         diet_delete = lambda did: reverse('physio-diet-delete', kwargs={**pid, 'diet_id': did})
         consultation_delete = lambda cid: reverse('physio-consultation-delete', kwargs={**pid, 'consultation_id': cid})
+        rx_delete = lambda rid: reverse('physio-rx-delete', kwargs={**pid, 'rx_id': rid})
+        rx_status_url = lambda rid: reverse('physio-rx-status', kwargs={**pid, 'rx_id': rid})
     else:
         context['medical_profile_save_url'] = reverse('patient-medical-profile')
         context['medication_add_url'] = reverse('patient-medication-add')
@@ -386,6 +397,7 @@ def _attach_medical_profile_urls(context, patient, is_physio):
         entry_delete = lambda eid: reverse('patient-assessment-entry-delete', kwargs={'entry_id': eid})
         diet_delete = lambda did: reverse('patient-diet-delete', kwargs={'diet_id': did})
         consultation_delete = lambda cid: reverse('patient-consultation-delete', kwargs={'consultation_id': cid})
+        rx_delete = rx_status_url = None  # Rx is doctor-issued only -- no patient-facing change path
 
     for bucket in context['medications_by_time'].values():
         for m in bucket:
@@ -401,6 +413,10 @@ def _attach_medical_profile_urls(context, patient, is_physio):
             d.delete_url = diet_delete(d.id)
     for con in context['consultations']:
         con.delete_url = consultation_delete(con.id)
+    if is_physio:
+        for rx in context['rx_list']:
+            rx.delete_url = rx_delete(rx.id)
+            rx.status_url = rx_status_url(rx.id)
 
 
 @patient_login_required
@@ -2375,6 +2391,28 @@ def _medical_profile_dict(profile):
                 'follow_up_date': c.follow_up_date.isoformat() if c.follow_up_date else None,
             } for c in patient.consultations.all()
         ],
+        'prescriptions': [
+            {
+                'id': rx.id,
+                'name': rx.display_name,
+                'dosage': rx.dosage,
+                'time_of_day': rx.time_of_day,
+                'start_date': rx.start_date.isoformat(),
+                'end_date': rx.end_date.isoformat() if rx.end_date else None,
+                'status': rx.effective_status,
+                'notes': rx.notes,
+                'issued_by': rx.issued_by.get_full_name() or rx.issued_by.username if rx.issued_by else None,
+            } for rx in patient.rx_list.select_related('pharmacy_product', 'issued_by')
+        ],
+        'upcoming_doses': [
+            {
+                'rx_id': d['rx'].id,
+                'name': d['rx'].display_name,
+                'dosage': d['rx'].dosage,
+                'slot_label': d['slot_label'],
+                'dose_at': d['dose_at'].isoformat(),
+            } for d in get_upcoming_doses(patient)
+        ],
     }
 
 
@@ -2656,3 +2694,32 @@ def patient_api_consultation_delete(request, consultation_id):
         return err
     PatientConsultation.objects.filter(id=consultation_id, patient=patient).delete()
     return JsonResponse({'success': True})
+
+
+@csrf_exempt
+@require_http_methods(["GET"])
+def patient_api_upcoming_doses(request):
+    """Lightweight endpoint for the app's "Next dose" widget -- just the
+    doses due soon, without pulling the whole medical profile payload.
+    `hours` (default 24) widens or narrows the look-ahead window."""
+    patient, err = _patient_required(request)
+    if err:
+        return err
+    try:
+        hours_ahead = int(request.GET.get('hours', 24))
+    except ValueError:
+        hours_ahead = 24
+
+    doses = get_upcoming_doses(patient, hours_ahead=hours_ahead)
+    return JsonResponse({
+        'success': True,
+        'doses': [
+            {
+                'rx_id': d['rx'].id,
+                'name': d['rx'].display_name,
+                'dosage': d['rx'].dosage,
+                'slot_label': d['slot_label'],
+                'dose_at': d['dose_at'].isoformat(),
+            } for d in doses
+        ],
+    })
