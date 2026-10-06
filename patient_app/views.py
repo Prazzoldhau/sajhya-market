@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.db.models import Prefetch, F, Count
-from personal_account.models import AddPatient, ActivationCard, PatientPhysioPairing, PatientMedicalProfile, PatientMedication, PatientBloodTest, PatientAid, PatientExercise, PatientAssessmentEntry, PatientDietEntry, get_nepal_time
+from personal_account.models import AddPatient, ActivationCard, PatientPhysioPairing, PatientMedicalProfile, PatientMedication, PatientBloodTest, PatientAid, PatientExercise, PatientAssessmentEntry, PatientDietEntry, PatientConsultation, get_nepal_time
 from visit_notes_app.models import VisitNote
 from assessment_app.models import SpecialTestReference
 from exercise_app.models import Prescription, PrescriptionExercise, ExerciseFeedback, Region, SubRegion, ExerciseMain
@@ -14,7 +14,8 @@ from django.conf import settings
 from django.db import transaction
 import json
 import logging
-from datetime import timedelta
+from datetime import timedelta, date
+from django.utils.dateparse import parse_date
 from decimal import Decimal
 from urllib.parse import quote
 from django.views.decorators.csrf import csrf_exempt
@@ -280,6 +281,11 @@ def _medical_profile_context(patient):
         for key, label in PatientDietEntry.MEAL_CHOICES
     ]
 
+    consultations = patient.consultations.select_related('recorded_by')
+    today = date.today()
+    for con in consultations:
+        con.followup_due = bool(con.follow_up_date and con.follow_up_date <= today)
+
     # Physiotherapy sub-tabs -- Assessment (read-only feed of physio-
     # recorded assessment_app records + the patient/physio-added
     # reference-tool list), Exercises (prescribed summary + a search of
@@ -312,6 +318,8 @@ def _medical_profile_context(patient):
     medication_count = sum(len(v) for v in medications_by_time.values())
     blood_test_count = blood_tests.count()
     diet_count = sum(len(v) for v in diet_entries_by_meal.values())
+    consultation_count = consultations.count()
+    followup_due_count = sum(1 for con in consultations if con.followup_due)
     physio_record_count = (
         assessments.count() + visit_notes.count() + aids.count()
         + saved_exercises.count() + assessment_entries.count() + scale_assessments.count()
@@ -337,6 +345,9 @@ def _medical_profile_context(patient):
         'saved_exercises': saved_exercises,
         'assessment_entries': assessment_entries,
         'diet_columns': diet_columns,
+        'consultations': consultations,
+        'consultation_count': consultation_count,
+        'followup_due_count': followup_due_count,
     }
 
 
@@ -354,11 +365,13 @@ def _attach_medical_profile_urls(context, patient, is_physio):
         context['aid_add_url'] = reverse('physio-aid-add', kwargs=pid)
         context['assessment_entry_add_url'] = reverse('physio-assessment-entry-add', kwargs=pid)
         context['diet_add_url'] = reverse('physio-diet-add', kwargs=pid)
+        context['consultation_add_url'] = reverse('physio-consultation-add', kwargs=pid)
         med_delete = lambda mid: reverse('physio-medication-delete', kwargs={**pid, 'medication_id': mid})
         bt_delete = lambda bid: reverse('physio-bloodtest-delete', kwargs={**pid, 'bloodtest_id': bid})
         aid_delete = lambda aid: reverse('physio-aid-delete', kwargs={**pid, 'aid_id': aid})
         entry_delete = lambda eid: reverse('physio-assessment-entry-delete', kwargs={**pid, 'entry_id': eid})
         diet_delete = lambda did: reverse('physio-diet-delete', kwargs={**pid, 'diet_id': did})
+        consultation_delete = lambda cid: reverse('physio-consultation-delete', kwargs={**pid, 'consultation_id': cid})
     else:
         context['medical_profile_save_url'] = reverse('patient-medical-profile')
         context['medication_add_url'] = reverse('patient-medication-add')
@@ -366,11 +379,13 @@ def _attach_medical_profile_urls(context, patient, is_physio):
         context['aid_add_url'] = reverse('patient-aid-add')
         context['assessment_entry_add_url'] = reverse('patient-assessment-entry-add')
         context['diet_add_url'] = reverse('patient-diet-add')
+        context['consultation_add_url'] = reverse('patient-consultation-add')
         med_delete = lambda mid: reverse('patient-medication-delete', kwargs={'medication_id': mid})
         bt_delete = lambda bid: reverse('patient-bloodtest-delete', kwargs={'bloodtest_id': bid})
         aid_delete = lambda aid: reverse('patient-aid-delete', kwargs={'aid_id': aid})
         entry_delete = lambda eid: reverse('patient-assessment-entry-delete', kwargs={'entry_id': eid})
         diet_delete = lambda did: reverse('patient-diet-delete', kwargs={'diet_id': did})
+        consultation_delete = lambda cid: reverse('patient-consultation-delete', kwargs={'consultation_id': cid})
 
     for bucket in context['medications_by_time'].values():
         for m in bucket:
@@ -384,6 +399,8 @@ def _attach_medical_profile_urls(context, patient, is_physio):
     for col in context['diet_columns']:
         for d in col['entries']:
             d.delete_url = diet_delete(d.id)
+    for con in context['consultations']:
+        con.delete_url = consultation_delete(con.id)
 
 
 @patient_login_required
@@ -577,6 +594,31 @@ def patient_diet_delete(request, diet_id):
         patient_id = request.session.get('patient_id')
         PatientDietEntry.objects.filter(id=diet_id, patient_id=patient_id).delete()
     return redirect(f"{reverse('patient-medical-profile')}?tab=diet")
+
+
+@patient_login_required
+def patient_consultation_add(request):
+    if request.method == "POST":
+        patient_id = request.session.get('patient_id')
+        patient = get_object_or_404(AddPatient, id=patient_id)
+        doctor_name = request.POST.get('doctor_name', '').strip()
+        visit_date = parse_date(request.POST.get('visit_date', '').strip())
+        notes = request.POST.get('notes', '').strip()
+        follow_up_date = parse_date(request.POST.get('follow_up_date', '').strip())
+        if doctor_name and visit_date:
+            PatientConsultation.objects.create(
+                patient=patient, doctor_name=doctor_name, visit_date=visit_date,
+                notes=notes, follow_up_date=follow_up_date,
+            )
+    return redirect(f"{reverse('patient-medical-profile')}?tab=consultation")
+
+
+@patient_login_required
+def patient_consultation_delete(request, consultation_id):
+    if request.method == "POST":
+        patient_id = request.session.get('patient_id')
+        PatientConsultation.objects.filter(id=consultation_id, patient_id=patient_id).delete()
+    return redirect(f"{reverse('patient-medical-profile')}?tab=consultation")
 
 
 def add_recs_to_cart(request):
@@ -2324,6 +2366,15 @@ def _medical_profile_dict(profile):
                 'notes': d.notes,
             } for d in patient.diet_entries.all()
         ],
+        'consultations': [
+            {
+                'id': c.id,
+                'doctor_name': c.doctor_name,
+                'visit_date': c.visit_date.isoformat(),
+                'notes': c.notes,
+                'follow_up_date': c.follow_up_date.isoformat() if c.follow_up_date else None,
+            } for c in patient.consultations.all()
+        ],
     }
 
 
@@ -2567,4 +2618,41 @@ def patient_api_diet_delete(request, diet_id):
     if err:
         return err
     PatientDietEntry.objects.filter(id=diet_id, patient=patient).delete()
+    return JsonResponse({'success': True})
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def patient_api_consultation_add(request):
+    patient, err = _patient_required(request)
+    if err:
+        return err
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON'}, status=400)
+
+    doctor_name = data.get('doctor_name', '').strip()
+    visit_date = parse_date(data.get('visit_date', '').strip())
+    notes = data.get('notes', '').strip()
+    follow_up_date = parse_date(data.get('follow_up_date', '').strip()) if data.get('follow_up_date') else None
+    if not doctor_name:
+        return JsonResponse({'success': False, 'error': 'doctor_name required'}, status=400)
+    if not visit_date:
+        return JsonResponse({'success': False, 'error': 'valid visit_date (YYYY-MM-DD) required'}, status=400)
+
+    entry = PatientConsultation.objects.create(
+        patient=patient, doctor_name=doctor_name, visit_date=visit_date,
+        notes=notes, follow_up_date=follow_up_date,
+    )
+    return JsonResponse({'success': True, 'id': entry.id, 'doctor_name': entry.doctor_name}, status=201)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def patient_api_consultation_delete(request, consultation_id):
+    patient, err = _patient_required(request)
+    if err:
+        return err
+    PatientConsultation.objects.filter(id=consultation_id, patient=patient).delete()
     return JsonResponse({'success': True})

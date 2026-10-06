@@ -2,9 +2,11 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from datetime import date
+from django.utils.dateparse import parse_date
 from personal_account.models import (
     AddPatient, Clinic, PatientMedicalProfile, PatientMedication,
     PatientBloodTest, PatientAid, PatientAssessmentEntry, PatientDietEntry,
+    PatientConsultation,
 )
 from exercise_app.models import Prescription, PrescriptionExercise, ExerciseFeedback
 from django.http import JsonResponse
@@ -408,3 +410,27 @@ def physio_diet_delete(request, patient_id, diet_id):
     if request.method == "POST":
         PatientDietEntry.objects.filter(id=diet_id, patient_id=patient_id).delete()
     return _physio_tab_redirect(patient_id, 'diet')
+
+
+@login_required
+def physio_consultation_add(request, patient_id):
+    patient = get_object_or_404(AddPatient, id=patient_id)
+    if request.method == "POST":
+        doctor_name = request.POST.get('doctor_name', '').strip()
+        visit_date = parse_date(request.POST.get('visit_date', '').strip())
+        notes = request.POST.get('notes', '').strip()
+        follow_up_date = parse_date(request.POST.get('follow_up_date', '').strip())
+        if doctor_name and visit_date:
+            PatientConsultation.objects.create(
+                patient=patient, doctor_name=doctor_name, visit_date=visit_date,
+                notes=notes, follow_up_date=follow_up_date,
+                recorded_by=request.user,
+            )
+    return _physio_tab_redirect(patient_id, 'consultation')
+
+
+@login_required
+def physio_consultation_delete(request, patient_id, consultation_id):
+    if request.method == "POST":
+        PatientConsultation.objects.filter(id=consultation_id, patient_id=patient_id).delete()
+    return _physio_tab_redirect(patient_id, 'consultation')
