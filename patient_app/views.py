@@ -2350,6 +2350,7 @@ def _medical_profile_dict(profile):
                 'id': b.id,
                 'name': b.display_name,
                 'notes': b.notes,
+                'created_at': b.created_at.isoformat(),
             } for b in patient.blood_test_entries.select_related('lab_test')
         ],
         'aids': [
