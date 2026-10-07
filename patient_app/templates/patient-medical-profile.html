@@ -286,7 +286,7 @@
 
             <h4 style="font-size:0.85rem;color:#374151;margin:18px 0 8px;">Medicine Reminders</h4>
             <div class="mp-time-cols">
-                <div class="mp-time-col">
+                <div class="mp-time-col mp-med-col">
                     <h3>Morning</h3>
                     <div class="mp-tile-grid">
                         {% for med in medications_by_time.morning %}
@@ -314,7 +314,7 @@
                     </form>
                 </div>
 
-                <div class="mp-time-col">
+                <div class="mp-time-col mp-med-col">
                     <h3>Evening</h3>
                     <div class="mp-tile-grid">
                         {% for med in medications_by_time.evening %}
@@ -342,7 +342,7 @@
                     </form>
                 </div>
 
-                <div class="mp-time-col">
+                <div class="mp-time-col mp-med-col">
                     <h3>Night</h3>
                     <div class="mp-tile-grid">
                         {% for med in medications_by_time.night %}
@@ -730,10 +730,16 @@
         if (initialSubtab) activateSubtab(initialSubtab);
 
         // ---- Medicine search (debounced, server-side filter) ----
-        document.querySelectorAll('.mp-time-col').forEach(function (col) {
+        // Scoped to .mp-med-col specifically, not the shared .mp-time-col
+        // layout class -- Diet Chart's meal-time columns reuse .mp-time-col
+        // for the same grid styling but have no .mp-med-search input, which
+        // previously threw here and silently broke every search box further
+        // down the page (Blood Tests, Assessment, Rx, Aids, Exercises).
+        document.querySelectorAll('.mp-med-col').forEach(function (col) {
             var input = col.querySelector('.mp-med-search');
             var box = col.querySelector('.mp-med-suggestions');
             var hiddenId = col.querySelector('.mp-med-pid');
+            if (!input || !box || !hiddenId) return;
             var timer;
             input.addEventListener('input', function () {
                 hiddenId.value = '';
