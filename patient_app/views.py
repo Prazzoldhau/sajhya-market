@@ -324,8 +324,9 @@ def _medical_profile_context(patient):
     diet_count = sum(len(v) for v in diet_entries_by_meal.values())
     consultation_count = consultations.count()
     followup_due_count = sum(1 for con in consultations if con.followup_due)
+    aid_count = aids.count()
     physio_record_count = (
-        assessments.count() + visit_notes.count() + aids.count()
+        assessments.count() + visit_notes.count()
         + saved_exercises.count() + assessment_entries.count() + scale_assessments.count()
     )
 
@@ -348,6 +349,7 @@ def _medical_profile_context(patient):
         'blood_test_count': blood_test_count,
         'diet_count': diet_count,
         'physio_record_count': physio_record_count,
+        'aid_count': aid_count,
         'aids': aids,
         'saved_exercises': saved_exercises,
         'assessment_entries': assessment_entries,
@@ -531,7 +533,7 @@ def patient_aid_add(request):
                 custom_name='' if product else custom_name,
                 notes=notes,
             )
-    return redirect(f"{reverse('patient-medical-profile')}?tab=physiotherapy&subtab=aids")
+    return redirect(f"{reverse('patient-medical-profile')}?tab=surgicare")
 
 
 @patient_login_required
@@ -539,7 +541,7 @@ def patient_aid_delete(request, aid_id):
     if request.method == "POST":
         patient_id = request.session.get('patient_id')
         PatientAid.objects.filter(id=aid_id, patient_id=patient_id).delete()
-    return redirect(f"{reverse('patient-medical-profile')}?tab=physiotherapy&subtab=aids")
+    return redirect(f"{reverse('patient-medical-profile')}?tab=surgicare")
 
 
 @patient_login_required

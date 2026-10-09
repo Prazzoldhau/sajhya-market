@@ -55,10 +55,11 @@
         .mp-tab-icon.icon-nursing { background: #ccfbf1; }
         .mp-tab-icon.icon-diet { background: #dcfce7; }
         .mp-tab-icon.icon-consultation { background: #ede9fe; }
+        .mp-tab-icon.icon-surgicare { background: #fae8ff; }
         .mp-tab.active .mp-tab-icon.icon-medicine, .mp-tab.active .mp-tab-icon.icon-lab,
         .mp-tab.active .mp-tab-icon.icon-physio, .mp-tab.active .mp-tab-icon.icon-record,
         .mp-tab.active .mp-tab-icon.icon-nursing, .mp-tab.active .mp-tab-icon.icon-diet,
-        .mp-tab.active .mp-tab-icon.icon-consultation { background: rgba(255,255,255,.22); }
+        .mp-tab.active .mp-tab-icon.icon-consultation, .mp-tab.active .mp-tab-icon.icon-surgicare { background: rgba(255,255,255,.22); }
         .mp-tab-pill.is-due, .mp-followup-due { background: #fee2e2; color: #b91c1c; }
         .mp-followup-due { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 600; margin-top: 4px; }
         .mp-next-dose { background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 10px; padding: 10px 14px; margin-bottom: 16px; font-size: 0.85rem; color: #065f46; }
@@ -187,6 +188,12 @@
                 <div class="mp-tab-title">Lab Test</div>
                 <div class="mp-tab-status{% if blood_test_count %} is-active-status{% endif %}">{% if blood_test_count %}Active{% else %}Inactive{% endif %}</div>
                 {% if blood_test_count %}<span class="mp-tab-pill">{{ blood_test_count }} test{{ blood_test_count|pluralize }}</span>{% endif %}
+            </button>
+            <button type="button" class="mp-tab" data-tab="surgicare">
+                <div class="mp-tab-icon icon-surgicare">🩹</div>
+                <div class="mp-tab-title">Surgicare</div>
+                <div class="mp-tab-status{% if aid_count %} is-active-status{% endif %}">{% if aid_count %}Active{% else %}Inactive{% endif %}</div>
+                {% if aid_count %}<span class="mp-tab-pill">{{ aid_count }} item{{ aid_count|pluralize }}</span>{% endif %}
             </button>
             <button type="button" class="mp-tab" data-tab="physiotherapy">
                 <div class="mp-tab-icon icon-physio">🏃</div>
@@ -418,12 +425,60 @@
             </form>
         </div>
 
+        <!-- ===================== Surgicare ===================== -->
+        <div class="mp-tab-panel mp-card" data-tab-panel="surgicare" hidden>
+            <h4 style="font-size:0.85rem;color:#374151;margin:0 0 8px;">My Aids</h4>
+            <div class="mp-tile-grid">
+                {% for aid in aids %}
+                <div class="mp-tile">
+                    <div class="mp-entry-name">{{ aid.display_name }}</div>
+                    {% if aid.notes %}<div class="mp-entry-sub">{{ aid.notes }}</div>{% endif %}
+                    {% if aid.recorded_by %}<div class="mp-entry-by">Added by Dr. {{ aid.recorded_by.get_full_name|default:aid.recorded_by.username }}</div>{% endif %}
+                    <form class="mp-entry-del" method="post" action="{{ aid.delete_url }}">
+                        {% csrf_token %}
+                        <button type="submit" title="Remove">✕</button>
+                    </form>
+                </div>
+                {% empty %}
+                <div class="mp-empty">No aids added yet.</div>
+                {% endfor %}
+            </div>
+
+            <form class="mp-add-form" method="post" action="{{ aid_add_url }}">
+                {% csrf_token %}
+                <input type="hidden" name="product_id" id="mp-aid-pid">
+                <input type="text" name="custom_name" id="mp-aid-search" placeholder="Search aids (crutches, braces, walkers...)" autocomplete="off">
+                <div class="mp-suggestions" id="mp-aid-suggestions"></div>
+                <input type="text" name="notes" placeholder="Notes (optional)" style="margin-top:6px;">
+                <button type="submit" class="mp-add-btn">+ Add</button>
+            </form>
+
+            <h4 style="font-size:0.85rem;color:#374151;margin:18px 0 8px;">Recommended by Your Physiotherapist</h4>
+            {% if manual_recs or auto_recs %}
+            <div class="mp-tile-grid">
+                {% for rec in manual_recs %}
+                <a href="{% url 'product-detail' rec.product.id %}" class="mp-tile">
+                    <div class="mp-entry-name">{{ rec.product.name }}</div>
+                    <div class="mp-entry-sub">NPR {{ rec.product.price }} &middot; Physio Pick</div>
+                </a>
+                {% endfor %}
+                {% for product in auto_recs %}
+                <a href="{% url 'product-detail' product.id %}" class="mp-tile">
+                    <div class="mp-entry-name">{{ product.name }}</div>
+                    <div class="mp-entry-sub">NPR {{ product.price }}</div>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="mp-empty">No aids or orthotic products recommended yet.</div>
+            {% endif %}
+        </div>
+
         <!-- ===================== Physiotherapy ===================== -->
         <div class="mp-tab-panel mp-card" data-tab-panel="physiotherapy" hidden>
             <div class="mp-subtabs">
                 <button type="button" class="mp-subtab active" data-subtab="assessment">Assessment</button>
                 <button type="button" class="mp-subtab" data-subtab="exercises">Exercises</button>
-                <button type="button" class="mp-subtab" data-subtab="aids">Aids</button>
             </div>
 
             <div class="mp-subtab-panel" data-subtab-panel="assessment">
@@ -539,53 +594,6 @@
                 {% endif %}
             </div>
 
-            <div class="mp-subtab-panel" data-subtab-panel="aids" hidden>
-                <h4 style="font-size:0.85rem;color:#374151;margin:0 0 8px;">My Aids</h4>
-                <div class="mp-tile-grid">
-                    {% for aid in aids %}
-                    <div class="mp-tile">
-                        <div class="mp-entry-name">{{ aid.display_name }}</div>
-                        {% if aid.notes %}<div class="mp-entry-sub">{{ aid.notes }}</div>{% endif %}
-                        {% if aid.recorded_by %}<div class="mp-entry-by">Added by Dr. {{ aid.recorded_by.get_full_name|default:aid.recorded_by.username }}</div>{% endif %}
-                        <form class="mp-entry-del" method="post" action="{{ aid.delete_url }}">
-                            {% csrf_token %}
-                            <button type="submit" title="Remove">✕</button>
-                        </form>
-                    </div>
-                    {% empty %}
-                    <div class="mp-empty">No aids added yet.</div>
-                    {% endfor %}
-                </div>
-
-                <form class="mp-add-form" method="post" action="{{ aid_add_url }}">
-                    {% csrf_token %}
-                    <input type="hidden" name="product_id" id="mp-aid-pid">
-                    <input type="text" name="custom_name" id="mp-aid-search" placeholder="Search aids (crutches, braces, walkers...)" autocomplete="off">
-                    <div class="mp-suggestions" id="mp-aid-suggestions"></div>
-                    <input type="text" name="notes" placeholder="Notes (optional)" style="margin-top:6px;">
-                    <button type="submit" class="mp-add-btn">+ Add</button>
-                </form>
-
-                <h4 style="font-size:0.85rem;color:#374151;margin:18px 0 8px;">Recommended by Your Physiotherapist</h4>
-                {% if manual_recs or auto_recs %}
-                <div class="mp-tile-grid">
-                    {% for rec in manual_recs %}
-                    <a href="{% url 'product-detail' rec.product.id %}" class="mp-tile">
-                        <div class="mp-entry-name">{{ rec.product.name }}</div>
-                        <div class="mp-entry-sub">NPR {{ rec.product.price }} &middot; Physio Pick</div>
-                    </a>
-                    {% endfor %}
-                    {% for product in auto_recs %}
-                    <a href="{% url 'product-detail' product.id %}" class="mp-tile">
-                        <div class="mp-entry-name">{{ product.name }}</div>
-                        <div class="mp-entry-sub">NPR {{ product.price }}</div>
-                    </a>
-                    {% endfor %}
-                </div>
-                {% else %}
-                <div class="mp-empty">No aids or orthotic products recommended yet.</div>
-                {% endif %}
-            </div>
         </div>
 
         <!-- ===================== Nursing ===================== -->
