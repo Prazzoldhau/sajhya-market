@@ -358,14 +358,14 @@ def physio_aid_add(request, patient_id):
                 custom_name='' if product else custom_name, notes=notes,
                 recorded_by=request.user,
             )
-    return _physio_tab_redirect(patient_id, 'physiotherapy', 'aids')
+    return _physio_tab_redirect(patient_id, 'surgicare')
 
 
 @login_required
 def physio_aid_delete(request, patient_id, aid_id):
     if request.method == "POST":
         PatientAid.objects.filter(id=aid_id, patient_id=patient_id).delete()
-    return _physio_tab_redirect(patient_id, 'physiotherapy', 'aids')
+    return _physio_tab_redirect(patient_id, 'surgicare')
 
 
 @login_required
