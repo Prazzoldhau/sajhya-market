@@ -211,25 +211,25 @@
         {% endif %}
 
         <div class="mp-tabs">
-            <button type="button" class="mp-tab active" data-tab="medication">
+            <button type="button" class="mp-tab active" data-tab="medication" data-med-count="{{ medication_count }}" data-rx-count="{{ active_rx_count }}">
                 <div class="mp-tab-icon icon-medicine">💊</div>
                 <div class="mp-tab-title">Medicine</div>
                 <div class="mp-tab-status{% if medication_count or active_rx_count %} is-active-status{% endif %}">{% if medication_count or active_rx_count %}Active{% else %}Inactive{% endif %}</div>
                 {% if active_rx_count %}<span class="mp-tab-pill">{{ active_rx_count }} Rx</span>{% elif medication_count %}<span class="mp-tab-pill">{{ medication_count }} medicine{{ medication_count|pluralize }}</span>{% endif %}
             </button>
-            <button type="button" class="mp-tab" data-tab="blood_tests">
+            <button type="button" class="mp-tab" data-tab="blood_tests" data-count="{{ blood_test_count }}">
                 <div class="mp-tab-icon icon-lab">🧪</div>
                 <div class="mp-tab-title">Lab Test</div>
                 <div class="mp-tab-status{% if blood_test_count %} is-active-status{% endif %}">{% if blood_test_count %}Active{% else %}Inactive{% endif %}</div>
                 {% if blood_test_count %}<span class="mp-tab-pill">{{ blood_test_count }} test{{ blood_test_count|pluralize }}</span>{% endif %}
             </button>
-            <button type="button" class="mp-tab" data-tab="surgicare">
+            <button type="button" class="mp-tab" data-tab="surgicare" data-count="{{ aid_count }}">
                 <div class="mp-tab-icon icon-surgicare">🩹</div>
                 <div class="mp-tab-title">Surgicare</div>
                 <div class="mp-tab-status{% if aid_count %} is-active-status{% endif %}">{% if aid_count %}Active{% else %}Inactive{% endif %}</div>
                 {% if aid_count %}<span class="mp-tab-pill">{{ aid_count }} item{{ aid_count|pluralize }}</span>{% endif %}
             </button>
-            <button type="button" class="mp-tab" data-tab="physiotherapy">
+            <button type="button" class="mp-tab" data-tab="physiotherapy" data-count="{{ physio_record_count }}">
                 <div class="mp-tab-icon icon-physio">🏃</div>
                 <div class="mp-tab-title">Physiotherapy</div>
                 <div class="mp-tab-status{% if physio_record_count %} is-active-status{% endif %}">{% if physio_record_count %}Active{% else %}Inactive{% endif %}</div>
@@ -245,13 +245,13 @@
                 <div class="mp-tab-title">Nursing</div>
                 <div class="mp-tab-status{% if profile.nursing_vitals or profile.nursing_wound_catheter_care or profile.nursing_mobility_assistance %} is-active-status{% endif %}">{% if profile.nursing_vitals or profile.nursing_wound_catheter_care or profile.nursing_mobility_assistance %}Active{% else %}Inactive{% endif %}</div>
             </button>
-            <button type="button" class="mp-tab" data-tab="diet">
+            <button type="button" class="mp-tab" data-tab="diet" data-count="{{ diet_count }}">
                 <div class="mp-tab-icon icon-diet">🍎</div>
                 <div class="mp-tab-title">Diet Chart</div>
                 <div class="mp-tab-status{% if diet_count %} is-active-status{% endif %}">{% if diet_count %}Active{% else %}Inactive{% endif %}</div>
                 {% if diet_count %}<span class="mp-tab-pill">{{ diet_count }} item{{ diet_count|pluralize }}</span>{% endif %}
             </button>
-            <button type="button" class="mp-tab" data-tab="consultation">
+            <button type="button" class="mp-tab" data-tab="consultation" data-count="{{ consultation_count }}" data-due-count="{{ followup_due_count }}">
                 <div class="mp-tab-icon icon-consultation">🗓️</div>
                 <div class="mp-tab-title">Consultation</div>
                 <div class="mp-tab-status{% if consultation_count %} is-active-status{% endif %}">{% if consultation_count %}Active{% else %}Inactive{% endif %}</div>
@@ -271,9 +271,9 @@
             {% endif %}
 
             <h4 style="font-size:0.85rem;color:#374151;margin:0 0 8px;">Prescriptions {% if not editing_patient_id %}(from your doctor){% endif %}</h4>
-            <div class="mp-tile-grid">
+            <div class="mp-tile-grid" data-empty-text="{% if editing_patient_id %}No prescriptions issued yet.{% else %}No prescriptions from your doctor yet.{% endif %}">
                 {% for rx in rx_list %}
-                <div class="mp-tile">
+                <div class="mp-tile" data-kind="rx">
                     <div class="mp-entry-name">{{ rx.display_name }}{% if rx.dosage %} <span class="mp-entry-sub">({{ rx.dosage }})</span>{% endif %}</div>
                     <div class="mp-entry-sub">{{ rx.get_time_of_day_display }} &middot; since {{ rx.start_date|date:"d M Y" }}{% if rx.end_date %}, until {{ rx.end_date|date:"d M Y" }}{% endif %}</div>
                     {% if rx.notes %}<div class="mp-entry-sub">{{ rx.notes }}</div>{% endif %}
@@ -329,9 +329,9 @@
             <div class="mp-time-cols">
                 <div class="mp-time-col mp-med-col">
                     <h3>Morning</h3>
-                    <div class="mp-tile-grid">
+                    <div class="mp-tile-grid" data-empty-text="No medications added.">
                         {% for med in medications_by_time.morning %}
-                        <div class="mp-tile">
+                        <div class="mp-tile" data-kind="medication">
                             <div class="mp-entry-name">{{ med.display_name }}</div>
                             {% if med.instructions %}<div class="mp-entry-sub">{{ med.instructions }}</div>{% endif %}
                             {% if med.recorded_by %}<div class="mp-entry-by">Added by Dr. {{ med.recorded_by.get_full_name|default:med.recorded_by.username }}</div>{% endif %}
@@ -344,7 +344,7 @@
                         <div class="mp-empty">No medications added.</div>
                         {% endfor %}
                     </div>
-                    <form class="mp-add-form" method="post" action="{{ medication_add_url }}">
+                    <form class="mp-add-form" method="post" action="{{ medication_add_url }}" data-ajax-kind="medication">
                         {% csrf_token %}
                         <input type="hidden" name="time_of_day" value="morning">
                         <input type="hidden" name="pharmacy_product_id" class="mp-med-pid">
@@ -357,9 +357,9 @@
 
                 <div class="mp-time-col mp-med-col">
                     <h3>Evening</h3>
-                    <div class="mp-tile-grid">
+                    <div class="mp-tile-grid" data-empty-text="No medications added.">
                         {% for med in medications_by_time.evening %}
-                        <div class="mp-tile">
+                        <div class="mp-tile" data-kind="medication">
                             <div class="mp-entry-name">{{ med.display_name }}</div>
                             {% if med.instructions %}<div class="mp-entry-sub">{{ med.instructions }}</div>{% endif %}
                             {% if med.recorded_by %}<div class="mp-entry-by">Added by Dr. {{ med.recorded_by.get_full_name|default:med.recorded_by.username }}</div>{% endif %}
@@ -372,7 +372,7 @@
                         <div class="mp-empty">No medications added.</div>
                         {% endfor %}
                     </div>
-                    <form class="mp-add-form" method="post" action="{{ medication_add_url }}">
+                    <form class="mp-add-form" method="post" action="{{ medication_add_url }}" data-ajax-kind="medication">
                         {% csrf_token %}
                         <input type="hidden" name="time_of_day" value="evening">
                         <input type="hidden" name="pharmacy_product_id" class="mp-med-pid">
@@ -385,9 +385,9 @@
 
                 <div class="mp-time-col mp-med-col">
                     <h3>Night</h3>
-                    <div class="mp-tile-grid">
+                    <div class="mp-tile-grid" data-empty-text="No medications added.">
                         {% for med in medications_by_time.night %}
-                        <div class="mp-tile">
+                        <div class="mp-tile" data-kind="medication">
                             <div class="mp-entry-name">{{ med.display_name }}</div>
                             {% if med.instructions %}<div class="mp-entry-sub">{{ med.instructions }}</div>{% endif %}
                             {% if med.recorded_by %}<div class="mp-entry-by">Added by Dr. {{ med.recorded_by.get_full_name|default:med.recorded_by.username }}</div>{% endif %}
@@ -400,7 +400,7 @@
                         <div class="mp-empty">No medications added.</div>
                         {% endfor %}
                     </div>
-                    <form class="mp-add-form" method="post" action="{{ medication_add_url }}">
+                    <form class="mp-add-form" method="post" action="{{ medication_add_url }}" data-ajax-kind="medication">
                         {% csrf_token %}
                         <input type="hidden" name="time_of_day" value="night">
                         <input type="hidden" name="pharmacy_product_id" class="mp-med-pid">
@@ -415,9 +415,9 @@
 
         <!-- ===================== Blood Tests ===================== -->
         <div class="mp-tab-panel mp-card" data-tab-panel="blood_tests" hidden>
-            <div class="mp-tile-grid">
+            <div class="mp-tile-grid" data-empty-text="No routine blood tests added.">
                 {% for bt in blood_tests %}
-                <div class="mp-tile">
+                <div class="mp-tile" data-kind="bloodtest">
                     <div class="mp-entry-name">{{ bt.display_name }}</div>
                     {% if bt.notes %}<div class="mp-entry-sub">{{ bt.notes }}</div>{% endif %}
                     {% if bt.recorded_by %}<div class="mp-entry-by">Added by Dr. {{ bt.recorded_by.get_full_name|default:bt.recorded_by.username }}</div>{% endif %}
@@ -431,7 +431,7 @@
                 {% endfor %}
             </div>
 
-            <form class="mp-add-form" method="post" action="{{ bloodtest_add_url }}">
+            <form class="mp-add-form" method="post" action="{{ bloodtest_add_url }}" data-ajax-kind="bloodtest">
                 {% csrf_token %}
                 <input type="hidden" name="lab_test_id" id="mp-lab-id">
                 <input type="text" name="custom_name" id="mp-lab-search" class="mp-search-input" placeholder="Search blood/lab test..." autocomplete="off">
@@ -462,9 +462,9 @@
         <!-- ===================== Surgicare ===================== -->
         <div class="mp-tab-panel mp-card" data-tab-panel="surgicare" hidden>
             <h4 style="font-size:0.85rem;color:#374151;margin:0 0 8px;">My Aids</h4>
-            <div class="mp-tile-grid">
+            <div class="mp-tile-grid" data-empty-text="No aids added yet.">
                 {% for aid in aids %}
-                <div class="mp-tile">
+                <div class="mp-tile" data-kind="aid">
                     <div class="mp-entry-name">{{ aid.display_name }}</div>
                     {% if aid.notes %}<div class="mp-entry-sub">{{ aid.notes }}</div>{% endif %}
                     {% if aid.recorded_by %}<div class="mp-entry-by">Added by Dr. {{ aid.recorded_by.get_full_name|default:aid.recorded_by.username }}</div>{% endif %}
@@ -478,7 +478,7 @@
                 {% endfor %}
             </div>
 
-            <form class="mp-add-form" method="post" action="{{ aid_add_url }}">
+            <form class="mp-add-form" method="post" action="{{ aid_add_url }}" data-ajax-kind="aid">
                 {% csrf_token %}
                 <input type="hidden" name="product_id" id="mp-aid-pid">
                 <input type="text" name="custom_name" id="mp-aid-search" class="mp-search-input" placeholder="Search aids (crutches, braces, walkers...)" autocomplete="off">
@@ -545,9 +545,9 @@
                 </div>
 
                 <h4 style="font-size:0.85rem;color:#374151;margin:18px 0 8px;">My Assessment Tools</h4>
-                <div class="mp-tile-grid">
+                <div class="mp-tile-grid" data-empty-text="No assessment tools added yet.">
                     {% for entry in assessment_entries %}
-                    <div class="mp-tile">
+                    <div class="mp-tile" data-kind="assessment">
                         <div class="mp-entry-name">{{ entry.reference.name }}</div>
                         <div class="mp-entry-sub">{{ entry.reference.get_region_display }}</div>
                         {% if entry.notes %}<div class="mp-entry-sub">{{ entry.notes }}</div>{% endif %}
@@ -562,7 +562,7 @@
                     {% endfor %}
                 </div>
 
-                <form class="mp-add-form" method="post" action="{{ assessment_entry_add_url }}">
+                <form class="mp-add-form" method="post" action="{{ assessment_entry_add_url }}" data-ajax-kind="assessment">
                     {% csrf_token %}
                     <input type="hidden" name="reference_id" id="mp-assessment-id">
                     <input type="text" name="reference_search" id="mp-assessment-search" class="mp-search-input" placeholder="Search assessment tools (e.g. Berg Balance, TUG...)" autocomplete="off">
@@ -599,9 +599,9 @@
 
                 {% if not editing_patient_id %}
                 <h4 style="font-size:0.85rem;color:#374151;margin:18px 0 8px;">My Exercises</h4>
-                <div class="mp-tile-grid" id="mp-my-exercises-grid">
+                <div class="mp-tile-grid" data-empty-text="No exercises saved yet -- search below and tick the ones you want." id="mp-my-exercises-grid">
                     {% for se in saved_exercises %}
-                    <div class="mp-tile">
+                    <div class="mp-tile" data-kind="exercise">
                         <div class="mp-entry-name">{{ se.exercise.exercise_name }}</div>
                         {% if se.exercise.default_sets %}<div class="mp-entry-sub">{{ se.exercise.default_sets }} sets &times; {{ se.exercise.default_reps }} reps</div>{% endif %}
                         <form class="mp-entry-del" method="post" action="{% url 'patient-exercise-delete' se.id %}">
@@ -659,9 +659,9 @@
                 {% for col in diet_columns %}
                 <div class="mp-time-col">
                     <h3>{{ col.label }}</h3>
-                    <div class="mp-tile-grid">
+                    <div class="mp-tile-grid" data-empty-text="No items added.">
                         {% for d in col.entries %}
-                        <div class="mp-tile">
+                        <div class="mp-tile" data-kind="diet">
                             <div class="mp-entry-name">{{ d.food_item }}</div>
                             {% if d.notes %}<div class="mp-entry-sub">{{ d.notes }}</div>{% endif %}
                             {% if d.recorded_by %}<div class="mp-entry-by">Added by Dr. {{ d.recorded_by.get_full_name|default:d.recorded_by.username }}</div>{% endif %}
@@ -674,7 +674,7 @@
                         <div class="mp-empty">No items added.</div>
                         {% endfor %}
                     </div>
-                    <form class="mp-add-form" method="post" action="{{ diet_add_url }}">
+                    <form class="mp-add-form" method="post" action="{{ diet_add_url }}" data-ajax-kind="diet">
                         {% csrf_token %}
                         <input type="hidden" name="meal_time" value="{{ col.key }}">
                         <input type="text" name="food_item" placeholder="e.g. Oatmeal with fruits and nuts" autocomplete="off">
@@ -688,9 +688,9 @@
 
         <!-- ===================== Consultation ===================== -->
         <div class="mp-tab-panel mp-card" data-tab-panel="consultation" hidden>
-            <div class="mp-tile-grid">
+            <div class="mp-tile-grid" data-empty-text="No consultations logged yet.">
                 {% for con in consultations %}
-                <div class="mp-tile">
+                <div class="mp-tile" data-kind="consultation" data-due="{{ con.followup_due|yesno:'true,false' }}">
                     <div class="mp-entry-name">{{ con.doctor_name }}</div>
                     <div class="mp-entry-sub">Visited {{ con.visit_date|date:"d M Y" }}</div>
                     {% if con.notes %}<div class="mp-entry-sub">{{ con.notes }}</div>{% endif %}
@@ -710,7 +710,7 @@
                 {% endfor %}
             </div>
 
-            <form class="mp-add-form" method="post" action="{{ consultation_add_url }}">
+            <form class="mp-add-form" method="post" action="{{ consultation_add_url }}" data-ajax-kind="consultation">
                 {% csrf_token %}
                 <input type="text" name="doctor_name" placeholder="Doctor / specialist name" autocomplete="off">
                 <label class="mp-hint" style="display:block;margin-top:6px;">Visit date</label>
@@ -770,6 +770,226 @@
 
         var initialSubtab = new URLSearchParams(window.location.search).get('subtab');
         if (initialSubtab) activateSubtab(initialSubtab);
+
+        // ---- AJAX add / delete -- avoids a full page reload per entry,
+        // which is the whole point when logging many rows in one sitting
+        // (e.g. a dozen+ medicines). Every add-form tagged
+        // data-ajax-kind="..." posts via fetch instead of a normal
+        // submit; the server only needs to hand back the new row's id,
+        // delete_url, and who recorded it -- the display text is exactly
+        // what the user just typed or picked from a suggestion, so the
+        // client already has it. Delete works the same way for every
+        // .mp-tile on the page via event delegation, including ones this
+        // page doesn't AJAX-ify adding for (Rx, My Exercises). Rx
+        // issuance and the Allergies/Nursing/status-change forms are
+        // deliberately left as plain reloads -- infrequent, one-at-a-time
+        // actions, not the repeated-entry case this is for. ----
+        function getCookie(name) {
+            var match = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+            return match ? decodeURIComponent(match[2]) : null;
+        }
+        var CSRF_TOKEN = getCookie('csrftoken');
+        var AJAX_HEADERS = { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': CSRF_TOKEN };
+
+        var MONTH_ABBR = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        function formatDateDMY(iso) {
+            if (!iso) return '';
+            var parts = iso.split('-');
+            if (parts.length !== 3) return iso;
+            var d = parseInt(parts[2], 10);
+            var mon = MONTH_ABBR[parseInt(parts[1], 10) - 1] || '';
+            return (d < 10 ? '0' + d : d) + ' ' + mon + ' ' + parts[0];
+        }
+        function isFollowUpDue(iso) {
+            if (!iso) return false;
+            var due = new Date(iso + 'T00:00:00');
+            var today = new Date();
+            today.setHours(0, 0, 0, 0);
+            return due <= today;
+        }
+        function ajaxEscapeHtml(s) {
+            return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+        function mpTileHtml(kind, name, subLines, recordedBy, deleteUrl) {
+            var html = '<div class="mp-tile" data-kind="' + kind + '">';
+            html += '<div class="mp-entry-name">' + ajaxEscapeHtml(name) + '</div>';
+            (subLines || []).forEach(function (line) {
+                if (line) html += '<div class="mp-entry-sub">' + ajaxEscapeHtml(line) + '</div>';
+            });
+            if (recordedBy) html += '<div class="mp-entry-by">Added by Dr. ' + ajaxEscapeHtml(recordedBy) + '</div>';
+            html += '<form class="mp-entry-del" method="post" action="' + deleteUrl + '">' +
+                '<button type="submit" title="Remove">✕</button></form></div>';
+            return html;
+        }
+
+        function bumpTabCount(tabKey, delta, label) {
+            var btn = document.querySelector('.mp-tab[data-tab="' + tabKey + '"]');
+            if (!btn) return;
+            var next = Math.max(0, parseInt(btn.dataset.count || '0', 10) + delta);
+            btn.dataset.count = next;
+            var statusEl = btn.querySelector('.mp-tab-status');
+            if (statusEl) {
+                statusEl.textContent = next > 0 ? 'Active' : 'Inactive';
+                statusEl.classList.toggle('is-active-status', next > 0);
+            }
+            var pill = btn.querySelector('.mp-tab-pill');
+            if (next > 0) {
+                var text = next + ' ' + label + (next === 1 ? '' : 's');
+                if (pill) { pill.textContent = text; }
+                else { pill = document.createElement('span'); pill.className = 'mp-tab-pill'; pill.textContent = text; btn.appendChild(pill); }
+            } else if (pill) {
+                pill.remove();
+            }
+        }
+
+        function bumpMedicineTab(kind, delta) {
+            var btn = document.querySelector('.mp-tab[data-tab="medication"]');
+            if (!btn) return;
+            if (kind === 'rx') btn.dataset.rxCount = Math.max(0, parseInt(btn.dataset.rxCount || '0', 10) + delta);
+            else btn.dataset.medCount = Math.max(0, parseInt(btn.dataset.medCount || '0', 10) + delta);
+            var medCount = parseInt(btn.dataset.medCount || '0', 10);
+            var rxCount = parseInt(btn.dataset.rxCount || '0', 10);
+            var statusEl = btn.querySelector('.mp-tab-status');
+            var active = medCount > 0 || rxCount > 0;
+            if (statusEl) {
+                statusEl.textContent = active ? 'Active' : 'Inactive';
+                statusEl.classList.toggle('is-active-status', active);
+            }
+            var pill = btn.querySelector('.mp-tab-pill');
+            var text = rxCount > 0 ? (rxCount + ' Rx') : (medCount > 0 ? (medCount + ' medicine' + (medCount === 1 ? '' : 's')) : null);
+            if (text) {
+                if (pill) pill.textContent = text;
+                else { pill = document.createElement('span'); pill.className = 'mp-tab-pill'; pill.textContent = text; btn.appendChild(pill); }
+            } else if (pill) {
+                pill.remove();
+            }
+        }
+
+        function bumpConsultationTab(delta, isDue) {
+            var btn = document.querySelector('.mp-tab[data-tab="consultation"]');
+            if (!btn) return;
+            btn.dataset.count = Math.max(0, parseInt(btn.dataset.count || '0', 10) + delta);
+            if (isDue) btn.dataset.dueCount = Math.max(0, parseInt(btn.dataset.dueCount || '0', 10) + delta);
+            var count = parseInt(btn.dataset.count || '0', 10);
+            var dueCount = parseInt(btn.dataset.dueCount || '0', 10);
+            var statusEl = btn.querySelector('.mp-tab-status');
+            if (statusEl) {
+                statusEl.textContent = count > 0 ? 'Active' : 'Inactive';
+                statusEl.classList.toggle('is-active-status', count > 0);
+            }
+            var pill = btn.querySelector('.mp-tab-pill');
+            var text = null, isDuePill = false;
+            if (dueCount > 0) { text = dueCount + ' follow-up' + (dueCount === 1 ? '' : 's') + ' due'; isDuePill = true; }
+            else if (count > 0) { text = count + ' visit' + (count === 1 ? '' : 's'); }
+            if (text) {
+                if (!pill) { pill = document.createElement('span'); pill.className = 'mp-tab-pill'; btn.appendChild(pill); }
+                pill.textContent = text;
+                pill.classList.toggle('is-due', isDuePill);
+            } else if (pill) {
+                pill.remove();
+            }
+        }
+
+        var TAB_BUMP = {
+            medication: function (delta) { bumpMedicineTab('medication', delta); },
+            rx: function (delta) { bumpMedicineTab('rx', delta); },
+            bloodtest: function (delta) { bumpTabCount('blood_tests', delta, 'test'); },
+            aid: function (delta) { bumpTabCount('surgicare', delta, 'item'); },
+            assessment: function (delta) { bumpTabCount('physiotherapy', delta, 'record'); },
+            exercise: function (delta) { bumpTabCount('physiotherapy', delta, 'record'); },
+            diet: function (delta) { bumpTabCount('diet', delta, 'item'); },
+            consultation: function (delta, isDue) { bumpConsultationTab(delta, isDue); },
+        };
+
+        var TILE_BUILDERS = {
+            medication: function (fd, data) {
+                return mpTileHtml('medication', fd.get('custom_name'), [fd.get('instructions')], data.recorded_by, data.delete_url);
+            },
+            bloodtest: function (fd, data) {
+                return mpTileHtml('bloodtest', fd.get('custom_name'), [fd.get('notes')], data.recorded_by, data.delete_url);
+            },
+            aid: function (fd, data) {
+                return mpTileHtml('aid', fd.get('custom_name'), [fd.get('notes')], data.recorded_by, data.delete_url);
+            },
+            assessment: function (fd, data) {
+                return mpTileHtml('assessment', fd.get('reference_search'), [data.region_display, fd.get('notes')], data.recorded_by, data.delete_url);
+            },
+            diet: function (fd, data) {
+                return mpTileHtml('diet', fd.get('food_item'), [fd.get('notes')], data.recorded_by, data.delete_url);
+            },
+            consultation: function (fd, data) {
+                var visitDate = fd.get('visit_date') || '';
+                var followUp = fd.get('follow_up_date') || '';
+                var notes = fd.get('notes') || '';
+                var due = isFollowUpDue(followUp);
+                var html = '<div class="mp-tile" data-kind="consultation" data-due="' + (due ? 'true' : 'false') + '">';
+                html += '<div class="mp-entry-name">' + ajaxEscapeHtml(fd.get('doctor_name')) + '</div>';
+                html += '<div class="mp-entry-sub">Visited ' + formatDateDMY(visitDate) + '</div>';
+                if (notes) html += '<div class="mp-entry-sub">' + ajaxEscapeHtml(notes) + '</div>';
+                if (followUp) {
+                    html += '<div class="mp-entry-sub' + (due ? ' mp-followup-due' : '') + '">' +
+                        (due ? 'Follow-up due: ' : 'Follow-up: ') + formatDateDMY(followUp) + '</div>';
+                }
+                if (data.recorded_by) html += '<div class="mp-entry-by">Added by Dr. ' + ajaxEscapeHtml(data.recorded_by) + '</div>';
+                html += '<form class="mp-entry-del" method="post" action="' + data.delete_url + '">' +
+                    '<button type="submit" title="Remove">✕</button></form></div>';
+                return html;
+            },
+        };
+
+        document.querySelectorAll('form.mp-add-form[data-ajax-kind]').forEach(function (form) {
+            var kind = form.dataset.ajaxKind;
+            var buildTile = TILE_BUILDERS[kind];
+            if (!buildTile) return;
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                var fd = new FormData(form);
+                fetch(form.action, { method: 'POST', headers: AJAX_HEADERS, body: fd })
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) {
+                        if (!data || !data.success) return;
+                        var grid = form.previousElementSibling;
+                        while (grid && !grid.classList.contains('mp-tile-grid')) grid = grid.previousElementSibling;
+                        if (!grid) return;
+                        var emptyMsg = grid.querySelector('.mp-empty');
+                        if (emptyMsg) emptyMsg.remove();
+                        grid.insertAdjacentHTML('beforeend', buildTile(fd, data));
+                        var bump = TAB_BUMP[kind];
+                        if (bump) {
+                            if (kind === 'consultation') bump(1, isFollowUpDue(fd.get('follow_up_date')));
+                            else bump(1);
+                        }
+                        form.reset();
+                        form.querySelectorAll('.mp-suggestions').forEach(function (s) { s.style.display = 'none'; s.innerHTML = ''; });
+                    })
+                    .catch(function () { /* network error -- input stays put so the user can retry */ });
+            });
+        });
+
+        document.addEventListener('submit', function (e) {
+            var form = e.target;
+            if (!form.classList || !form.classList.contains('mp-entry-del')) return;
+            e.preventDefault();
+            var tile = form.closest('.mp-tile');
+            var grid = tile ? tile.closest('.mp-tile-grid') : null;
+            var kind = tile ? tile.dataset.kind : null;
+            var wasDue = tile ? tile.dataset.due === 'true' : false;
+            fetch(form.action, { method: 'POST', headers: AJAX_HEADERS, body: new FormData(form) })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (!data || !data.success || !tile) return;
+                    tile.remove();
+                    if (grid && !grid.querySelector('.mp-tile')) {
+                        grid.insertAdjacentHTML('afterbegin', '<div class="mp-empty">' + (grid.dataset.emptyText || 'No entries yet.') + '</div>');
+                    }
+                    var bump = kind && TAB_BUMP[kind];
+                    if (bump) {
+                        if (kind === 'consultation') bump(-1, wasDue);
+                        else bump(-1);
+                    }
+                })
+                .catch(function () { /* leave the tile in place so the user can see the delete didn't go through */ });
+        });
 
         // ---- Medicine search (debounced, server-side filter) ----
         // Scoped to .mp-med-col specifically, not the shared .mp-time-col
