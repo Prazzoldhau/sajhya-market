@@ -8,10 +8,9 @@
 
 /* base.html always renders an empty Bootstrap .container.mt-3 above <main>
    for Django messages; with no message its margin still exposes custom.css's
-   global purple body gradient as a sliver above this page's white header.
-   The old hero's own gradient used to mask that seam -- this one needs it
-   overridden explicitly. Safe to set unscoped since this file only loads
-   on this page. */
+   global body background as a sliver above this page's white header (both
+   are white now, but keep this explicit in case that global ever changes
+   again). Safe to set unscoped since this file only loads on this page. */
 html, body {
     background: #fff !important;
 }

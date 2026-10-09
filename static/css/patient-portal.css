@@ -6,7 +6,7 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #ffffff;
     min-height: 100vh;
     padding: 20px;
 }
@@ -102,7 +102,7 @@ body {
 .stat-card {
     text-align: center;
     padding: 15px 25px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #667eea;
     border-radius: 10px;
     color: white;
 }
@@ -132,7 +132,7 @@ body {
 }
 
 .prescription-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #667eea;
     color: white;
     padding: 20px 25px;
     cursor: pointer;
