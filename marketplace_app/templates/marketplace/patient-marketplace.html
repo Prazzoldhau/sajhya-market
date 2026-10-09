@@ -8,8 +8,8 @@
 <style>
 .rec-btn { display:inline-flex; align-items:center; gap:4px; font-size:0.74rem; font-weight:700;
     padding:0.28rem 0.7rem; border-radius:6px; border:none; cursor:pointer; transition:all .2s; white-space:nowrap; }
-.rec-btn-add  { background:#e0e7ff; color:#4338ca; }
-.rec-btn-add:hover  { background:#c7d2fe; }
+.rec-btn-add  { background:#dbeafe; color:#1d4ed8; }
+.rec-btn-add:hover  { background:#bfdbfe; }
 .rec-btn-remove { background:#fee2e2; color:#dc2626; }
 .rec-btn-remove:hover { background:#fca5a5; }
 .rec-note-input { border:1.5px solid #e5e7eb; border-radius:6px; padding:0.25rem 0.5rem;
@@ -46,13 +46,13 @@
     <!-- ── PHYSIO-PICKED SECTION ── -->
     {% if manual_recs %}
     <div class="mkt-section-header" style="margin-top:1.5rem;">
-        <h2 style="color:#4338ca;">👨‍⚕️ Your Picks
+        <h2 style="color:#1d4ed8;">👨‍⚕️ Your Picks
             <span style="font-weight:400;font-size:0.88rem;color:#6b7280;"> — hand-selected for this patient</span>
         </h2>
         <div style="display:flex;align-items:center;gap:8px;">
             <span class="mkt-section-sub">{{ manual_recs|length }} product{{ manual_recs|length|pluralize }}</span>
             <a href="{% url 'add-picks-to-cart' patient.id %}"
-               style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;font-size:0.78rem;
+               style="background:#667eea;color:white;font-size:0.78rem;
                       font-weight:700;padding:0.3rem 0.8rem;border-radius:8px;text-decoration:none;white-space:nowrap;">
                 🛒 Order All Picks
             </a>
@@ -69,7 +69,7 @@
                     {% else %}
                         <div class="mkt-img-placeholder">{{ rec.product.category.icon|default:"📦" }}</div>
                     {% endif %}
-                    <span class="mkt-featured-tag" style="background:#4338ca;">👨‍⚕️ Your Pick</span>
+                    <span class="mkt-featured-tag" style="background:#1d4ed8;">👨‍⚕️ Your Pick</span>
                 </div>
             </a>
             <div class="mkt-product-body">
@@ -78,7 +78,7 @@
                     <h3 class="mkt-product-name">{{ rec.product.name }}</h3>
                 </a>
                 {% if rec.note %}
-                <p style="font-size:0.78rem;color:#4338ca;font-style:italic;margin-bottom:4px;">{{ rec.note }}</p>
+                <p style="font-size:0.78rem;color:#1d4ed8;font-style:italic;margin-bottom:4px;">{{ rec.note }}</p>
                 {% endif %}
                 <div class="mkt-product-footer">
                     <div class="mkt-price">NPR {{ rec.product.price }}</div>
