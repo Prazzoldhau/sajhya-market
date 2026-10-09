@@ -295,6 +295,27 @@ def physio_medical_profile_page(request, patient_id):
     return render(request, 'patient-medical-profile.html', context)
 
 
+def _wants_json(request):
+    """True for the AJAX add-form submissions the Medical Profile page's
+    own JS makes -- see patient_app.views._wants_json, which this mirrors
+    exactly, and the `mpAjaxForm` wiring at the bottom of
+    patient-medical-profile.html (shared by both the patient and physio
+    views of this same page)."""
+    return request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
+
+def _ajax_add_response(request, obj, delete_url, recorded_by_user=None, extra=None):
+    if not _wants_json(request):
+        return None
+    recorded_by = None
+    if recorded_by_user:
+        recorded_by = recorded_by_user.get_full_name() or recorded_by_user.username
+    payload = {'success': True, 'id': obj.id, 'delete_url': delete_url, 'recorded_by': recorded_by}
+    if extra:
+        payload.update(extra)
+    return JsonResponse(payload)
+
+
 @login_required
 def physio_medication_add(request, patient_id):
     patient = get_object_or_404(AddPatient, id=patient_id)
@@ -305,11 +326,18 @@ def physio_medication_add(request, patient_id):
         instructions = request.POST.get('instructions', '').strip()
         if time_of_day in dict(PatientMedication.TIME_CHOICES) and (pharmacy_product_id or custom_name):
             pharmacy_product = PharmacyProduct.objects.filter(id=pharmacy_product_id).first() if pharmacy_product_id else None
-            PatientMedication.objects.create(
+            med = PatientMedication.objects.create(
                 patient=patient, time_of_day=time_of_day, pharmacy_product=pharmacy_product,
                 custom_name='' if pharmacy_product else custom_name, instructions=instructions,
                 recorded_by=request.user,
             )
+            ajax_resp = _ajax_add_response(
+                request, med,
+                reverse('physio-medication-delete', kwargs={'patient_id': patient_id, 'medication_id': med.id}),
+                recorded_by_user=request.user,
+            )
+            if ajax_resp:
+                return ajax_resp
     return _physio_tab_redirect(patient_id, 'medication')
 
 
@@ -317,6 +345,8 @@ def physio_medication_add(request, patient_id):
 def physio_medication_delete(request, patient_id, medication_id):
     if request.method == "POST":
         PatientMedication.objects.filter(id=medication_id, patient_id=patient_id).delete()
+        if _wants_json(request):
+            return JsonResponse({'success': True})
     return _physio_tab_redirect(patient_id, 'medication')
 
 
@@ -329,11 +359,18 @@ def physio_bloodtest_add(request, patient_id):
         notes = request.POST.get('notes', '').strip()
         if lab_test_id or custom_name:
             lab_test = LabTest.objects.filter(id=lab_test_id).first() if lab_test_id else None
-            PatientBloodTest.objects.create(
+            bt = PatientBloodTest.objects.create(
                 patient=patient, lab_test=lab_test,
                 custom_name='' if lab_test else custom_name, notes=notes,
                 recorded_by=request.user,
             )
+            ajax_resp = _ajax_add_response(
+                request, bt,
+                reverse('physio-bloodtest-delete', kwargs={'patient_id': patient_id, 'bloodtest_id': bt.id}),
+                recorded_by_user=request.user,
+            )
+            if ajax_resp:
+                return ajax_resp
     return _physio_tab_redirect(patient_id, 'blood_tests')
 
 
@@ -341,6 +378,8 @@ def physio_bloodtest_add(request, patient_id):
 def physio_bloodtest_delete(request, patient_id, bloodtest_id):
     if request.method == "POST":
         PatientBloodTest.objects.filter(id=bloodtest_id, patient_id=patient_id).delete()
+        if _wants_json(request):
+            return JsonResponse({'success': True})
     return _physio_tab_redirect(patient_id, 'blood_tests')
 
 
@@ -353,11 +392,18 @@ def physio_aid_add(request, patient_id):
         notes = request.POST.get('notes', '').strip()
         if product_id or custom_name:
             product = Product.objects.filter(id=product_id).first() if product_id else None
-            PatientAid.objects.create(
+            aid = PatientAid.objects.create(
                 patient=patient, product=product,
                 custom_name='' if product else custom_name, notes=notes,
                 recorded_by=request.user,
             )
+            ajax_resp = _ajax_add_response(
+                request, aid,
+                reverse('physio-aid-delete', kwargs={'patient_id': patient_id, 'aid_id': aid.id}),
+                recorded_by_user=request.user,
+            )
+            if ajax_resp:
+                return ajax_resp
     return _physio_tab_redirect(patient_id, 'surgicare')
 
 
@@ -365,6 +411,8 @@ def physio_aid_add(request, patient_id):
 def physio_aid_delete(request, patient_id, aid_id):
     if request.method == "POST":
         PatientAid.objects.filter(id=aid_id, patient_id=patient_id).delete()
+        if _wants_json(request):
+            return JsonResponse({'success': True})
     return _physio_tab_redirect(patient_id, 'surgicare')
 
 
@@ -376,10 +424,18 @@ def physio_assessment_entry_add(request, patient_id):
         notes = request.POST.get('notes', '').strip()
         reference = SpecialTestReference.objects.filter(id=reference_id, is_active=True).first()
         if reference:
-            PatientAssessmentEntry.objects.get_or_create(
+            entry, _created = PatientAssessmentEntry.objects.get_or_create(
                 patient=patient, reference=reference,
                 defaults={'notes': notes, 'recorded_by': request.user},
             )
+            ajax_resp = _ajax_add_response(
+                request, entry,
+                reverse('physio-assessment-entry-delete', kwargs={'patient_id': patient_id, 'entry_id': entry.id}),
+                recorded_by_user=request.user,
+                extra={'region_display': reference.get_region_display()},
+            )
+            if ajax_resp:
+                return ajax_resp
     return _physio_tab_redirect(patient_id, 'physiotherapy', 'assessment')
 
 
@@ -387,6 +443,8 @@ def physio_assessment_entry_add(request, patient_id):
 def physio_assessment_entry_delete(request, patient_id, entry_id):
     if request.method == "POST":
         PatientAssessmentEntry.objects.filter(id=entry_id, patient_id=patient_id).delete()
+        if _wants_json(request):
+            return JsonResponse({'success': True})
     return _physio_tab_redirect(patient_id, 'physiotherapy', 'assessment')
 
 
@@ -398,10 +456,17 @@ def physio_diet_add(request, patient_id):
         food_item = request.POST.get('food_item', '').strip()
         notes = request.POST.get('notes', '').strip()
         if meal_time in dict(PatientDietEntry.MEAL_CHOICES) and food_item:
-            PatientDietEntry.objects.create(
+            entry = PatientDietEntry.objects.create(
                 patient=patient, meal_time=meal_time, food_item=food_item, notes=notes,
                 recorded_by=request.user,
             )
+            ajax_resp = _ajax_add_response(
+                request, entry,
+                reverse('physio-diet-delete', kwargs={'patient_id': patient_id, 'diet_id': entry.id}),
+                recorded_by_user=request.user,
+            )
+            if ajax_resp:
+                return ajax_resp
     return _physio_tab_redirect(patient_id, 'diet')
 
 
@@ -409,6 +474,8 @@ def physio_diet_add(request, patient_id):
 def physio_diet_delete(request, patient_id, diet_id):
     if request.method == "POST":
         PatientDietEntry.objects.filter(id=diet_id, patient_id=patient_id).delete()
+        if _wants_json(request):
+            return JsonResponse({'success': True})
     return _physio_tab_redirect(patient_id, 'diet')
 
 
@@ -421,11 +488,18 @@ def physio_consultation_add(request, patient_id):
         notes = request.POST.get('notes', '').strip()
         follow_up_date = parse_date(request.POST.get('follow_up_date', '').strip())
         if doctor_name and visit_date:
-            PatientConsultation.objects.create(
+            con = PatientConsultation.objects.create(
                 patient=patient, doctor_name=doctor_name, visit_date=visit_date,
                 notes=notes, follow_up_date=follow_up_date,
                 recorded_by=request.user,
             )
+            ajax_resp = _ajax_add_response(
+                request, con,
+                reverse('physio-consultation-delete', kwargs={'patient_id': patient_id, 'consultation_id': con.id}),
+                recorded_by_user=request.user,
+            )
+            if ajax_resp:
+                return ajax_resp
     return _physio_tab_redirect(patient_id, 'consultation')
 
 
@@ -433,6 +507,8 @@ def physio_consultation_add(request, patient_id):
 def physio_consultation_delete(request, patient_id, consultation_id):
     if request.method == "POST":
         PatientConsultation.objects.filter(id=consultation_id, patient_id=patient_id).delete()
+        if _wants_json(request):
+            return JsonResponse({'success': True})
     return _physio_tab_redirect(patient_id, 'consultation')
 
 
@@ -475,4 +551,6 @@ def physio_rx_status(request, patient_id, rx_id):
 def physio_rx_delete(request, patient_id, rx_id):
     if request.method == "POST":
         Rx.objects.filter(id=rx_id, patient_id=patient_id).delete()
+        if _wants_json(request):
+            return JsonResponse({'success': True})
     return _physio_tab_redirect(patient_id, 'medication')
