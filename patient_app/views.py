@@ -2006,6 +2006,66 @@ def patient_api_pharmacy_order(request):
     return JsonResponse({'success': True, 'order_number': order.order_number, 'total': str(total)})
 
 
+@csrf_exempt
+@require_http_methods(["GET"])
+def patient_api_refill_medications(request):
+    """Powers the app's "1-Touch Refill" screen: every Medicine Reminder
+    (PatientMedication) linked to a real PharmacyProduct -- only those can
+    actually be re-ordered, since a custom_name-only entry has no product
+    id to add to cart -- alongside how many days are left on an assumed
+    30-day supply, worked out from this patient's most recent pharmacy
+    order containing that same product. Deliberately NOT a new "refill"
+    model: a refill is just another ordinary pharmacy order of the same
+    product, so it's computed from the Order/OrderItem history
+    patient_api_pharmacy_order already creates, same customer_email
+    linking convention used everywhere else a patient's own orders are
+    looked up."""
+    patient, err = _patient_required(request)
+    if err:
+        return err
+
+    medications = patient.medications.filter(pharmacy_product__isnull=False).select_related('pharmacy_product')
+    customer_email = f'{patient.patient_code}@sajhya.local'
+    today = get_nepal_time().date()
+
+    data = []
+    seen_product_ids = set()
+    for med in medications:
+        product = med.pharmacy_product
+        if product.id in seen_product_ids:
+            continue  # Same product reminded at more than one time of day -- list it once.
+        seen_product_ids.add(product.id)
+
+        last_item = (
+            OrderItem.objects.filter(
+                pharmacy_product=product,
+                order__order_type='pharmacy',
+                order__customer_email=customer_email,
+            )
+            .select_related('order')
+            .order_by('-order__created_at')
+            .first()
+        )
+        last_purchased = None
+        days_remaining = None
+        if last_item:
+            last_purchased = last_item.order.created_at.date()
+            days_remaining = 30 - (today - last_purchased).days
+
+        data.append({
+            'medication_id': med.id,
+            'product_id': product.id,
+            'name': product.name,
+            'price': str(product.price),
+            'image_url': _product_photo_url(request, product),
+            'in_stock': product.in_stock,
+            'last_purchased': last_purchased.isoformat() if last_purchased else None,
+            'days_remaining': days_remaining,
+        })
+
+    return JsonResponse({'medications': data})
+
+
 # ==================== EXERCISE LIBRARY (Browse) ====================
 # Read-only: lets a patient explore the exercise library themselves,
 # independent of what a physio has actually prescribed them. Deliberately
