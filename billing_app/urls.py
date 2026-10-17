@@ -7,4 +7,5 @@ urlpatterns = [
     path('entry/<int:entry_id>/delete/', views.billing_entry_delete, name='billing-entry-delete'),
     path('patient/<int:patient_id>/', views.patient_billing_page, name='patient-billing'),
     path('patient/<int:patient_id>/package/<int:package_id>/cancel/', views.patient_package_cancel, name='patient-package-cancel'),
+    path('patient/<int:patient_id>/package/<int:package_id>/payment/', views.patient_package_payment, name='patient-package-payment'),
 ]
