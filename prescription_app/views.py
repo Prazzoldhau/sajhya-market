@@ -8,6 +8,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.shortcuts import get_object_or_404
 from .models import TreatmentSession, Modality, TreatmentSessionModality
+from billing_app.models import PatientPackage
 import json
 from django.urls import reverse
 
@@ -106,6 +107,16 @@ def save_treatment_session(request):
                 # session_note=data.get('session_note', ''),# remove
             )
             
+            # Deduct one session from the patient's active billing package,
+            # if they have one -- this IS "a session completed" for billing
+            # purposes, not a separate thing the physio has to track.
+            active_package = next(
+                (p for p in patient.packages.all() if p.effective_status == 'active'),
+                None,
+            )
+            if active_package:
+                active_package.record_session()
+
             # Create modality junction records
             for mod_data in modalities_data:
                 modality_name = mod_data['name']
