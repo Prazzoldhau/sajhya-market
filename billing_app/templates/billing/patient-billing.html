@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Billing — {{ patient.patient_name }} — Sajhya{% endblock %}
+
+{% block extra_css %}
+<style>
+    .bill-wrap { max-width: 960px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+    .bill-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 0.3rem; }
+    .bill-header h1 { font-size: 1.5rem; margin: 0; }
+    .bill-sub { color: #5a5f72; font-size: 0.88rem; margin-bottom: 1.5rem; }
+    .bill-back { font-size: 0.85rem; color: #2f5fdb; text-decoration: none; }
+    .bill-btn { padding: 0.45rem 0.9rem; border-radius: 8px; border: 1px solid #d7dbe3; background: #fff; cursor: pointer; font-size: 0.85rem; text-decoration: none; color: #1a1d29; display: inline-block; }
+    .bill-btn:hover { background: #f4f5f7; }
+    .bill-btn-primary { background: #2f5fdb; color: #fff; border-color: #2f5fdb; }
+    .bill-btn-primary:hover { background: #274cb3; }
+    .bill-btn-danger { color: #b3261e; border-color: #f0c9c6; }
+    .bill-form { background: #fff; border: 1px solid #e4e6ec; border-radius: 12px; padding: 1.25rem; margin-bottom: 2rem; }
+    .bill-form h3 { margin: 0 0 1rem; font-size: 1.05rem; }
+    .bill-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.9rem; }
+    .bill-form-group { display: flex; flex-direction: column; gap: 0.3rem; }
+    .bill-form-group.full { grid-column: 1 / -1; }
+    .bill-form-group label { font-size: 0.78rem; color: #5a5f72; font-weight: 600; }
+    .form-control { width: 100%; padding: 0.5rem 0.65rem; border: 1px solid #d7dbe3; border-radius: 8px; font-size: 0.9rem; font-family: inherit; box-sizing: border-box; }
+    .bill-messages { margin-bottom: 1rem; }
+    .bill-messages .msg { padding: 0.6rem 0.9rem; border-radius: 8px; font-size: 0.85rem; margin-bottom: 0.5rem; }
+    .bill-messages .msg.success { background: #ecfdf5; color: #047857; }
+    .bill-messages .msg.error { background: #fef2f2; color: #b3261e; }
+
+    .bill-pkg-card { background: #f4f7ff; border: 1px solid #dde5fb; border-radius: 12px; padding: 1.1rem 1.25rem; margin-bottom: 1.5rem; }
+    .bill-pkg-card .pkg-top { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.6rem; margin-bottom: 0.7rem; }
+    .bill-pkg-name { font-weight: 700; font-size: 1.05rem; color: #1a1d29; }
+    .bill-pkg-meta { font-size: 0.8rem; color: #5a5f72; margin-top: 2px; }
+    .bill-progress-track { background: #e4e6ec; border-radius: 999px; height: 10px; overflow: hidden; margin: 0.5rem 0; }
+    .bill-progress-fill { background: #2f5fdb; height: 100%; border-radius: 999px; }
+    .bill-pkg-stats { display: flex; justify-content: space-between; font-size: 0.82rem; color: #374151; }
+    .bill-status-pill { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 0.72rem; font-weight: 600; }
+    .bill-status-active { background: #d1fae5; color: #065f46; }
+    .bill-status-completed { background: #e5e7eb; color: #374151; }
+    .bill-status-expired { background: #fef3c7; color: #92400e; }
+    .bill-status-cancelled { background: #fee2e2; color: #b91c1c; }
+
+    .bill-empty { text-align: center; color: #5a5f72; padding: 2rem 0; }
+    .bill-table-wrap { overflow-x: auto; }
+    table.bill-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    table.bill-table th, table.bill-table td { padding: 0.65rem 0.5rem; border-bottom: 1px solid #eceef2; text-align: left; }
+    table.bill-table th { color: #5a5f72; font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em; }
+    .bill-actions-cell { white-space: nowrap; }
+    .bill-actions-cell form { display: inline; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bill-wrap">
+    <div class="bill-header">
+        <h1>💰 Billing — {{ patient.patient_name }}</h1>
+        <a href="{% url 'patient-detail' patient_id=patient.id %}" class="bill-back">← Back to Patient</a>
+    </div>
+    <div class="bill-sub">Subscription packages and session usage for this patient.</div>
+
+    {% if messages %}
+    <div class="bill-messages">
+        {% for message in messages %}
+        <div class="msg {{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if active_package %}
+    <div class="bill-pkg-card">
+        <div class="pkg-top">
+            <div>
+                <div class="bill-pkg-name">{{ active_package.get_duration_display }} Package</div>
+                <div class="bill-pkg-meta">NPR {{ active_package.total_amount }} &middot; started {{ active_package.start_date|date:"d M Y" }}, valid until {{ active_package.end_date|date:"d M Y" }}</div>
+                {% if active_package.notes %}<div class="bill-pkg-meta">{{ active_package.notes }}</div>{% endif %}
+            </div>
+            <span class="bill-status-pill bill-status-{{ active_package.effective_status }}">{{ active_package.effective_status_display }}</span>
+        </div>
+        <div class="bill-progress-track">
+            <div class="bill-progress-fill" style="width:{% widthratio active_package.sessions_used active_package.total_sessions 100 %}%;"></div>
+        </div>
+        <div class="bill-pkg-stats">
+            <span>{{ active_package.sessions_used }} of {{ active_package.total_sessions }} sessions used</span>
+            <span>{{ active_package.sessions_remaining }} remaining</span>
+        </div>
+        <form method="POST" action="{% url 'patient-package-cancel' patient_id=patient.id package_id=active_package.id %}" onsubmit="return confirm('Cancel this package?');" style="margin-top:0.8rem;">
+            {% csrf_token %}
+            <button type="submit" class="bill-btn bill-btn-danger">Cancel Package</button>
+        </form>
+    </div>
+    {% else %}
+    <div class="bill-pkg-card" style="background:#fff;border-color:#e4e6ec;">
+        <div class="bill-empty" style="padding:0.5rem 0;">No active package. Start one below.</div>
+    </div>
+    {% endif %}
+
+    <div class="bill-form">
+        <h3>Start New Package</h3>
+        <form method="POST">
+            {% csrf_token %}
+            <div class="bill-form-grid">
+                <div class="bill-form-group">
+                    <label>Duration *</label>
+                    {{ form.duration }}
+                    {{ form.duration.errors }}
+                </div>
+                <div class="bill-form-group">
+                    <label>Total Sessions *</label>
+                    {{ form.total_sessions }}
+                    {{ form.total_sessions.errors }}
+                </div>
+                <div class="bill-form-group">
+                    <label>Amount (NPR) *</label>
+                    {{ form.total_amount }}
+                    {{ form.total_amount.errors }}
+                </div>
+                <div class="bill-form-group">
+                    <label>Start Date</label>
+                    {{ form.start_date }}
+                </div>
+                <div class="bill-form-group full">
+                    <label>Notes</label>
+                    {{ form.notes }}
+                </div>
+            </div>
+            <br>
+            <button type="submit" class="bill-btn bill-btn-primary">Start Package</button>
+        </form>
+    </div>
+
+    <div class="bill-table-wrap">
+        <h3 style="font-size:1.05rem;margin-bottom:0.8rem;">Package History</h3>
+        {% if packages %}
+        <table class="bill-table">
+            <thead>
+                <tr>
+                    <th>Duration</th>
+                    <th>Sessions</th>
+                    <th>Amount</th>
+                    <th>Started</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for pkg in packages %}
+                <tr>
+                    <td>{{ pkg.get_duration_display }}</td>
+                    <td>{{ pkg.sessions_used }} / {{ pkg.total_sessions }}</td>
+                    <td>NPR {{ pkg.total_amount }}</td>
+                    <td>{{ pkg.start_date|date:"d M Y" }}</td>
+                    <td><span class="bill-status-pill bill-status-{{ pkg.effective_status }}">{{ pkg.effective_status_display }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="bill-empty">No packages started for this patient yet.</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
