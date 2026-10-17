@@ -8,8 +8,8 @@ from django.utils import timezone
 
 from personal_account.models import AddPatient
 
-from .forms import BillingEntryForm, PatientPackageForm
-from .models import BillingEntry, PatientPackage
+from .forms import BillingEntryForm, PatientPackageForm, PackagePaymentForm
+from .models import BillingEntry, PatientPackage, PackagePayment
 
 
 @login_required
@@ -92,18 +92,23 @@ def patient_billing_page(request, patient_id):
             package.patient = patient
             package.physio = request.user
             package.save()
+            amount_paid_now = form.cleaned_data.get('amount_paid_now') or 0
+            if amount_paid_now > 0:
+                package.record_payment(amount_paid_now, recorded_by=request.user, notes='Paid at booking')
             messages.success(request, f'Package started -- {package.get_duration_display()}, {package.total_sessions} sessions.')
             return redirect('patient-billing', patient_id=patient.id)
         messages.error(request, 'Please fix the errors below.')
     else:
         form = PatientPackageForm(initial={'start_date': timezone.localdate()})
 
-    packages = patient.packages.select_related('physio').all()
+    packages = patient.packages.select_related('physio').prefetch_related('payments').all()
     active_package = next((p for p in packages if p.effective_status == 'active'), None)
+    payment_form = PackagePaymentForm()
 
     context = {
         'patient': patient,
         'form': form,
+        'payment_form': payment_form,
         'packages': packages,
         'active_package': active_package,
     }
@@ -117,4 +122,29 @@ def patient_package_cancel(request, patient_id, package_id):
         package.status = 'cancelled'
         package.save()
         messages.success(request, 'Package cancelled.')
+    return redirect('patient-billing', patient_id=patient_id)
+
+
+@login_required
+def patient_package_payment(request, patient_id, package_id):
+    """Records a payment against this package's due balance -- usable on
+    any package (active, completed, even past-expired), since settling a
+    due is independent of session progress. Caps the amount at what's
+    actually owed (see PatientPackage.record_payment)."""
+    package = get_object_or_404(PatientPackage, id=package_id, patient_id=patient_id)
+    if request.method == 'POST':
+        form = PackagePaymentForm(request.POST)
+        if form.is_valid():
+            if package.is_fully_paid:
+                messages.error(request, 'This package has no due balance left.')
+            else:
+                payment = package.record_payment(
+                    form.cleaned_data['amount'],
+                    payment_mode=form.cleaned_data['payment_mode'],
+                    notes=form.cleaned_data.get('notes', ''),
+                    recorded_by=request.user,
+                )
+                messages.success(request, f'Payment recorded -- NPR {payment.amount}.')
+        else:
+            messages.error(request, 'Please enter a valid payment amount.')
     return redirect('patient-billing', patient_id=patient_id)

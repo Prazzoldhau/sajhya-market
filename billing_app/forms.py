@@ -1,5 +1,5 @@
 from django import forms
-from .models import BillingEntry, PatientPackage
+from .models import BillingEntry, PatientPackage, PackagePayment
 
 
 class BillingEntryForm(forms.ModelForm):
@@ -32,6 +32,18 @@ class BillingEntryForm(forms.ModelForm):
 
 
 class PatientPackageForm(forms.ModelForm):
+    # Not a PatientPackage field -- how much the patient is paying right
+    # now at booking. Left at 0 (the default), the package is booked
+    # fully unpaid; entering the full total_amount here books it as
+    # fully paid; anything in between is a partial payment, logged as
+    # this package's first PackagePayment so the rest shows as due.
+    amount_paid_now = forms.DecimalField(
+        required=False, min_value=0, initial=0,
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '0.00', 'step': '0.01'}),
+        label='Amount Paid Now',
+        help_text='Leave as 0 if nothing is being paid today.',
+    )
+
     class Meta:
         model = PatientPackage
         fields = ['duration', 'total_sessions', 'total_amount', 'start_date', 'notes']
@@ -54,3 +66,28 @@ class PatientPackageForm(forms.ModelForm):
         if total_amount is not None and total_amount < 0:
             raise forms.ValidationError('Amount cannot be negative.')
         return total_amount
+
+    def clean(self):
+        cleaned_data = super().clean()
+        amount_paid_now = cleaned_data.get('amount_paid_now') or 0
+        total_amount = cleaned_data.get('total_amount')
+        if total_amount is not None and amount_paid_now > total_amount:
+            self.add_error('amount_paid_now', 'Cannot be more than the total package amount.')
+        return cleaned_data
+
+
+class PackagePaymentForm(forms.ModelForm):
+    class Meta:
+        model = PackagePayment
+        fields = ['amount', 'payment_mode', 'notes']
+        widgets = {
+            'amount': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'NPR', 'step': '0.01', 'min': '0.01'}),
+            'payment_mode': forms.Select(attrs={'class': 'form-control'}),
+            'notes': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Optional notes'}),
+        }
+
+    def clean_amount(self):
+        amount = self.cleaned_data.get('amount')
+        if amount is not None and amount <= 0:
+            raise forms.ValidationError('Amount must be greater than 0.')
+        return amount

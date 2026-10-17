@@ -39,6 +39,15 @@
     .bill-status-completed { background: #e5e7eb; color: #374151; }
     .bill-status-expired { background: #fef3c7; color: #92400e; }
     .bill-status-cancelled { background: #fee2e2; color: #b91c1c; }
+    .bill-due-pill { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 0.72rem; font-weight: 600; background: #fee2e2; color: #b91c1c; }
+    .bill-paid-pill { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 0.72rem; font-weight: 600; background: #d1fae5; color: #065f46; }
+    .bill-pay-form { display: flex; gap: 0.4rem; align-items: center; margin-top: 0.8rem; flex-wrap: wrap; }
+    .bill-pay-form input[type="number"] { width: 100px; flex-shrink: 0; }
+    .bill-pay-form select { width: auto; flex-shrink: 0; }
+    .bill-pay-form input[type="text"] { width: 160px; flex: 1 1 160px; }
+    .bill-row-pay-form { display: flex; gap: 0.3rem; align-items: center; }
+    .bill-row-pay-form input[type="number"] { width: 90px; padding: 0.3rem 0.4rem; border: 1px solid #d7dbe3; border-radius: 6px; font-size: 0.8rem; }
+    .bill-row-pay-form button { padding: 0.3rem 0.6rem; border-radius: 6px; border: 1px solid #2f5fdb; background: #2f5fdb; color: #fff; font-size: 0.75rem; cursor: pointer; }
 
     .bill-empty { text-align: center; color: #5a5f72; padding: 2rem 0; }
     .bill-table-wrap { overflow-x: auto; }
@@ -83,6 +92,23 @@
             <span>{{ active_package.sessions_used }} of {{ active_package.total_sessions }} sessions used</span>
             <span>{{ active_package.sessions_remaining }} remaining</span>
         </div>
+        <div class="bill-pkg-stats" style="margin-top:0.6rem;">
+            <span>Paid: NPR {{ active_package.amount_paid }}</span>
+            {% if active_package.is_fully_paid %}
+            <span class="bill-paid-pill">Fully Paid</span>
+            {% else %}
+            <span class="bill-due-pill">Due: NPR {{ active_package.amount_due }}</span>
+            {% endif %}
+        </div>
+        {% if not active_package.is_fully_paid %}
+        <form method="POST" action="{% url 'patient-package-payment' patient_id=patient.id package_id=active_package.id %}" class="bill-pay-form">
+            {% csrf_token %}
+            {{ payment_form.amount }}
+            {{ payment_form.payment_mode }}
+            {{ payment_form.notes }}
+            <button type="submit" class="bill-btn bill-btn-primary">Record Payment</button>
+        </form>
+        {% endif %}
         <form method="POST" action="{% url 'patient-package-cancel' patient_id=patient.id package_id=active_package.id %}" onsubmit="return confirm('Cancel this package?');" style="margin-top:0.8rem;">
             {% csrf_token %}
             <button type="submit" class="bill-btn bill-btn-danger">Cancel Package</button>
@@ -115,6 +141,11 @@
                     {{ form.total_amount.errors }}
                 </div>
                 <div class="bill-form-group">
+                    <label>Amount Paid Now</label>
+                    {{ form.amount_paid_now }}
+                    {{ form.amount_paid_now.errors }}
+                </div>
+                <div class="bill-form-group">
                     <label>Start Date</label>
                     {{ form.start_date }}
                 </div>
@@ -137,6 +168,8 @@
                     <th>Duration</th>
                     <th>Sessions</th>
                     <th>Amount</th>
+                    <th>Paid</th>
+                    <th>Due</th>
                     <th>Started</th>
                     <th>Status</th>
                 </tr>
@@ -147,6 +180,20 @@
                     <td>{{ pkg.get_duration_display }}</td>
                     <td>{{ pkg.sessions_used }} / {{ pkg.total_sessions }}</td>
                     <td>NPR {{ pkg.total_amount }}</td>
+                    <td>NPR {{ pkg.amount_paid }}</td>
+                    <td class="bill-actions-cell">
+                        {% if pkg.is_fully_paid %}
+                        <span class="bill-paid-pill">Paid</span>
+                        {% else %}
+                        <span class="bill-due-pill">NPR {{ pkg.amount_due }}</span>
+                        <form method="POST" action="{% url 'patient-package-payment' patient_id=patient.id package_id=pkg.id %}" class="bill-row-pay-form" style="margin-top:4px;">
+                            {% csrf_token %}
+                            <input type="hidden" name="payment_mode" value="cash">
+                            <input type="number" name="amount" step="0.01" min="0.01" max="{{ pkg.amount_due }}" placeholder="Amount" required>
+                            <button type="submit">Pay</button>
+                        </form>
+                        {% endif %}
+                    </td>
                     <td>{{ pkg.start_date|date:"d M Y" }}</td>
                     <td><span class="bill-status-pill bill-status-{{ pkg.effective_status }}">{{ pkg.effective_status_display }}</span></td>
                 </tr>

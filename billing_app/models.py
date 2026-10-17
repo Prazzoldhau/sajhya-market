@@ -1,5 +1,6 @@
 import uuid
 from datetime import timedelta
+from decimal import Decimal
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
@@ -63,10 +64,13 @@ class PatientPackage(models.Model):
     not tied to a real patient record), this is tied to an actual
     AddPatient and tracks session usage against it.
 
-    Deliberately session-count tracking only, not a computed per-session
-    currency split (e.g. "NPR 750 used so far") -- that invites rounding/
-    fraction noise for no real benefit; the package's total_amount is
-    just the agreed price, shown as a flat reference figure.
+    Deliberately session-count tracking only (not a computed per-session
+    currency split, e.g. "NPR 750 used so far") -- that invites rounding/
+    fraction noise for no real benefit. Money tracking is instead a
+    separate paid-vs-due ledger (see amount_paid/amount_due/PackagePayment
+    below), since a patient often pays a package off only partially at
+    booking and settles the rest later, in one or more further payments --
+    unrelated to how many sessions they've used.
 
     sessions_used increments by one each time a TreatmentSession is
     logged for this patient while this package is the active one (see
@@ -98,6 +102,7 @@ class PatientPackage(models.Model):
     duration = models.CharField(max_length=10, choices=DURATION_CHOICES)
     total_sessions = models.PositiveIntegerField(help_text='How many sessions this package covers')
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    amount_paid = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     sessions_used = models.PositiveIntegerField(default=0)
     start_date = models.DateField(default=timezone.localdate)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='active')
@@ -139,6 +144,14 @@ class PatientPackage(models.Model):
             return 'Expired'
         return self.get_status_display()
 
+    @property
+    def amount_due(self):
+        return max(Decimal('0'), self.total_amount - self.amount_paid)
+
+    @property
+    def is_fully_paid(self):
+        return self.amount_due <= 0
+
     def record_session(self):
         """Deducts one session from this package. No-op (returns False)
         if the package isn't actually active -- callers don't need to
@@ -150,3 +163,44 @@ class PatientPackage(models.Model):
             self.status = 'completed'
         self.save()
         return True
+
+    def record_payment(self, amount, payment_mode='cash', notes='', recorded_by=None):
+        """Logs one payment against this package's due balance -- used
+        both for an initial partial payment at booking and for any
+        later installment that settles the rest. Capped at amount_due
+        so a mistaken overpayment can't push the balance negative;
+        returns None (no-op) for a non-positive amount or once nothing
+        is owed."""
+        if amount is None or amount <= 0 or self.is_fully_paid:
+            return None
+        amount = min(Decimal(amount), self.amount_due)
+        payment = PackagePayment.objects.create(
+            package=self, amount=amount, payment_mode=payment_mode,
+            notes=notes, recorded_by=recorded_by,
+        )
+        self.amount_paid += amount
+        self.save()
+        return payment
+
+
+class PackagePayment(models.Model):
+    """One payment transaction against a PatientPackage's total_amount.
+    A package is often paid off over more than one sitting -- a partial
+    payment at booking, the rest later -- so this is a running ledger,
+    not just a single amount_paid field, mirroring how BillingEntry
+    already logs individual transactions rather than a bare total."""
+
+    package = models.ForeignKey(PatientPackage, on_delete=models.CASCADE, related_name='payments')
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    payment_mode = models.CharField(max_length=10, choices=BillingEntry.PAYMENT_MODE_CHOICES, default='cash')
+    notes = models.CharField(max_length=255, blank=True, default='')
+    recorded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='+',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"NPR {self.amount} — {self.package}"
