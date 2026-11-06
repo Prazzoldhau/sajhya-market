@@ -180,6 +180,22 @@ ALLOWED_APK_MIME_TYPES = ['application/vnd.android.package-archive']
 
 
 
+# Force HTTPS -- http://sajhya.com/ currently serves every page (including
+# the login/signup pages, and the donate/lab-test forms that collect name,
+# phone, email and address) over plain HTTP with no redirect at all.
+# SECURE_PROXY_SSL_HEADER tells Django to trust the X-Forwarded-Proto header
+# that this host's LiteSpeed/cPanel Passenger reverse proxy sets when it
+# terminates TLS -- without it, SECURE_SSL_REDIRECT would see every request
+# (even ones that really came in over HTTPS) as insecure and redirect-loop
+# the whole site, since Django itself only ever receives the proxy's
+# internal plain-HTTP connection. After deploying, verify immediately:
+#   curl -I http://sajhya.com/   -> expect 301 to https://sajhya.com/
+#   curl -I https://sajhya.com/  -> expect 200, NOT another redirect
+# If https:// loops instead, this proxy assumed wrong for this host --
+# comment both lines back out and redeploy right away.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_SSL_REDIRECT = not DEBUG
+
 # CORS - allow Flutter app requests
 CORS_ALLOWED_ORIGINS = [
     "https://sajhya.com",
