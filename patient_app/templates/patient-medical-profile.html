@@ -1271,7 +1271,7 @@
                 var q = exInput.value.trim();
                 if (q.length < 2) { exBox.innerHTML = ''; updateSelectedCount(); return; }
                 exTimer = setTimeout(function () {
-                    fetch('/patient-app/api/browse/public-exercises/search/?q=' + encodeURIComponent(q))
+                    fetch('/patient-app/api/browse/exercises/search/?q=' + encodeURIComponent(q))
                         .then(function (r) { return r.json(); })
                         .then(function (data) {
                             var items = data.exercises || [];
