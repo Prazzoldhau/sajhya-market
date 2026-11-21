@@ -5,7 +5,6 @@ from personal_account.models import AddPatient
 from datetime import datetime, timedelta,date
 from django.utils import timezone   # Django's timezone has .now()
 import json
-from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
@@ -17,6 +16,7 @@ from django.db.models import Max
 
 
 # Create your views here.
+@login_required
 def load_exercises(request,patient_id):
     patient = get_object_or_404(AddPatient, id=patient_id)  # single object
 
@@ -54,7 +54,7 @@ def get_exercises_by_subregion(request):
     return JsonResponse({'exercises': []})
 
 
-@csrf_exempt
+@login_required
 @require_http_methods(["POST"])
 def submit_prescription(request):
     try:
@@ -157,7 +157,7 @@ def submit_prescription(request):
             'error': str(e)
         }, status=500)
 
-@csrf_exempt
+@login_required
 @require_http_methods(["POST"])
 def add_exercises_to_prescription(request, prescription_id):
     try:
@@ -213,6 +213,7 @@ def prescription_exercise_details(request):
     return render (request, 'prescription-exercise-details.html')
 
 
+@login_required
 def patient_prescriptions_view(request, patient_id):
     """View to display all prescriptions for a patient"""
     patient = get_object_or_404(AddPatient, id=patient_id)
@@ -265,6 +266,7 @@ def session_detail(request):
 
 
 
+@login_required
 def add_edit_exercise(request, patient_id):
     patient = get_object_or_404(AddPatient, id=patient_id)
 

@@ -4,9 +4,9 @@ from .models import TreatmentSession
 from datetime import datetime
 from django.db import transaction
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.shortcuts import get_object_or_404
+from django.contrib.auth.decorators import login_required
 from .models import TreatmentSession, Modality, TreatmentSessionModality
 from billing_app.models import PatientPackage
 import json
@@ -14,6 +14,7 @@ from django.urls import reverse
 
 
 # Create your views here.
+@login_required
 def start_prescription(request, patient_id):
     patient = get_object_or_404(AddPatient, id=patient_id)
     # patient = AddPatient.objects.filter(id=patient_id)
@@ -36,7 +37,7 @@ def start_prescription(request, patient_id):
 
 
 @require_http_methods(["POST"])
-@csrf_exempt  # only if needed for your API client
+@login_required
 def save_treatment_session(request):
     try:
         # Parse request body
