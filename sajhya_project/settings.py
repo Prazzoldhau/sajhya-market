@@ -196,6 +196,15 @@ ALLOWED_APK_MIME_TYPES = ['application/vnd.android.package-archive']
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SECURE_SSL_REDIRECT = not DEBUG
 
+# Without this, every @login_required view (a growing list after this
+# security pass) sends an anonymous visitor to Django's default
+# /accounts/login/, which has no URL pattern here -- a 404 dead end
+# instead of an actual login prompt. There are several separate login
+# flows (personal/clinic/enterprise/patient); this chooser page is the
+# one sane single target for a bare @login_required redirect since it
+# lets the visitor pick which one they need.
+LOGIN_URL = '/acc/sign-in/'
+
 # CORS - allow Flutter app requests
 CORS_ALLOWED_ORIGINS = [
     "https://sajhya.com",

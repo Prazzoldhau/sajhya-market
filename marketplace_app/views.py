@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.http import JsonResponse
@@ -602,6 +603,7 @@ def get_recommended_for_diagnosis(diagnosis_text):
     return Product.objects.filter(id__in=matched_pks, in_stock=True).exclude(category__name='Pharmacy').distinct(), matched_label
 
 
+@login_required
 def patient_marketplace(request, patient_id):
     from personal_account.models import AddPatient
     patient = get_object_or_404(AddPatient, id=patient_id)
@@ -649,6 +651,7 @@ def patient_marketplace(request, patient_id):
     return render(request, 'marketplace/patient-marketplace.html', context)
 
 
+@login_required
 def add_patient_recommendation(request, patient_id, product_id):
     if request.method != 'POST':
         return JsonResponse({'success': False}, status=405)
@@ -668,6 +671,7 @@ def add_patient_recommendation(request, patient_id, product_id):
     return redirect(request.META.get('HTTP_REFERER', 'patient-marketplace'))
 
 
+@login_required
 def remove_patient_recommendation(request, rec_id):
     if request.method != 'POST':
         return JsonResponse({'success': False}, status=405)
@@ -678,6 +682,7 @@ def remove_patient_recommendation(request, rec_id):
     return redirect(request.META.get('HTTP_REFERER', 'patient-marketplace'))
 
 
+@login_required
 def add_picks_to_cart(request, patient_id):
     """Add all physio-picked products for a patient into the current session cart."""
     from personal_account.models import AddPatient

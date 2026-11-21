@@ -12,7 +12,6 @@ from exercise_app.models import Prescription, PrescriptionExercise, ExerciseFeed
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 import json
-from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 from prescription_app.models import TreatmentSession
 from marketplace_app.views import get_recommended_for_diagnosis
@@ -23,6 +22,7 @@ from patient_app.views import _medical_profile_context, _attach_medical_profile_
 
 
 # Create your views here.
+@login_required
 def patient_detail(request, patient_id):
     patient = get_object_or_404(AddPatient, id=patient_id)
     sessions = TreatmentSession.objects.filter(patient_id=patient_id).only(
@@ -53,8 +53,9 @@ def patient_detail(request, patient_id):
     return render(request, 'patient-detail-dashboard.html', context)
 
 
+@login_required
 def patient_exercise_status(request, patient_id):
-   
+
     """View to display all prescriptions for a patient"""
     patient = get_object_or_404(AddPatient, id=patient_id)
     # clinic_id = patient.origin_clinic.id   # Get clinic ID from patient
@@ -120,6 +121,7 @@ def patient_exercise_status(request, patient_id):
 
 
 
+@login_required
 def latest_prescription(request, patient_id):
     patient = get_object_or_404(AddPatient, id=patient_id)
     latest_prescription = Prescription.objects.filter(patient=patient).order_by('-created_at').first()
@@ -146,7 +148,7 @@ def latest_prescription(request, patient_id):
     })
 
 
-@csrf_exempt
+@login_required
 @require_http_methods(["POST"])
 def toggle_exercise_completion(request, exercise_id):
     try:
@@ -185,7 +187,7 @@ def toggle_exercise_completion(request, exercise_id):
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
     
     
-@csrf_exempt
+@login_required
 @require_http_methods(["POST"])
 def remove_prescription_exercise(request, exercise_id):
     try:
@@ -211,7 +213,7 @@ def remove_prescription_exercise(request, exercise_id):
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
 
-@csrf_exempt
+@login_required
 @require_http_methods(["POST"])
 def update_exercise_params(request, exercise_id):
     try:
@@ -248,6 +250,7 @@ def update_exercise_params(request, exercise_id):
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 
+@login_required
 def refer_to(request, patient_id):
     patient = get_object_or_404(AddPatient, id=patient_id)
 
