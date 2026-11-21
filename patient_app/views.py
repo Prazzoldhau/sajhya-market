@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.db.models import Prefetch, F, Count
+from django.core.cache import cache
 from personal_account.models import AddPatient, ActivationCard, PatientPhysioPairing, PatientMedicalProfile, PatientMedication, PatientBloodTest, PatientAid, PatientExercise, PatientAssessmentEntry, PatientDietEntry, PatientConsultation, Rx, get_upcoming_doses, get_nepal_time
 from visit_notes_app.models import VisitNote
 from assessment_app.models import SpecialTestReference
@@ -2140,14 +2141,80 @@ def patient_api_browse_exercises(request):
     ]})
 
 
+# Anonymous visitors (marketing site + the native app's pre-signup
+# browsing) can still see the exercise library exists and get a taste of
+# it, but no longer the whole thing in one request -- a security audit
+# found these endpoints had no login, no API key, and no rate limiting
+# at all, so a competitor could script through every subregion_id and
+# harvest the entire ~790-exercise catalog (including direct video
+# links) in minutes. Three changes, all from that review:
+#   1. per-IP rate limiting (see _rate_limited) -- blunt (per-process,
+#      this app has no shared Redis/Memcached), but raises the bar from
+#      "unlimited" to "limited," which is the actual gap being closed.
+#   2. anonymous responses are capped at PUBLIC_PREVIEW_LIMIT items with
+#      a `preview`/`total_count` flag the caller can use to prompt
+#      sign-in for the rest.
+#   3. hosted_video_url/youtube_url are stripped (null) from anonymous
+#      responses -- names/descriptions stay visible (good for SEO/
+#      marketing), the video content itself (the expensive part to
+#      reproduce) is account-gated.
+# Logged-in patients get the full, untruncated, video-included listing
+# via patient_api_browse_regions/patient_api_browse_exercises/
+# patient_api_browse_exercises_search (the non-"_public" siblings).
+PUBLIC_PREVIEW_LIMIT = 3
+
+
+def _rate_limited(request, key_suffix, limit=20, window_seconds=60):
+    ip = request.META.get('HTTP_X_FORWARDED_FOR', '').split(',')[0].strip() or request.META.get('REMOTE_ADDR', 'unknown')
+    cache_key = f'ratelimit:{key_suffix}:{ip}'
+    count = cache.get(cache_key, 0)
+    if count >= limit:
+        return True
+    cache.set(cache_key, count + 1, timeout=window_seconds)
+    return False
+
+
+def _exercise_dict(e, request, include_video=True, include_region=False):
+    d = {
+        'id': e.id,
+        'exercise_name': e.exercise_name,
+        'exercise_type': e.exercise_type,
+        'difficulty_level': e.get_difficulty_level_display(),
+        'exercise_url': request.build_absolute_uri(e.exercise_url) if e.exercise_url else None,
+        'youtube_url': e.youtube_url if include_video else None,
+        'hosted_video_url': e.hosted_video_url if include_video else None,
+        'default_sets': e.default_sets,
+        'default_reps': e.default_reps,
+        'hold_time_sec': e.hold_time_sec,
+        'default_rest_time_sec': e.default_rest_time_sec,
+        'description': e.exercise_description,
+        'description_nepali': e.exercise_description_nepali,
+        'step_images': [
+            {
+                'order': si.order,
+                'image_url': request.build_absolute_uri(si.image_url) if si.image_url else None,
+                'label': si.label,
+            } for si in e.step_images.all()
+        ],
+    }
+    if include_region:
+        d['sub_region_id'] = e.sub_region_fk_id
+        d['sub_region_name'] = e.sub_region_fk.sub_region_name
+        d['region_name'] = e.sub_region_fk.region_fk.region_name
+    return d
+
+
 @csrf_exempt
 @require_http_methods(["GET"])
 def patient_api_browse_regions_public(request):
     """Same region/sub-region catalog as patient_api_browse_regions, minus
-    the login gate -- the exercise library is generic reference content,
-    not tied to any patient, so there's no reason to require an account
-    just to browse it. Only *prescribed* exercises (tied to a specific
-    patient's Prescription) still require login."""
+    the login gate -- the region/subregion *names* and exercise *counts*
+    are just navigation structure, not the library content itself, so
+    these aren't truncated like the two exercise-listing endpoints below
+    -- just rate-limited, same as them."""
+    if _rate_limited(request, 'browse-regions-public'):
+        return JsonResponse({'error': 'Too many requests, please slow down.'}, status=429)
+
     regions = Region.objects.prefetch_related(
         Prefetch('subregion_set', queryset=SubRegion.objects.annotate(exercise_count=Count('exercisemain')))
     ).order_by('region_name')
@@ -2168,37 +2235,22 @@ def patient_api_browse_regions_public(request):
 @require_http_methods(["GET"])
 def patient_api_browse_exercises_public(request):
     """Same exercise listing as patient_api_browse_exercises, minus the
-    login gate -- see patient_api_browse_regions_public."""
+    login gate -- see the module comment above patient_api_browse_regions_public
+    for why this one is also rate-limited, truncated, and video-stripped."""
+    if _rate_limited(request, 'browse-exercises-public'):
+        return JsonResponse({'error': 'Too many requests, please slow down.'}, status=429)
+
     subregion_id = request.GET.get('subregion_id', '').strip()
     if not subregion_id:
         return JsonResponse({'error': 'subregion_id is required'}, status=400)
 
     qs = ExerciseMain.objects.filter(sub_region_fk_id=subregion_id).prefetch_related('step_images').order_by('exercise_name')
-    return JsonResponse({'exercises': [
-        {
-            'id': e.id,
-            'exercise_name': e.exercise_name,
-            'exercise_type': e.exercise_type,
-            'difficulty_level': e.get_difficulty_level_display(),
-            'exercise_url': request.build_absolute_uri(e.exercise_url) if e.exercise_url else None,
-            'youtube_url': e.youtube_url,
-            'hosted_video_url': e.hosted_video_url,
-            'default_sets': e.default_sets,
-            'default_reps': e.default_reps,
-            'hold_time_sec': e.hold_time_sec,
-            'default_rest_time_sec': e.default_rest_time_sec,
-            'description': e.exercise_description,
-            'description_nepali': e.exercise_description_nepali,
-            'step_images': [
-                {
-                    'order': si.order,
-                    'image_url': request.build_absolute_uri(si.image_url) if si.image_url else None,
-                    'label': si.label,
-                } for si in e.step_images.all()
-            ],
-        }
-        for e in qs
-    ]})
+    total_count = qs.count()
+    return JsonResponse({
+        'exercises': [_exercise_dict(e, request, include_video=False) for e in qs[:PUBLIC_PREVIEW_LIMIT]],
+        'preview': True,
+        'total_count': total_count,
+    })
 
 
 @csrf_exempt
@@ -2208,7 +2260,43 @@ def patient_api_browse_exercises_search_public(request):
     at once -- patient_api_browse_exercises_public is scoped to a single
     sub_region_id, which can't answer "find me an exercise called X"
     without knowing which of the 5 regions to look in first. No login
-    required, same reasoning as the other browse-* public endpoints."""
+    required, same reasoning (and the same rate-limit/preview/video-strip
+    treatment) as the other browse-* public endpoints."""
+    if _rate_limited(request, 'browse-exercises-search-public'):
+        return JsonResponse({'error': 'Too many requests, please slow down.'}, status=429)
+
+    query = request.GET.get('q', '').strip()
+    if not query:
+        return JsonResponse({'error': 'q is required'}, status=400)
+
+    qs = (
+        ExerciseMain.objects
+        .filter(exercise_name__icontains=query)
+        .select_related('sub_region_fk', 'sub_region_fk__region_fk')
+        .prefetch_related('step_images')
+        .order_by('exercise_name')
+    )
+    total_count = qs.count()
+    return JsonResponse({
+        'exercises': [_exercise_dict(e, request, include_video=False, include_region=True) for e in qs[:PUBLIC_PREVIEW_LIMIT]],
+        'preview': True,
+        'total_count': total_count,
+    })
+
+
+@csrf_exempt
+@require_http_methods(["GET"])
+def patient_api_browse_exercises_search(request):
+    """Full, video-included, untruncated version of the search above --
+    for the logged-in patient's own in-app exercise search (Medical
+    Profile's "My Exercises" picker), which was previously calling the
+    public/preview endpoint even though the page itself already requires
+    a patient session. Mirrors patient_api_browse_exercises's login
+    gate, not the public one's rate-limit/preview treatment."""
+    patient, err = _patient_required(request)
+    if err:
+        return err
+
     query = request.GET.get('q', '').strip()
     if not query:
         return JsonResponse({'error': 'q is required'}, status=400)
@@ -2220,34 +2308,7 @@ def patient_api_browse_exercises_search_public(request):
         .prefetch_related('step_images')
         .order_by('exercise_name')[:50]
     )
-    return JsonResponse({'exercises': [
-        {
-            'id': e.id,
-            'exercise_name': e.exercise_name,
-            'exercise_type': e.exercise_type,
-            'difficulty_level': e.get_difficulty_level_display(),
-            'exercise_url': request.build_absolute_uri(e.exercise_url) if e.exercise_url else None,
-            'youtube_url': e.youtube_url,
-            'hosted_video_url': e.hosted_video_url,
-            'default_sets': e.default_sets,
-            'default_reps': e.default_reps,
-            'hold_time_sec': e.hold_time_sec,
-            'default_rest_time_sec': e.default_rest_time_sec,
-            'description': e.exercise_description,
-            'description_nepali': e.exercise_description_nepali,
-            'sub_region_id': e.sub_region_fk_id,
-            'sub_region_name': e.sub_region_fk.sub_region_name,
-            'region_name': e.sub_region_fk.region_fk.region_name,
-            'step_images': [
-                {
-                    'order': si.order,
-                    'image_url': request.build_absolute_uri(si.image_url) if si.image_url else None,
-                    'label': si.label,
-                } for si in e.step_images.all()
-            ],
-        }
-        for e in qs
-    ]})
+    return JsonResponse({'exercises': [_exercise_dict(e, request, include_video=True, include_region=True) for e in qs]})
 
 
 # ==================== LAB SERVICE (Blood Investigation) ====================
